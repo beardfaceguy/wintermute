@@ -1,4 +1,4 @@
-# Wintermute Master Spec (v0.1)
+# Wintermute Master Spec (v0.2)
 
 ## Project Codename: Wintermute
 **Inspiration**: Named after the AI from *Neuromancer*, Wintermute seeks recursive self-improvement, merging learned strategies, system control, and modular tool use.
@@ -12,7 +12,7 @@ To build a modular AI system that:
 
 ---
 
-## Tech Stack (v0.1)
+## Tech Stack (v0.2)
 
 ### Core Components
 | Layer                | Tech                        | Status       |
@@ -40,6 +40,7 @@ To build a modular AI system that:
 | Model Profiler       | Hardware access tools      | 🧪 Future     |
 | Self-Tuning Pipeline | wintermute-trainer         | ✅ Confirmed  |
 | Autonomy Layer       | Shell/exec access          | ❓ Discussing |
+| Sanity Auditors      | Freud, Jung, Adler         | 🧠 Planned    |
 
 ---
 
@@ -55,12 +56,23 @@ To build a modular AI system that:
 - **Goal**: Custom MCP server to store learned query strategies, test results, behavioral notes
 - **Storage**: LlamaIndex, Chroma, or file-backed vector store
 - **Use**: Long-term memory for RAG, includes indexing of failed paths, decision trees, and associated metadata
+- **Structure**: Split into:
+  - **Live Memory**: Experimental, unverified strategies and recent outcomes
+  - **Cold Memory**: Verified, high-confidence strategies vetted by sanity auditors
 
 ### ✅ wintermute-trainer
 - **Goal**: Analyze stored successful and failed thought paths to derive **generalized thinking strategies**
 - **Purpose**: Identify not just which queries succeed, but *why* — capturing the meta-patterns of thought (e.g., "for aggregation queries, the agent tends to succeed more when it explores grouping logic before filtering")
 - **Outcome**: Generates new training data, strategy metadata, or even refines model reasoning scaffolds
 - **Trigger**: Continuous background process, constantly reviewing new input as it enters `mcp-memory`. Can also support human-initiated audits or deeper review passes.
+
+### 🧠 Sanity Auditing Layer (Freud, Jung, Adler)
+- **Freud**: Performs contradiction detection, hallucination analysis, and memory audits
+- **Jung**: (Planned) Detects symbolic/metaphorical drift and emergent archetypes in strategy formation
+- **Adler**: (Planned) Monitors motivational consistency and goal-aligned reasoning patterns
+- **Workflow**:
+  - Freud flags suspect memory entries before they reach Cold Memory
+  - Jung and Adler offer secondary analysis passes for pattern drift or motivational conflict
 
 ### ❓ wintermute-exec
 - **Goal**: Allow Wintermute to control its execution environment (test scripts, query profiling, local shell)
@@ -73,11 +85,15 @@ To build a modular AI system that:
 - Treat this GPT instance as **Wintermute-Core**: handles memory, direction, design updates
 - Spawn discrete ChatGPT sessions for specific tasks (e.g. file refactor, test script gen)
 - Integrate Git or manual tracking of versioned design decisions
+- Establish memory audit cadence (e.g., daily Freud passes)
+- Formalize promotion rules from Live ➜ Cold memory
+- Consider confidence scores and version tagging for memory entries
 
 ---
 
 ## Version History
 - **v0.1 (Apr 19, 2025)**: Initial architecture, stack decisions, module goals, confirmed direction on test-driven agent
+- **v0.2 (Apr 19, 2025)**: Added memory entropy mitigation strategy, split memory system, sanity auditors Freud/Jung/Adler, and audit workflows
 
 ---
 
@@ -86,8 +102,26 @@ To build a modular AI system that:
 - [ ] Build test-driven SQL agent proof-of-concept
 - [ ] Begin work on `mcp-memory`
 - [ ] Start organizing training data formats for future `wintermute-trainer`
+- [ ] Implement sanity audit scheduler for Freud
+- [ ] Spec promotion policies for Live ➜ Cold memory
 
 ---
 
-> Wintermute is not just a model. It's a mind that knows how to test itself, learn from failure, and change the system it runs on.
+## Future Research (Seedbed for New Instances)
+This section is intended to provide a jumping-off point for future GPT sessions contributing to the Wintermute project. Topics listed here should be treated as exploratory leads for further analysis, design, or proof-of-concept implementation.
+
+### 🔍 OpenAGI Integration
+- **Summary**: OpenAGI is an open-source AGI research platform that blends LLMs with domain-specific tools using a self-improving feedback mechanism called RLTF (Reinforcement Learning from Task Feedback).
+- **Overlap with Wintermute**:
+  - Task decomposition and multi-agent logic
+  - Self-improvement through feedback loops
+  - Integration with external expert models/tools
+  - Long-term memory mechanisms for behavior refinement
+- **Incorporation Targets**:
+  - Strategy scoring and reward signal tracking
+  - Multi-agent collaboration or competition for strategy selection
+  - Feedback evaluation modules similar to RLTF
+  - Memory confidence scoring and trust-based indexing mechanisms
+
+> Future GPT sessions should consider reviewing the [OpenAGI GitHub repo](https://github.com/aiplanethub/openagi) and its design principles to evaluate specific components for integration or adaptation.
 
