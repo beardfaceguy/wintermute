@@ -38,7 +38,7 @@ To build a modular AI system that:
 |----------------------|----------------------------|--------------|
 | Verification Agent   | Secondary LLM (Critic)     | ✅ Confirmed  |
 | Model Profiler       | Hardware access tools      | 🧪 Future     |
-| Self-Tuning Pipeline | wintermute-trainer         | ❓ Proposed   |
+| Self-Tuning Pipeline | wintermute-trainer         | ✅ Confirmed  |
 | Autonomy Layer       | Shell/exec access          | ❓ Discussing |
 
 ---
@@ -49,17 +49,18 @@ To build a modular AI system that:
 - **Goal**: Have the AI generate, test, and correct SQL queries based on known-good expectations
 - **MCP**: Postgres
 - **Verification**: Auto-check result accuracy vs. test case
-- **Memory**: Store known-successful queries
+- **Memory**: Store both successful and failed queries, including the **thought path** used by the LLM to reach each conclusion
 
 ### 🚧 mcp-memory
 - **Goal**: Custom MCP server to store learned query strategies, test results, behavioral notes
 - **Storage**: LlamaIndex, Chroma, or file-backed vector store
-- **Use**: Long-term memory for RAG
+- **Use**: Long-term memory for RAG, includes indexing of failed paths, decision trees, and associated metadata
 
-### ❓ wintermute-trainer
-- **Goal**: Use logs of successful corrections to auto-generate fine-tuning data
-- **Outcome**: Optional LoRA/QLoRA training loop
-- **Trigger**: Human-initiated or performance-driven
+### ✅ wintermute-trainer
+- **Goal**: Analyze stored successful and failed thought paths to derive **generalized thinking strategies**
+- **Purpose**: Identify not just which queries succeed, but *why* — capturing the meta-patterns of thought (e.g., "for aggregation queries, the agent tends to succeed more when it explores grouping logic before filtering")
+- **Outcome**: Generates new training data, strategy metadata, or even refines model reasoning scaffolds
+- **Trigger**: Continuous background process, constantly reviewing new input as it enters `mcp-memory`. Can also support human-initiated audits or deeper review passes.
 
 ### ❓ wintermute-exec
 - **Goal**: Allow Wintermute to control its execution environment (test scripts, query profiling, local shell)
