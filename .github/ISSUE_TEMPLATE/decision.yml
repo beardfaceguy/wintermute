@@ -1,0 +1,20 @@
+name: DECISION
+description: Record an immutable architecture decision
+labels: [decision]
+body:
+  - type: input
+    id: title
+    attributes:
+      label: Short title
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / trade‑offs
+  - type: input
+    id: dec_id
+    attributes:
+      label: DEC‑ID (leave blank to auto‑assign)
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Consequence
