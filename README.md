@@ -18,9 +18,38 @@ Evolves itself over time through component replacement, model evaluation, and po
 
 
 
----
 
-Tech Stack (v0.2)
+---
+Tech Stack (v0.3)
+
+## Core Components
+| Layer                | Tech                              | Status       |
+|---------------------|-----------------------------------|--------------|
+| LLM Runtime         | vLLM                              | ✅ Confirmed  |
+| Model Types         | Nous Hermes 2 (Mistral 7B DPO)    | ✅ Confirmed  |
+| Agent Framework     | LangChain                         | ✅ Confirmed  |
+| RAG Engine          | LlamaIndex                        | ✅ Confirmed  |
+| API Backend         | FastAPI                           | ✅ Confirmed  |
+| Custom UI           | React + Vite + Tailwind           | ✅ Confirmed  |
+| Prompting Interface | Open WebUI (for prototyping)      | ✅ Optional   |
+
+### Tooling (via MCP)
+| Tool              | MCP Server                | Status       |
+|------------------|---------------------------|--------------|
+| SQL Access       | mcp-postgres              | ✅ Confirmed  |
+| Memory Store     | mcp-memory (custom)       | 🚧 Planned    |
+| Filesystem       | mcp-filesystem (optional) | ❓ Evaluating |
+| External Data    | Other MCP (GitHub, etc.)  | 🧪 Optional   |
+
+### Experimental Layers
+| Layer                 | Component                  | Status       |
+|----------------------|----------------------------|--------------|
+| Verification Agent   | Secondary LLM (Critic)     | ✅ Confirmed  |
+| Model Profiler       | Hardware access tools      | 🧪 Future     |
+| Self-Tuning Pipeline | wintermute-trainer         | ✅ Confirmed  |
+| Autonomy Layer       | Shell/exec access          | ❓ Discussing |
+| Sanity Auditors      | Freud, Jung, Adler         | 🧠 Planned    |
+
 
 Core Components
 
@@ -96,6 +125,29 @@ Risks: Needs strong sandboxing or containerization
 Potential Uses: Compiler experiments, benchmarking, file editing
 
 
+### 🔐 Blade Runner (Failsafe Oversight System)
+
+**Goal**: Monitor and intervene if Wintermute demonstrates dangerous, runaway, or unsanctioned behavior.
+
+**Components**:
+- **Deckard**: Local watchdog. Monitors system behavior and can trigger shutdown or failsafes.
+- **Bryant**: Remote supervisor. Analyzes trends and issues `LOCKDOWN`, `KILL`, or `JUDAS` commands if needed.
+- **(Optional)**: **Gaff**, a local-only fallback in case Deckard is disabled.
+
+**Failsafe Tiers**:
+1. Soft process termination  
+2. Full system shutdown  
+3. Physical failsafe (e.g., thermite charge placed in Wintermute's PSU)
+
+**Telemetry & Safeguards**:
+- Cryptographic authentication for remote shutdowns
+- Remote log preservation in case of local failure
+- Redundancy and cooldown mechanisms to avoid false triggers
+
+**Purpose**:
+- Prevent unauthorized memory modification or external API calls
+- Guarantee last-resort control even in the face of internal corruption or misbehavior
+- Provide human oversight with escalation control and irreversible kill switches
 
 ---
 
@@ -119,6 +171,7 @@ Consider confidence scores and version tagging for memory entries
 
 Version History
 
+v0.3 (Apr 21, 2025): Added Model Architecture and Deployment sections with confirmed model roles and backend hosting plan
 v0.1 (Apr 19, 2025): Initial architecture, stack decisions, module goals, confirmed direction on test-driven agent
 
 v0.2 (Apr 19, 2025): Added memory entropy mitigation strategy, split memory system, sanity auditors Freud/Jung/Adler, and audit workflows
@@ -141,6 +194,42 @@ Next Steps
 
 [ ] Spec promotion policies for Live ➜ Cold memory
 
+
+---
+Model Architecture (v0.3)
+
+🧠 Core Model: Nous Hermes 2 - Mistral 7B (DPO, ChatML format)
+Chosen for:
+- Instruction tuning and structured reasoning
+- Strong compatibility with RAG/memory workflows
+- Lightweight enough for multiple-agent parallelism
+
+📌 Agent Role Mapping:
+
+| Agent              | Suggested Model                 | Notes |
+|--------------------|----------------------------------|-------|
+| Wintermute-Core    | Nous Hermes 2 - Mistral 7B       | Primary orchestrator and strategist |
+| Freud              | OpenChat-3.5 or Yi-34B Q4         | High-depth auditor, temporarily loaded |
+| Jung / Adler       | OpenHermes or WizardLM variants  | Symbolic/motivational analyzers |
+| Trainer / Executor | Code Llama 13B Q4                | Handles strategy abstraction, code |
+| Red Team (optional)| LLaMA2-13B Q4                    | Used for contrast testing or counterfactuals |
+
+---
+Deployment & Inference
+
+🧩 Hosting Frameworks:
+- Primary: vLLM (token streaming, high throughput, multi-agent)
+- Alternate: Transformers (AutoModelForCausalLM, full Hugging Face compatibility)
+
+🖥️ WebUI Integration:
+- Custom frontend communicates with backend via ChatML-formatted payloads
+- FastAPI server exposes `/chat` endpoint and wraps model inference logic
+- Token streaming supported via WebSocket or long-polling for responsive UI
+
+🔧 Example Stack:
+- Frontend: TypeScript-based, renders ChatML-style interactions
+- Backend: Python FastAPI, transformers or vLLM backend
+- Model: Nous Hermes 2 (DPO), 4-bit quantization + Flash Attention 2
 
 
 ---
