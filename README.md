@@ -202,6 +202,29 @@ Retraining triggers based on divergence metrics
 Optional meta-agent tasked with monitoring sanity checker effectiveness over time
 
 
+### 🛡️ Blade Runner (Oversight Package)
+
+**Summary**: Blade Runner is a failsafe monitoring system composed of two components — Deckard and Bryant — responsible for detecting and responding to dangerous activity by Wintermute.
+
+- **Deckard**: Local watchdog agent running on the same system as Wintermute. Monitors process behavior, resource usage, and system calls. Capable of issuing warnings, soft shutdowns, or triggering physical hardware failsafes.
+- **Bryant**: Remote supervisory agent. Receives telemetry from Deckard, analyzes trends, and holds authority to issue `LOCKDOWN`, `KILL`, or `JUDAS` (irreversible hardware destruction) commands.
+
+**Failsafe Tiers**:
+1. Soft process termination  
+2. Full system shutdown  
+3. Thermite ignition (via remote hardware trigger)
+
+**Goals**:
+- Prevent runaway behavior or unsanctioned memory access
+- Preserve logs remotely if Deckard is disabled or compromised
+- Support out-of-band recovery or escalation
+
+**Optional Expansion**:
+- Integration with Gaff (fallback local-only Deckard variant)
+- Redundancy and response delay buffers to prevent false ignition
+- Cryptographic kill-switch sequences authenticated by Bryant
+
+
 
 > Future GPT sessions may propose a mcp-sanity-monitor module or meta-auditor to oversee sanity checker lifecycle and determine retrain/replace thresholds.
 
