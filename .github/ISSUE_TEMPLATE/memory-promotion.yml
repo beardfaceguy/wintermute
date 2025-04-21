@@ -1,0 +1,17 @@
+name: Memory Promotion
+description: Request promotion of a Live memory entry to Cold.
+title: "Promotion: <memory key or summary>"
+labels: ["memory-promotion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Request Freud audit and promotion of a memory strategy or record from Live to Cold.
+  - type: input
+    id: memory_key
+    attributes:
+      label: Memory Entry Key
+  - type: textarea
+    id: notes
+    attributes:
+      label: Context Notes
