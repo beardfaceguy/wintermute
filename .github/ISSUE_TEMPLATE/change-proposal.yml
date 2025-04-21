@@ -1,0 +1,14 @@
+name: Change Proposal
+description: Propose a modification to an existing architecture decision.
+title: "CP: <short summary>"
+labels: ["change-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form to propose a change to an existing design decision. Include rationale and impact.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      placeholder: What decision are you proposing to change, and why?
