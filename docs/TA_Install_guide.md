@@ -135,3 +135,54 @@ Edit
   dependency-map.yaml      # Module relationships
   audits/freud/            # Sanity audit logs
   logs/work-notes/         # Transient observations
+  
+  
+  🏗️ Step 5: Initialize the Governance Repo Structure
+Once the model is running, you’ll need to scaffold the required GitHub project resources.
+
+5.1 ✅ Create Governance Labels
+bash
+Copy
+Edit
+gh label create decision --description "Immutable architecture decision"           --color F9D0C4
+gh label create change-proposal --description "Request to change an existing decision"   --color D4C5F9
+gh label create dependency --description "Dependency mapping / breaking change"     --color BFD4F2
+gh label create memory-promotion --description "Live ➜ Cold memory promotion"             --color C2E0C6
+5.2 ✅ Scaffold Governance Folder Structure
+bash
+Copy
+Edit
+mkdir -p governance/{change-proposals,audits/freud,logs/work-notes}
+echo "# Wintermute Design Decisions
+| DEC‑ID | Date | Decision | Rationale | Linked CP |
+|--------|------|----------|-----------|-----------|" > governance/design-decisions.md
+echo "# Wintermute Dependency Map (YAML)" > governance/dependency-map.yaml
+git add governance && git commit -m "governance: scaffold base"
+5.3 ✅ Add GitHub Issue Templates
+Create .github/ISSUE_TEMPLATE/ and add:
+
+decision.yml
+
+change-proposal.yml
+
+memory-promotion.yml
+
+You can copy these from existing samples in the repo or this GPT thread.
+
+5.4 ✅ Create the Project Board
+bash
+Copy
+Edit
+gh project create --title "Wintermute Governance" --owner YOUR_GH_USERNAME
+5.5 ✅ Add Built-in “Status” Field to Project
+Make sure the board has a Status field with options:
+
+Todo
+
+In Progress
+
+Blocked
+
+Done
+
+Use the GitHub UI or CLI (gh project field-*) to manage.
