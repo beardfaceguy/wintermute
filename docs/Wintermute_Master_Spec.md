@@ -131,7 +131,7 @@ Potential Uses: Compiler experiments, benchmarking, file editing
 
 **Components**:
 - **Deckard**: Local watchdog. Monitors system behavior and can trigger shutdown or failsafes.
-- **Bryant**: Remote supervisor. Analyzes trends and issues `LOCKDOWN`, `KILL`, or `JUDAS` commands if needed.
+- **Bryant**: Remote supervisor. Analyzes trends and issues `LOCKDOWN`, `KILL`, or `BUTLERIAN-JIHAD` commands if needed.
 - **(Optional)**: **Gaff**, a local-only fallback in case Deckard is disabled.
 
 **Failsafe Tiers**:
@@ -221,15 +221,23 @@ Deployment & Inference
 - Primary: vLLM (token streaming, high throughput, multi-agent)
 - Alternate: Transformers (AutoModelForCausalLM, full Hugging Face compatibility)
 
-🖥️ WebUI Integration:
-- Custom frontend communicates with backend via ChatML-formatted payloads
-- FastAPI server exposes `/chat` endpoint and wraps model inference logic
-- Token streaming supported via WebSocket or long-polling for responsive UI
+🖥️ WebUI Integration
+Custom Vite + React + Redux frontend renders ChatGPT-style chat interface with upload and voice support
 
-🔧 Example Stack:
-- Frontend: TypeScript-based, renders ChatML-style interactions
-- Backend: Python FastAPI, transformers or vLLM backend
-- Model: Nous Hermes 2 (DPO), 4-bit quantization + Flash Attention 2
+Frontend communicates with backend via ChatML-formatted payloads
+
+Token streaming via WebSocket (preferred) or HTTP long-polling for responsive interactions
+
+File upload and audio I/O modules designed for modular integration with other MCP agents
+
+🔧 Implementation Stack
+Frontend: Vite + TypeScript + React + Redux (project name: talkingHead)
+
+Backend: Python (FastAPI), model server using vLLM
+
+Model: Nous Hermes 2 (DPO), 4-bit quantized with Flash Attention 2
+
+Future UI hooks: Support planned for additional MCP interaction panels, multi-agent chat, and prompt graph visualizers
 
 
 ---
