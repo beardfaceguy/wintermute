@@ -8,6 +8,7 @@ const Chat: React.FC = () => {
   const messages = useSelector((state: RootState) => state.chat.messages)
   const [input, setInput] = useState('')
   const ws = useRef<WebSocket | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:8000/ws/chat')
@@ -17,6 +18,10 @@ const Chat: React.FC = () => {
     return () => ws.current?.close()
   }, [dispatch])
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
   const sendMessage = () => {
     if (ws.current && input.trim() !== '') {
       ws.current.send(input)
@@ -25,26 +30,41 @@ const Chat: React.FC = () => {
     }
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') sendMessage()
+  }
+
   return (
-    <div className="flex flex-col h-screen p-4">
-      <div className="flex-1 overflow-y-auto space-y-2">
-        {messages.map((msg, i) => (
-          <div key={i} className={msg.sender === 'user' ? 'text-right' : 'text-left'}>
-            <span className="inline-block p-2 rounded bg-gray-200 dark:bg-gray-700">
-              {msg.content}
-            </span>
+    <div className="flex flex-col h-screen bg-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`max-w-[75%] p-2 rounded-lg shadow-sm whitespace-pre-wrap break-words ${
+              msg.sender === 'user'
+                ? 'ml-auto bg-blue-100 text-right'
+                : 'mr-auto bg-gray-200 text-left'
+            }`}
+          >
+            {msg.content}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
-      <div className="mt-4 flex">
+
+      <div className="flex gap-2 p-4 border-t bg-gray-50">
         <input
+          type="text"
+          className="flex-1 border rounded px-3 py-2 text-sm"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          className="flex-1 p-2 border rounded"
+          onKeyDown={handleKeyPress}
           placeholder="Say something..."
         />
-        <button onClick={sendMessage} className="ml-2 px-4 py-2 bg-blue-500 text-white rounded">
+        <button
+          onClick={sendMessage}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
           Send
         </button>
       </div>
