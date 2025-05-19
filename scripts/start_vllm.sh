@@ -16,5 +16,5 @@ python -m vllm.entrypoints.openai.api_server \
   --swap-space 8 \
   --disable-log-requests \
   --enforce-eager \
-  --port 8000
+  --port 8001
 
