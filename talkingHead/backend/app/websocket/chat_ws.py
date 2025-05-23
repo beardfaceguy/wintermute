@@ -17,7 +17,7 @@ async def websocket_endpoint(websocket: WebSocket):
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream(
                 "POST",
-                "http://localhost:8001/v1/chat/completions",
+                "http://192.168.8.3:8001/v1/chat/completions",
                 json={
                     "model": "mistral-7b-instruct-awq",
                     "messages": [{"role": "user", "content": user_input}],
