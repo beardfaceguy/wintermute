@@ -6,7 +6,7 @@ from urllib.parse import urlunparse
 import asyncio
 
 VLLM_SCHEME = "http"
-VLLM_HOST = "localhost"
+VLLM_HOST = "192.168.8.3"
 VLLM_PORT = 8001
 VLLM_PATH = "/v1/chat/completions"
 MODEL_NAME = "mistral-7b-instruct-awq"
