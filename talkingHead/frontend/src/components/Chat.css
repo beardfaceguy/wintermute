@@ -1,0 +1,32 @@
+.chat-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 560px;
+  padding: 16px;
+  background-color: #01a7a8;
+  color: #000;
+  font-family: "JetSites Cookie Banner JetBrains Mono", Menlo, Consolas, Monaco,
+               "Lucida Console", "Liberation Mono", "DejaVu Sans Mono",
+               "Bitstream Vera Sans Mono", "Courier New", monospace, serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  border: 1px solid black;
+  box-shadow: 20px 20px 0 rgba(0, 0, 0, 0.68);
+  box-sizing: border-box;
+  transition: opacity 0.3s;
+}
+
+.chat-button {
+  background: yellow;
+  border: none;
+  font-weight: bold;
+  font-family: inherit;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}

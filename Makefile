@@ -1,10 +1,12 @@
 # Wintermute Makefile - Dev Environment Builder
 
+# Environment Setup
 PYTHON_VERSION=3.10.14
 VENV_DIR=$(HOME)/wintermute/venv
 VLLM_DIR=$(HOME)/wintermute/vllm
 MODEL_NAME=NousResearch/Nous-Hermes-2-Mistral-7B-DPO
-MODEL_DIR=$(HOME)/wintermute/models/$(shell basename $(MODEL_NAME))
+MODEL_BASE_NAME=$(shell basename $(MODEL_NAME))
+MODEL_DIR=$(HOME)/wintermute/models/$(MODEL_BASE_NAME)
 LOG_FILE=$(HOME)/wintermute/wintermute_setup.log
 
 .PHONY: all python venv vllm model launch clean fix-ssl
@@ -62,3 +64,21 @@ launch:
 clean:
 	@echo "🧹 Cleaning Wintermute build environment..."
 	rm -rf $(VENV_DIR) $(VLLM_DIR) $(MODEL_DIR) $(LOG_FILE)
+
+# Install Python dependencies
+install:
+	pip install -r talkingHead/backend/requirements.txt
+
+# Run FastAPI backend with live reload
+backend:
+	cd talkingHead/backend && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+
+# Run Vite frontend
+frontend:
+	cd talkingHead/frontend && npm run dev
+
+
+# Run both frontend and backend
+dev:
+	make -j2 backend frontend
