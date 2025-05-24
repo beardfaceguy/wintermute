@@ -1,1 +1,5 @@
 flask>=2.3.0
+llama-index
+chromadb
+sentence-transformers
+huggingface-hub

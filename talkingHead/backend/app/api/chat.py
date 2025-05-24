@@ -4,19 +4,9 @@ from starlette.responses import StreamingResponse
 import httpx
 from urllib.parse import urlunparse
 import asyncio
+from shared.config_loader import load_vllm_config
+VLLM_URL, MODEL_NAME = load_vllm_config()
 
-VLLM_SCHEME = "http"
-VLLM_HOST = "192.168.8.3"
-VLLM_PORT = 8001
-VLLM_PATH = "/v1/chat/completions"
-MODEL_NAME = "mistral-7b-instruct-awq"
-
-VLLM_URL = urlunparse((
-    VLLM_SCHEME,
-    f"{VLLM_HOST}:{VLLM_PORT}",
-    VLLM_PATH,
-    '', '', ''
-))
 
 router = APIRouter()
 
