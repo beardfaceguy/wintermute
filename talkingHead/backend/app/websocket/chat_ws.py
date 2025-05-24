@@ -3,6 +3,10 @@ import httpx
 import asyncio
 import json
 
+from shared.config_loader import load_vllm_config
+
+VLLM_URL, MODEL_NAME = load_vllm_config()
+
 router = APIRouter()
 
 @router.websocket("/ws/chat")
@@ -17,9 +21,9 @@ async def websocket_endpoint(websocket: WebSocket):
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream(
                 "POST",
-                "http://192.168.8.3:8001/v1/chat/completions",
+                VLLM_URL,
                 json={
-                    "model": "mistral-7b-instruct-awq",
+                    "model": MODEL_NAME,
                     "messages": [{"role": "user", "content": user_input}],
                     "stream": True,
                 },
