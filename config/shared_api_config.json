@@ -11,5 +11,11 @@
     "host": "192.168.8.3",
     "port": 8000,
     "path": "/ws/chat"
+  },
+  "rag": {
+    "storage_dir": "memory/chroma_store",
+    "live_data_dir": "memory/live",
+    "embed_model": "BAAI/bge-small-en",
+    "device": "cpu"
   }
 }
