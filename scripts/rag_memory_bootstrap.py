@@ -50,21 +50,20 @@ def build_index(data_dir: str, chroma_dir: str, embed_model):
     index.storage_context.persist(persist_dir=chroma_dir)
     return index
 
-
 def load_existing_index(chroma_dir: str, embed_model):
     try:
-        return load_index_from_storage(persist_dir=chroma_dir, embed_model=embed_model)
-    except Exception as e:
-        print(f"Persisted index load failed: {e}. Falling back to reconstructing vector store.")
         db = chromadb.PersistentClient(path=chroma_dir)
         vector_store = ChromaVectorStore(chroma_collection=db.get_or_create_collection("wintermute_memory"))
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+        return load_index_from_storage(storage_context=storage_context, embed_model=embed_model)
+    except Exception as e:
+        print(f"Persisted index load failed: {e}. Falling back to reconstructing vector store.")
         return VectorStoreIndex.from_vector_store(
             vector_store=vector_store,
             storage_context=storage_context,
             embed_model=embed_model,
         )
-
 
 def query_index(index, query: str):
     llm = VLLM(base_url=VLLM_URL, model_name=MODEL_NAME)
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     parser.add_argument("--reset", action="store_true", help="Clear and reset the index before running.")
 
     args = parser.parse_args()
-    embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
+    embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL, device="cpu", embed_batch_size=64)
 
     if args.reset and os.path.exists(CHROMA_DIR):
         print(f"Resetting index at {CHROMA_DIR}...")

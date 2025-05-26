@@ -50,3 +50,7 @@ ehthumbs.db
 .history
 .bash_history
 .zsh_history
+
+
+memory/chroma_store/
+
