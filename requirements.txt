@@ -1,17 +1,23 @@
-annotated-types
+# Core API
+fastapi
+uvicorn[standard]
+httpx
+
+# Core RAG stack (modular LlamaIndex)
+llama-index-core
+llama-index-vector-stores-chroma
+llama-index-embeddings-huggingface
+llama-index-readers-file
+llama-index-embeddings-openai
+chromadb
+transformers
+sentence-transformers
+
+# LLM server
+vllm[openai]
+
+# Utility / compatibility
 anyio
 click
-fastapi
-h11
-httpcore
-httpx
-idna
 pydantic
-pydantic_core
-sniffio
 starlette
-typing-inspection
-typing_extensions
-uvicorn
-uvicorn[standard]
-chromadb
