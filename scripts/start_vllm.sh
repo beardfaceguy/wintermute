@@ -1,6 +1,13 @@
 #!/bin/bash
 cd "$(dirname "$0")" || exit 1
 
+# Force correct Python version from pyenv
+PYENV_PYTHON="$HOME/.pyenv/versions/3.11.9/bin/python"
+if [ ! -x "$PYENV_PYTHON" ]; then
+  echo "❌ Python 3.11.9 not found at expected location: $PYENV_PYTHON"
+  exit 1
+fi
+
 # Set environment variables
 export CUDA_VISIBLE_DEVICES=0
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True

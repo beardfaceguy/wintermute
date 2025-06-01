@@ -237,6 +237,52 @@ Backend: Python (FastAPI), model server using vLLM
 
 Model: Nous Hermes 2 (DPO), 4-bit quantized with Flash Attention 2
 
+✅ RAG Query + Memory Engine Integration
+
+Goal:
+Provide a memory-aware, FastAPI-accessible query interface using LlamaIndex and vLLM.
+
+Endpoints:
+
+    GET /api/rag/query?q=... – One-shot RAG query
+
+    POST /api/chat/stream – Conversational interface powered by RAG + ChatMemoryBuffer
+
+Dependencies:
+
+    llama-index-core
+
+    llama-index-vector-stores-chroma
+
+    llama-index-embeddings-huggingface
+
+    vLLM (via OpenAI-compatible API)
+
+    ChromaDB
+
+✅ Current Status: Functioning
+
+    ✅ RAG index validation and bootstrapping working via RAGService
+
+    ✅ Memory support via ChatMemoryBuffer integrated using get_chat_engine()
+
+    ✅ FastAPI route /chat/stream now calls get_chat_response() to unify retrieval + memory
+
+    ✅ RAG logic and configuration abstracted into reusable service layer
+
+    ✅ Legacy issues with NoneType during HuggingFaceEmbedding(...) resolved by explicitly setting Settings.embed_model
+
+🧠 Next Steps:
+
+Add per-session memory tracking (e.g. memory pool by session/user ID)
+
+Expose RAG and memory lifecycle operations via /api/rag/init, /reset, etc.
+
+Consider streaming ChatEngine.chat(...) output via vLLM tokenizer
+
+Begin wiring memory update proposals to mcp-memory for long-term self-training
+
+
 Future UI hooks: Support planned for additional MCP interaction panels, multi-agent chat, and prompt graph visualizers
 
 
