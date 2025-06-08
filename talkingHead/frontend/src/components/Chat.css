@@ -1,8 +1,12 @@
+/*
+ * /src/components/Chat.css
+ */
+
 .chat-modal {
   position: fixed;
-  top: 50%;
+  bottom: 40px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 9999;
   width: 560px;
   padding: 16px;
@@ -29,4 +33,58 @@
   padding: 0.5rem 1rem;
   margin-top: 1rem;
   cursor: pointer;
+}
+
+/* 🔄 New floating scroll region above modal */
+.chat-floating-messages {
+  position: fixed;
+  bottom: 100px; /* sits just above .chat-modal */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9998;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+/* 💬 Shared base for all chat bubbles */
+.chat-line {
+  max-width: 70%;
+  padding: 6px 10px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.7);
+  border: 1px solid black;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  pointer-events: auto;
+  word-break: break-word;
+}
+
+/* 🙋 Right-aligned user message */
+.chat-user {
+  align-self: flex-end;
+  background-color: #ffffaa;
+}
+
+/* 🤖 Left-aligned assistant message */
+.chat-assistant {
+  align-self: flex-start;
+  background-color: #ffffff;
+}
+
+/* ✅ Optional: input row inside modal */
+.chat-input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* 🧹 Deprecated: no longer used */
+.chat-scroll-window {
+  display: none;
 }

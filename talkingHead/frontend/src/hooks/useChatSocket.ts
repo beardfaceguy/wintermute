@@ -1,3 +1,7 @@
+/*
+ * /src/hooks/useChatSocket.ts
+ */
+
 import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { addMessage, updateLastAssistantMessage } from "../store/chatSlice";

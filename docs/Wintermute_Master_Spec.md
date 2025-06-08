@@ -422,5 +422,8 @@ This tests analytical capabilities and emotional contextualization without compr
 
 > Future GPT sessions may propose a mcp-sanity-monitor module or meta-auditor to oversee sanity checker lifecycle and determine retrain/replace thresholds.
 
+install notes:
+
+Note: Some AWQ models may lack a head_dim in their config.json. Add "head_dim": 128 manually if vLLM crashes during load.
 
 
