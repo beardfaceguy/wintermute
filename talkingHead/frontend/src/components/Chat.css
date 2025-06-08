@@ -38,7 +38,7 @@
 /* 🔄 New floating scroll region above modal */
 .chat-floating-messages {
   position: fixed;
-  bottom: 100px; /* sits just above .chat-modal */
+  bottom: 140px; /* sits just above .chat-modal */
   left: 50%;
   transform: translateX(-50%);
   width: 560px;
