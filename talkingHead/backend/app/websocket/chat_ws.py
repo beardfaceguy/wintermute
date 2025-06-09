@@ -1,3 +1,7 @@
+"""
+app/websocket/chat_ws.py
+"""
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import httpx
 import asyncio
@@ -8,6 +12,7 @@ from shared.config_loader import load_vllm_config
 VLLM_URL, MODEL_NAME = load_vllm_config()
 
 router = APIRouter()
+
 
 @router.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):

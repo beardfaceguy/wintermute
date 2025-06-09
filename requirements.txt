@@ -21,3 +21,4 @@ anyio
 click
 pydantic
 starlette
+soundfile
