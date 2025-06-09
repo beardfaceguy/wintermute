@@ -1,3 +1,7 @@
+/*
+ * /shared_api_config.json
+ */
+
 {
   "vllm": {
     "scheme": "http",

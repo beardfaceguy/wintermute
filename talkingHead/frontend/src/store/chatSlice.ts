@@ -1,3 +1,7 @@
+/*
+ * /src/store/chatSlice.ts
+ */
+
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface ChatMessage {
