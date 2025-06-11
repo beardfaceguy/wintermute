@@ -132,7 +132,7 @@ Potential Uses: Compiler experiments, benchmarking, file editing
 **Components**:
 - **Deckard**: Local watchdog. Monitors system behavior and can trigger shutdown or failsafes.
 - **Bryant**: Remote supervisor. Analyzes trends and issues `LOCKDOWN`, `KILL`, or `BUTLERIAN-JIHAD` commands if needed.
-- **(Optional)**: **Gaff**, a local-only fallback in case Deckard is disabled.
+- **(Optional)**: **Gaff**, a remote-only fallback in case Deckard is disabled.
 
 **Failsafe Tiers**:
 1. Soft process termination  
@@ -182,7 +182,7 @@ v0.2 (Apr 19, 2025): Added memory entropy mitigation strategy, split memory syst
 
 Next Steps
 
-[ ] Scaffold FastAPI backend with MCP and LangChain agent wrapper
+[ ] Scaffold FastAPI backend with MCP and vllm agent wrapper
 
 [ ] Build test-driven SQL agent proof-of-concept
 
