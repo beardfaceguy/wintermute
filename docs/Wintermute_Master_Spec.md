@@ -260,6 +260,54 @@ Dependencies:
 
     ChromaDB
 
+🧠 Memory Architecture (v0.4)
+
+Storage Backend:
+
+    Database: PostgreSQL + pgvector
+
+    ORM / Migration Tooling: SQLAlchemy + Alembic
+
+Scope & Identity:
+
+    Memory is model-scoped, not tied to user or session.
+
+    Each model instance (e.g., Wintermute-Core) retains its own evolving memory, supporting autonomous identity and long-term behavioral refinement.
+
+Message Storage Strategy:
+
+    All conversational messages are persisted — no hard limit or memory cleanup.
+
+    Memory pruning or summarization will be handled asynchronously by external agents (e.g., mcp-memory, freud, trainer).
+
+Embeddings:
+
+    Each message is stored with its associated embedding vector to enable semantic search.
+
+    Vector generation is handled via HuggingFace-compatible embedding model configured in the RAG service layer.
+
+Retrieval Strategy:
+
+    Hybrid memory retrieval: Combines the last N messages for short-term continuity with embedding-based similarity search for long-term relevance.
+
+    This supports both recent context threading and deeper thematic/semantic recall.
+
+Prompt Injection Policy:
+
+    Current mode: Non-injected memory (Option B)
+
+    Retrieved messages are routed through a reasoning agent (e.g., memory-service) which decides what — if anything — should be injected into the prompt.
+
+    This prevents overloading the LLM context window and reduces risk of irrelevant memory hallucinations.
+
+Planned Enhancements:
+
+    Add metadata tagging to messages (e.g., source, confidence score, memory zone)
+
+    Implement trust scoring for messages promoted to Cold Memory
+
+    Integrate mcp-memory as a routing layer to distinguish between Live and Cold memory segments
+
 ✅ Current Status: Functioning
 
     ✅ RAG index validation and bootstrapping working via RAGService
