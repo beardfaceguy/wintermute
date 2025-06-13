@@ -22,3 +22,6 @@ click
 pydantic
 starlette
 soundfile
+pgvector
+sqlalchemy
+psycopg2-binary
