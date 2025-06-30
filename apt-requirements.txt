@@ -1,0 +1,4 @@
+libportaudio2
+portaudio19-dev
+libpulse-dev
+ffmpeg
