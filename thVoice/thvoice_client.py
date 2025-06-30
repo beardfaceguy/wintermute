@@ -13,7 +13,7 @@ import websockets
 import time
 
 MODEL_PATH = "vosk-model-small-en-us-0.15"
-SAMPLE_RATE = 16000
+SAMPLE_RATE = 48000
 BLOCK_SIZE = 1096
 CHANNELS = 1
 STREAM_URL = "http://localhost:8000/chat/stream"
@@ -41,6 +41,8 @@ def recognize_speech():
 
     print("Say something...")
     with sd.RawInputStream(
+        device=4,
+        latency="high",
         samplerate=SAMPLE_RATE,
         blocksize=BLOCK_SIZE,
         dtype="int16",
