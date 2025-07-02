@@ -1,26 +1,26 @@
-import os
-import shutil
 import argparse
 import json
+import os
+import shutil
 
 try:
     import chromadb
     from chromadb.config import Settings as ChromaSettings
-except ImportError as e:
+except ImportError:
     print("ChromaDB is not installed. Please install chromadb to use this script.")
     exit(1)
 
 try:
     from llama_index.core import (
-        VectorStoreIndex,
-        StorageContext,
+        Settings,
         SimpleDirectoryReader,
+        StorageContext,
+        VectorStoreIndex,
         load_index_from_storage,
     )
-    from llama_index.vector_stores.chroma import ChromaVectorStore
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-    from llama_index.core import Settings
     from llama_index.core.settings import Settings
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+    from llama_index.vector_stores.chroma import ChromaVectorStore
 except ImportError as e:
     print(f"Failed to import llama-index or related modules:\n{e}")
     exit(1)
@@ -53,7 +53,7 @@ collection_name = "rag_collection"
 #     "scheme": "http",
 #     "host": "192.168.8.3",
 #     "port": 8001,
-#     "path": "/v1/chat/completions",
+#     "path": "/v1/completions",
 #     "model": "mistral-7b-instruct-awq"
 #   },
 vllm_config = config.get("vllm", ())

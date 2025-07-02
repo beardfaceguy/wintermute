@@ -25,7 +25,7 @@ Tech Stack (v0.3)
 | Layer               | Tech                           | Status       |
 | ------------------- | ------------------------------ | ------------ |
 | LLM Runtime         | vLLM                           | ✅ Confirmed |
-| Model Types         | Nous Hermes 2 (Mistral 7B DPO) | ✅ Confirmed |
+| Model Types         | Wizard-Vicuna-7B-Uncensored-AWQ| ✅ Confirmed |
 | Agent Framework     | LangChain                      | ✅ Confirmed |
 | RAG Engine          | LlamaIndex                     | ✅ Confirmed |
 | API Backend         | FastAPI                        | ✅ Confirmed |
@@ -190,7 +190,7 @@ Next Steps
 
 Model Architecture (v0.3)
 
-🧠 Core Model: Nous Hermes 2 - Mistral 7B (DPO, ChatML format)
+🧠 Core Model: Wizard-Vicuna-7B-Uncensored-AWQ
 Chosen for:
 
 - Instruction tuning and structured reasoning
@@ -201,7 +201,7 @@ Chosen for:
 
 | Agent               | Suggested Model                 | Notes                                        |
 | ------------------- | ------------------------------- | -------------------------------------------- |
-| Wintermute-Core     | Nous Hermes 2 - Mistral 7B      | Primary orchestrator and strategist          |
+| Wintermute-Core     | Wizard-Vicuna-7B-Uncensored-AWQ | Primary orchestrator and strategist          |
 | Freud               | OpenChat-3.5 or Yi-34B Q4       | High-depth auditor, temporarily loaded       |
 | Jung / Adler        | OpenHermes or WizardLM variants | Symbolic/motivational analyzers              |
 | Trainer / Executor  | Code Llama 13B Q4               | Handles strategy abstraction, code           |

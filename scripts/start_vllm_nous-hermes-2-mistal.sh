@@ -19,8 +19,8 @@ export RAY_disable_usage_stats=1
 
 # Start vLLM in background
 python -m vllm.entrypoints.openai.api_server \
-  --model "$HOME/models/wizard-vicuna-awq" \
-  --served-model-name wizard-vicuna-7b-awq \
+  --model "$HOME/models/Nous-Hermes-2-Mistral-7B-DPO-AWQ" \
+  --served-model-name mistral-7b-instruct-awq \
   --quantization awq \
   --dtype auto \
   --max-model-len 2048 \
@@ -35,7 +35,6 @@ python -m vllm.entrypoints.openai.api_server \
   --port 8001 &
 
 VLLM_PID=$!
-
 
 # Function to handle shutdown
 cleanup() {

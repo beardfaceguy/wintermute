@@ -1,10 +1,14 @@
 # Wintermute Makefile - Dev Environment Builder
-
+# Load .env file if it exists
+ifneq ("$(wildcard .env)","")
+    include .env
+    export
+endif
 # Environment Setup
 PYTHON_VERSION=3.11.9
 VENV_DIR=$(HOME)/wintermute/venv
 VLLM_DIR=$(HOME)/wintermute/vllm
-MODEL_NAME=NousResearch/Nous-Hermes-2-Mistral-7B-DPO
+MODEL_NAME ?= Wizard-Vicuna-7B-Uncensored-AWQ
 MODEL_BASE_NAME=$(shell basename $(MODEL_NAME))
 MODEL_DIR=$(HOME)/wintermute/models/$(MODEL_BASE_NAME)
 LOG_FILE=$(HOME)/wintermute/wintermute_setup.log
@@ -51,14 +55,22 @@ model:
 
 launch:
 	@echo "🚀 Launching vLLM server on port 8000..."
-	bash -c "source $(VENV_DIR)/bin/activate && cd $(VLLM_DIR) && \
-	python -m vllm.entrypoints.openai.api_server --model $(MODEL_DIR) --port 8000 >> $(LOG_FILE) 2>&1 &"
-	sleep 5
-	@echo "🔍 Checking vLLM API health..."
+	bash -c "\
+		source $(VENV_DIR)/bin/activate && \
+		cd $(VLLM_DIR) && \
+		python -m vllm.entrypoints.openai.api_server \
+			--model $(MODEL_DIR) \
+			--served-model-name $(MODEL_NAME) \
+			--port 8000 >> $(LOG_FILE) 2>&1 &"
+
+	@sleep 5
+	@echo "🔍 Checking vLLM API health for model '$(MODEL_NAME)'..."
+
 	curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/v1/completions \
 		-H "Content-Type: application/json" \
-		-d '{"model": "mistral", "prompt": "ping", "max_tokens": 1}' | grep -q 200 || \
+		-d "{\"model\": \"$(MODEL_NAME)\", \"prompt\": \"ping\", \"max_tokens\": 1}" | grep -q 200 || \
 		( echo "❌ API failed to respond properly." && exit 1 )
+
 	@echo "✅ API responded successfully. Logs are in $(LOG_FILE)"
 
 clean:

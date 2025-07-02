@@ -5,7 +5,7 @@
     "host": "gaming-pc-linux",
     "port": 8001,
     "path": "/v1/completions",
-    "model": "wizard-vicuna-7b-awq"
+    "model": "mistral-7b-instruct-awq"
   },
   "web_interface": {
     "scheme": "http",

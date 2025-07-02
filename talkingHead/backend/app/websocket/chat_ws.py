@@ -2,10 +2,10 @@
 app/websocket/chat_ws.py
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-import httpx
-import asyncio
 import json
+
+import httpx
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from shared.config_loader import load_vllm_config
 
@@ -23,14 +23,24 @@ async def websocket_endpoint(websocket: WebSocket):
         user_input = await websocket.receive_text()
         print(f"Prompt: {user_input[:50]}...")
 
+        # Construct a plain prompt-style input
+        full_prompt = (
+            "### System:\nYou are a helpful, detailed, and technically proficient assistant.\n\n"
+            f"### User:\n{user_input}\n\n"
+            "### Assistant:\n"
+        )
+
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream(
                 "POST",
                 VLLM_URL,
                 json={
                     "model": MODEL_NAME,
-                    "messages": [{"role": "user", "content": user_input}],
+                    "prompt": full_prompt,
                     "stream": True,
+                    "max_tokens": 512,
+                    "temperature": 0.95,
+                    "top_p": 0.95,
                 },
             ) as response:
                 async for line in response.aiter_lines():
@@ -41,7 +51,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                     try:
                         payload = json.loads(line.removeprefix("data: "))
-                        content = payload["choices"][0]["delta"].get("content")
+                        content = payload["choices"][0].get("text", "")
                         if content:
                             await websocket.send_text(content)
                     except (json.JSONDecodeError, KeyError) as e:
