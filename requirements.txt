@@ -1,3 +1,4 @@
+torch
 # Core API
 fastapi
 uvicorn[standard]
@@ -14,7 +15,8 @@ transformers
 sentence-transformers
 
 # LLM server
-vllm[openai]
+vllm
+openai
 
 # Utility / compatibility
 anyio
@@ -25,3 +27,5 @@ soundfile
 pgvector
 sqlalchemy
 psycopg2-binary
+
+vosk

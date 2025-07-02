@@ -1,7 +1,7 @@
 # Wintermute Makefile - Dev Environment Builder
 
 # Environment Setup
-PYTHON_VERSION=3.10.14
+PYTHON_VERSION=3.11.9
 VENV_DIR=$(HOME)/wintermute/venv
 VLLM_DIR=$(HOME)/wintermute/vllm
 MODEL_NAME=NousResearch/Nous-Hermes-2-Mistral-7B-DPO

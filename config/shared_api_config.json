@@ -2,14 +2,14 @@
 {
   "vllm": {
     "scheme": "http",
-    "host": "192.168.8.3",
+    "host": "gaming-pc-linux",
     "port": 8001,
     "path": "/v1/chat/completions",
     "model": "mistral-7b-instruct-awq"
   },
   "web_interface": {
     "scheme": "http",
-    "host": "192.168.8.3",
+    "host": "localhost",
     "port": 8000,
     "path": "/ws/chat"
   },
