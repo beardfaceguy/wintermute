@@ -29,3 +29,5 @@ sqlalchemy
 psycopg2-binary
 
 vosk
+
+alembic
