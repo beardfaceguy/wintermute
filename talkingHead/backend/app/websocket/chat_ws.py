@@ -1,13 +1,17 @@
 import json
+import os
 import uuid
-from fastapi import WebSocket, APIRouter, WebSocketDisconnect
+
+from db.db_ops import get_recent_messages, store_message
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
 from ..chat.llm import ChatProcessor
 from .connection_manager import manager
-from db.db_ops import store_message
-import os
+
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 router = APIRouter()
 chat_processor = ChatProcessor()
+
 
 @router.websocket("/ws/chat")
 async def chat_endpoint(websocket: WebSocket):
@@ -22,7 +26,7 @@ async def chat_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             try:
                 if DEBUG:
-                     print(f"[DEBUG] Raw WebSocket message: {data}")
+                    print(f"[DEBUG] Raw WebSocket message: {data}")
                 payload = json.loads(data)
                 user_message = payload.get("message", "").strip()
 
@@ -40,9 +44,21 @@ async def chat_endpoint(websocket: WebSocket):
                     content=user_message,
                 )
 
-                # Generate and stream response
-                assistant_message = await chat_processor.stream_response(user_message, websocket.send_text)
+                # Fetch recent conversation history
+                history = await get_recent_messages(session_id)
 
+                # Format prompt with history
+                formatted_prompt = ""
+                for msg in history:
+                    role = msg.role
+                    content = msg.content
+                    formatted_prompt += f"{role}: {content}\n"
+                formatted_prompt += f"user: {user_message}\nassistant:"
+
+                # Generate and stream response
+                assistant_message = await chat_processor.stream_response(
+                    formatted_prompt, websocket.send_text
+                )
 
                 if DEBUG:
                     print(f"[DEBUG] Assistant full response: {assistant_message}")
@@ -60,9 +76,10 @@ async def chat_endpoint(websocket: WebSocket):
                 await websocket.send_text(f"Error: {str(e)}")
                 if DEBUG:
                     import traceback
+
                     traceback.print_exc()
 
     except WebSocketDisconnect:
-        await manager.disconnect(websocket)
+        manager.disconnect(websocket)
         if DEBUG:
             print(f"[DEBUG] WebSocket session disconnected: {session_id}")
