@@ -1,4 +1,4 @@
-Wintermute Master Spec (v0.2)
+Wintermute Master Spec (v0.4)
 
 Project Codename: Wintermute
 
@@ -18,7 +18,7 @@ Evolves itself over time through component replacement, model evaluation, and po
 
 ---
 
-Tech Stack (v0.3)
+Tech Stack (v0.4)
 
 ## Core Components
 
@@ -164,7 +164,7 @@ Consider confidence scores and version tagging for memory entries
 ---
 
 Version History
-
+v0.4 (Jul 1, 2025): Short-term memory system implemented and integrated with vLLM backend. Responses now draw from PostgreSQL message history scoped to session.
 v0.3 (Apr 21, 2025): Added Model Architecture and Deployment sections with confirmed model roles and backend hosting plan
 v0.1 (Apr 19, 2025): Initial architecture, stack decisions, module goals, confirmed direction on test-driven agent
 
@@ -174,7 +174,11 @@ v0.2 (Apr 19, 2025): Added memory entropy mitigation strategy, split memory syst
 
 Next Steps
 
-[ ] Scaffold FastAPI backend with MCP and vllm agent wrapper
+[x] "Build vLLM memory-enabled chat backend"
+
+[ ] Integrate thVoice interface into talkingHead
+
+[ ] "Wrap vLLM pipeline in MCP-compatible agent interface
 
 [ ] Build test-driven SQL agent proof-of-concept
 
@@ -230,7 +234,7 @@ Frontend: Vite + TypeScript + React + Redux (project name: talkingHead)
 
 Backend: Python (FastAPI), model server using vLLM
 
-Model: Nous Hermes 2 (DPO), 4-bit quantized with Flash Attention 2
+Model: Wizard-Vicuna-7B-Uncensored-AWQ
 
 Future UI hooks: Support planned for additional MCP interaction panels, multi-agent chat, and prompt graph visualizers
 
