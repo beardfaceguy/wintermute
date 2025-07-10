@@ -1,5 +1,9 @@
 {
     "python.analysis.extraPaths": [
-        "./thVoice/test_"
-    ]
+        "./thVoice/test_",
+        "./talkingHead/backend",
+        "./backend/app",
+        "./backend"
+    ],
+    "python.defaultInterpreterPath": "./venv/bin/python"
 }

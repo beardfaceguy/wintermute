@@ -27,7 +27,7 @@ export default function useChatSocket() {
 
     // Add assistant placeholder message
     dispatch(addMessage({ role: "assistant", text: "" }));
-
+    const payload = JSON.stringify({ message: inputText });
     if (!isConnected.current) {
       const socketUrl = buildChatWSUrl();
 
@@ -43,13 +43,13 @@ export default function useChatSocket() {
 
       socket.onopen = () => {
         isConnected.current = true;
-        socket.send(inputText);
+        socket.send(payload);
       };
 
       socketRef.current = socket;
     } else {
       // Reuse existing socket
-      socketRef.current?.send(inputText);
+      socketRef.current?.send(payload);
     }
   };
 

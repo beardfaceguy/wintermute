@@ -1,71 +1,68 @@
-"""
-app/websocket/chat_ws.py
-"""
-
 import json
-
-import httpx
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-
-from shared.config_loader import load_vllm_config
-
-VLLM_URL, MODEL_NAME = load_vllm_config()
-
+import uuid
+from fastapi import WebSocket, APIRouter, WebSocketDisconnect
+from ..chat.llm import ChatProcessor
+from .connection_manager import manager
+from db.db_ops import store_message
+import os
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 router = APIRouter()
-
+chat_processor = ChatProcessor()
 
 @router.websocket("/ws/chat")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    print("WebSocket connection open")
+async def chat_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    session_id = str(uuid.uuid4())
+
+    if DEBUG:
+        print(f"[DEBUG] New WebSocket session started: {session_id}")
 
     try:
-        user_input = await websocket.receive_text()
-        print(f"Prompt: {user_input[:50]}...")
+        while True:
+            data = await websocket.receive_text()
+            try:
+                if DEBUG:
+                     print(f"[DEBUG] Raw WebSocket message: {data}")
+                payload = json.loads(data)
+                user_message = payload.get("message", "").strip()
 
-        # Construct a plain prompt-style input
-        full_prompt = (
-            "### System:\nYou are a helpful, detailed, and technically proficient assistant.\n\n"
-            f"### User:\n{user_input}\n\n"
-            "### Assistant:\n"
-        )
+                if not user_message:
+                    await websocket.send_text("Error: Empty message")
+                    continue
 
-        async with httpx.AsyncClient(timeout=None) as client:
-            async with client.stream(
-                "POST",
-                VLLM_URL,
-                json={
-                    "model": MODEL_NAME,
-                    "prompt": full_prompt,
-                    "stream": True,
-                    "max_tokens": 512,
-                    "temperature": 0.95,
-                    "top_p": 0.95,
-                },
-            ) as response:
-                async for line in response.aiter_lines():
-                    if line.strip() == "" or line.startswith(":"):
-                        continue
-                    if line.strip() == "data: [DONE]":
-                        break
+                if DEBUG:
+                    print(f"[DEBUG] Received user message: {user_message}")
 
-                    try:
-                        payload = json.loads(line.removeprefix("data: "))
-                        content = payload["choices"][0].get("text", "")
-                        if content:
-                            await websocket.send_text(content)
-                    except (json.JSONDecodeError, KeyError) as e:
-                        print(f"Streaming parse error: {e}")
+                # Store the user message
+                await store_message(
+                    session_id=session_id,
+                    role="user",
+                    content=user_message,
+                )
+
+                # Generate and stream response
+                assistant_message = await chat_processor.stream_response(user_message, websocket.send_text)
+
+
+                if DEBUG:
+                    print(f"[DEBUG] Assistant full response: {assistant_message}")
+
+                # Store assistant's message
+                await store_message(
+                    session_id=session_id,
+                    role="assistant",
+                    content=assistant_message,
+                )
+
+            except json.JSONDecodeError:
+                await websocket.send_text("Error: Invalid JSON format")
+            except Exception as e:
+                await websocket.send_text(f"Error: {str(e)}")
+                if DEBUG:
+                    import traceback
+                    traceback.print_exc()
 
     except WebSocketDisconnect:
-        print("Client disconnected")
-
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-
-    finally:
-        try:
-            await websocket.close()
-        except RuntimeError as e:
-            print(f"WebSocket already closed: {e}")
-        print("WebSocket connection closed")
+        await manager.disconnect(websocket)
+        if DEBUG:
+            print(f"[DEBUG] WebSocket session disconnected: {session_id}")

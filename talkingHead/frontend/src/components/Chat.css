@@ -25,17 +25,7 @@
   transition: opacity 0.3s;
 }
 
-.chat-button {
-  background: yellow;
-  border: none;
-  font-weight: bold;
-  font-family: inherit;
-  padding: 0.5rem 1rem;
-  margin-top: 1rem;
-  cursor: pointer;
-}
-
-/* 🔄 New floating scroll region above modal */
+/* 🛠 Added to ensure messages don’t appear behind modal */
 .chat-floating-messages {
   position: fixed;
   bottom: 140px; /* sits just above .chat-modal */
@@ -46,9 +36,11 @@
   flex-direction: column;
   gap: 10px;
   z-index: 9998;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 160px); /* dynamic vertical space */
   overflow-y: auto;
   pointer-events: none;
+  flex: 1;
+  padding-bottom: 100px; /* extra padding to prevent cutoff behind modal */
 }
 
 /* 💬 Shared base for all chat bubbles */
@@ -76,6 +68,16 @@
   background-color: #ffffff;
 }
 
+.chat-button {
+  background: yellow;
+  border: none;
+  font-weight: bold;
+  font-family: inherit;
+  padding: 0.5rem 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
 /* ✅ Optional: input row inside modal */
 .chat-input-row {
   display: flex;
@@ -87,4 +89,32 @@
 /* 🧹 Deprecated: no longer used */
 .chat-scroll-window {
   display: none;
+}
+
+.chat-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px; /* teal margin on all sides */
+  box-sizing: border-box;
+}
+
+.chat-input-textarea {
+  width: 100%;
+  height: 70px;
+  resize: none;
+  overflow-y: auto;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #000;
+  box-sizing: border-box;
+  background: white;
+  z-index: 1; /* Ensure it's above background but below chat messages */
+}
+
+.chat-button-row {
+  display: flex;
+  justify-content: flex-end;
 }

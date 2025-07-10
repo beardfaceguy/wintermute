@@ -1,3 +1,7 @@
+# DEPRECATED: This file is no longer used. See `app/websocket/chat_ws.py` instead.
+# Retained temporarily for reference or backup.
+
+
 from fastapi import APIRouter, Query
 
 from pydantic import BaseModel
