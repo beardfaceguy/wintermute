@@ -34,7 +34,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=True,
         ),
-        sa.Column("embedding", Vector(768), nullable=True),
+        sa.Column("embedding", Vector(768), nullable=True),  # type: ignore
         sa.Column("token_count", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )

@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List, Optional
+
 from sqlalchemy.future import select
+
 from .db_models import Message
 from .session_async import AsyncSessionLocal
-from typing import List, Optional
 
 
 async def store_message(

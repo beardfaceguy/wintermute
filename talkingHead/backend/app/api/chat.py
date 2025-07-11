@@ -6,11 +6,9 @@ from fastapi import APIRouter, Query
 
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
-import httpx
 import asyncio
 
 from utils.rag_utils import query_rag, get_chat_response
-from utils.config_utils import get_vllm_url, get_llm_model_name
 
 router = APIRouter()
 

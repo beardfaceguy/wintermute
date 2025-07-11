@@ -1,8 +1,10 @@
-from sqlalchemy.orm import Session
 from app.models.memory_entry import MemoryEntry
+from sqlalchemy.orm import Session
 
 
-def add_memory_entry(db: Session, text: str, embedding: list[float], tags: dict = {}):
+def add_memory_entry(
+    db: Session, text: str, embedding: list[float], tags: dict[str, str] = {}
+):
     entry = MemoryEntry(text=text, embedding=embedding, tags=tags, zone="live")
     db.add(entry)
     db.commit()

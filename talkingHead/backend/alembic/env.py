@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from logging.config import fileConfig
@@ -11,11 +12,13 @@ from sqlalchemy import engine_from_config, pool
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from db.db_models import Base 
+from typing import Any
+
+from db.db_models import Base
 
 
 @renderers.dispatch_for(Vector)
-def render_vector_type(type_, autogen_context):
+def render_vector_type(type_: Vector, autogen_context: Any):
     return f"Vector({type_.dimensions})"
 
 

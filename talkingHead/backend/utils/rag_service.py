@@ -1,30 +1,28 @@
-import os
 import json
+import os
 import shutil
-from pathlib import Path
+
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from llama_index.core import (
-    VectorStoreIndex,
-    StorageContext,
-    SimpleDirectoryReader,
-    load_index_from_storage,
     Settings,
+    SimpleDirectoryReader,
+    StorageContext,
+    VectorStoreIndex,
+    load_index_from_storage,
 )
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.memory import ChatMemoryBuffer
-
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.vector_stores.chroma import ChromaVectorStore
 from utils.config_utils import (
-    get_embed_model_name,
     get_embed_device,
-    get_storage_dir,
+    get_embed_model_name,
     get_live_data_dir,
-    get_vllm_url,
     get_llm_model_name,
+    get_storage_dir,
+    get_vllm_url,
 )
-
 
 from shared.vllm_llm import VLLM
 
@@ -99,7 +97,7 @@ class RAGService:
             docs = []
 
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        index = (
+        _index = (
             VectorStoreIndex.from_documents(docs, storage_context=storage_context)
             if docs
             else VectorStoreIndex([], storage_context=storage_context)

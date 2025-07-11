@@ -16,7 +16,7 @@ chat = [
     {"role": "user", "content": "List the contents of /home using your tools."},
 ]
 
-payload = {
+payload = {  # type: ignore
     "model": "models/{model_name}",
     "messages": chat,
     "tools": [
@@ -43,7 +43,7 @@ payload = {
     "max_tokens": 256,
 }
 
-resp = requests.post(vllm_url, json=payload)
+resp = requests.post(vllm_url, json=payload)  # type: ignore
 resp.raise_for_status()
 resp_data = resp.json()
 choices = resp_data.get("choices", [])

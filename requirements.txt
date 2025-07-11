@@ -4,7 +4,7 @@ fastapi
 uvicorn[standard]
 httpx
 
-
+llama-index
 llama-index-core
 llama-index-vector-stores-chroma
 llama-index-embeddings-huggingface

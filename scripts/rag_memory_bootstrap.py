@@ -2,6 +2,9 @@ import argparse
 import json
 import os
 import shutil
+import sys
+from pathlib import Path
+from typing import Any
 
 try:
     import chromadb
@@ -9,30 +12,30 @@ try:
 except ImportError:
     print("ChromaDB is not installed. Please install chromadb to use this script.")
     exit(1)
+from llama_index.core import SimpleDirectoryReader
+from llama_index.core.llms import CompletionResponse
+from llama_index.core.query_engine import BaseQueryEngine
 
 try:
     from llama_index.core import (
+        Document,
         Settings,
-        SimpleDirectoryReader,
         StorageContext,
         VectorStoreIndex,
         load_index_from_storage,
     )
-    from llama_index.core.settings import Settings
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
     from llama_index.vector_stores.chroma import ChromaVectorStore
 except ImportError as e:
     print(f"Failed to import llama-index or related modules:\n{e}")
     exit(1)
-import sys
-from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from shared.vllm_llm import VLLM
 
 # Load configuration
 CONFIG_PATH = "config/shared_api_config.json"
-config = {}
+config: dict[str, Any] = {}
 if os.path.exists(CONFIG_PATH):
     with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
@@ -48,37 +51,25 @@ embed_model_name = rag_config.get("embed_model", "BAAI/bge-small-en")
 device = rag_config.get("device", "cpu").lower()
 collection_name = "rag_collection"
 
-# Extract LLM settings
-#   "vllm": {
-#     "scheme": "http",
-#     "host": "192.168.8.3",
-#     "port": 8001,
-#     "path": "/v1/completions",
-#     "model": "mistral-7b-instruct-awq"
-#   },
-vllm_config = config.get("vllm", ())
+# Extract VLLM LLM settings
+vllm_config = config.get("vllm", {})
 llm_model = vllm_config.get("model")
 llm_scheme = vllm_config.get("scheme")
 llm_host = vllm_config.get("host")
 llm_port = vllm_config.get("port")
 llm_path = vllm_config.get("path")
 
-try:
-    base_url = f"{llm_scheme}://{llm_host}:{llm_port}{llm_path}"
-    Settings.llm = VLLM(base_url=base_url, model_name=llm_model)
-except Exception as e:
-    print(f"⚠️  Failed to set custom VLLM: {e}")
-
+base_url = f"{llm_scheme}://{llm_host}:{llm_port}{llm_path}"
+llm = VLLM(base_url=base_url, model_name=llm_model)
 
 # Set up embedding model
-embedding_model = HuggingFaceEmbedding(model_name=embed_model_name, device=device)
-Settings.embed_model = embedding_model
+Settings.embed_model = HuggingFaceEmbedding(model_name=embed_model_name, device=device)
 
 # Index metadata path
 meta_path = os.path.join(persist_base_dir, "index_metadata.json")
 
 
-def is_index_valid():
+def is_index_valid() -> bool:
     if not os.path.isdir(persist_base_dir):
         return False
     if not os.path.isdir(chroma_persist_dir):
@@ -103,7 +94,7 @@ def is_index_valid():
     return True
 
 
-def reset_index():
+def reset_index() -> None:
     if os.path.isdir(persist_base_dir):
         shutil.rmtree(persist_base_dir, ignore_errors=True)
     if os.path.isdir(chroma_persist_dir):
@@ -112,7 +103,7 @@ def reset_index():
     print("Reset: Existing index and vector store have been deleted.")
 
 
-def init_index():
+def init_index() -> None:
     print("Initializing a new vector index...")
     client = chromadb.PersistentClient(
         path=chroma_persist_dir, settings=ChromaSettings(anonymized_telemetry=False)
@@ -124,26 +115,29 @@ def init_index():
     collection = client.get_or_create_collection(collection_name)
     vector_store = ChromaVectorStore(chroma_collection=collection)
     docs = []
+
     if os.path.isdir(docs_path):
-        reader = SimpleDirectoryReader(docs_path)
+        reader = SimpleDirectoryReader(docs_path)  # type: ignore
         docs = reader.load_data()
     elif os.path.isfile(docs_path):
-        from llama_index.core import Document
-
         with open(docs_path, "r", encoding="utf-8", errors="ignore") as f:
             text = f.read()
-        docs = [Document(text)]
+        docs = [Document(text)]  # type: ignore
     else:
         print(
             f"Warning: No valid document source found at '{docs_path}'. The index will be empty."
         )
+
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
-    index = (
-        VectorStoreIndex.from_documents(docs, storage_context=storage_context)
-        if docs
-        else VectorStoreIndex([], storage_context=storage_context)
-    )
-    storage_context.persist(persist_dir=persist_base_dir)
+    if docs:
+        _index = VectorStoreIndex.from_documents(
+            docs, storage_context=storage_context, llm=llm
+        )
+    else:
+        _index = VectorStoreIndex.from_documents(
+            [], storage_context=storage_context, llm=llm
+        )
+    storage_context.save(persist_dir=persist_base_dir)  # type: ignore
     meta = {"embedding_model": embed_model_name}
     os.makedirs(persist_base_dir, exist_ok=True)
     with open(meta_path, "w") as f:
@@ -153,7 +147,7 @@ def init_index():
     )
 
 
-def query_index(question):
+def query_index(question: str) -> None:
     client = chromadb.PersistentClient(
         path=chroma_persist_dir, settings=ChromaSettings(anonymized_telemetry=False)
     )
@@ -177,9 +171,9 @@ def query_index(question):
         )
         index = load_index_from_storage(storage_context)
 
-    query_engine = index.as_query_engine()
+    query_engine: BaseQueryEngine = index.as_query_engine(llm=llm)  # type: ignore
     print(f"Query: {question}")
-    response = query_engine.query(question)
+    response: CompletionResponse = query_engine.query(question)  # type: ignore
     print(f"Response: {response}")
 
 

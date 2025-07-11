@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.api import memory
+
+from app.api.memory import router
 
 app = FastAPI(title="MCP Memory Service")
-app.include_router(memory.router, prefix="/api/memory")
+app.include_router(router, prefix="/api/memory")

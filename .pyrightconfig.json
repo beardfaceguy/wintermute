@@ -1,0 +1,10 @@
+{
+  "include": ["."],
+  "exclude": ["**/__pycache__", "**/node_modules", "**/.venv", "**/venv", "talkingHead/backend/alembic/versions/**", "**talkingHead/backend/alembic/versions/**", "thVoice/piper/**"  ],
+  "extraPaths": ["typings"],
+  "reportMissingImports": true,
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true,
+  "reportGeneralTypeIssues": true,
+  "typeCheckingMode": "strict"
+}

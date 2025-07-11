@@ -1,3 +1,5 @@
+from llama_index.core.chat_engine.types import BaseChatEngine
+from llama_index.core.llms import ChatResponse
 from utils.rag_service import RAGService
 
 _rag = RAGService()
@@ -20,6 +22,6 @@ def is_rag_valid() -> bool:
 
 
 def get_chat_response(user_input: str) -> str:
-    chat_engine = _rag.get_chat_engine()
-    response = chat_engine.chat(user_input)
-    return str(response.response)
+    chat_engine: BaseChatEngine = _rag.get_chat_engine()  # type: ignore
+    response: ChatResponse = chat_engine.chat(user_input)  # type: ignore
+    return str(response.response)  # type: ignore

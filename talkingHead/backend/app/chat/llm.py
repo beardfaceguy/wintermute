@@ -1,17 +1,23 @@
 import json
 import os
+from typing import Awaitable, Callable
+
 import httpx
+
 from shared.config_loader import load_vllm_config
 
 VLLM_URL, MODEL_NAME = load_vllm_config()
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+
 
 class ChatProcessor:
     def __init__(self, model_url: str = VLLM_URL, model_name: str = MODEL_NAME):
         self.model_url = model_url
         self.model_name = model_name
 
-    async def stream_response(self, prompt: str, send_token_callback) -> str:
+    async def stream_response(
+        self, prompt: str, send_token_callback: Callable[[str], Awaitable[None]]
+    ) -> str:
         """
         Stream response from the LLM to the provided send_token_callback function.
         Returns the full assembled assistant response string.

@@ -1,12 +1,12 @@
-from llama_index.core.llms import CustomLLM
+from typing import Any
+
+import requests
 from llama_index.core.base.llms.types import (
-    LLMMetadata,
     CompletionResponse,
     CompletionResponseGen,
-    ChatMessage,
+    LLMMetadata,
 )
-import requests
-from typing import Optional, List, Generator
+from llama_index.core.llms import CustomLLM
 from pydantic import PrivateAttr
 
 
@@ -14,12 +14,14 @@ class VLLM(CustomLLM):
     _base_url: str = PrivateAttr()
     _model_name: str = PrivateAttr()
 
-    def __init__(self, base_url: str, model_name: str, **kwargs):
+    def __init__(self, base_url: str, model_name: str, **kwargs: Any):
         super().__init__(**kwargs)
         self._base_url = base_url.rstrip("/")
         self._model_name = model_name
 
-    def complete(self, prompt: str, **kwargs) -> CompletionResponse:
+    def complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponse:
         # Construct the chat-style message body
         response = requests.post(
             self._base_url,  # Already contains full path
@@ -38,9 +40,11 @@ class VLLM(CustomLLM):
             raise ValueError(f"Unexpected response from vLLM: {response.text}")
         return CompletionResponse(text=text)
 
-    def stream_complete(self, prompt: str, **kwargs) -> CompletionResponseGen:
+    def stream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseGen:
         # Dummy fallback streaming
-        yield self.complete(prompt, **kwargs)
+        yield self.complete(prompt, formatted, **kwargs)
 
     @property
     def metadata(self) -> LLMMetadata:

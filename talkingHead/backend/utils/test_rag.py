@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from utils.rag_utils import query_rag, init_rag, reset_rag, is_rag_valid
+from utils.rag_utils import init_rag, is_rag_valid, query_rag
 
 print("Checking index validity...")
 if not is_rag_valid():
