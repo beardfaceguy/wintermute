@@ -1,0 +1,3 @@
+[submodule "thVoice/models/whisper.cpp"]
+	path = thVoice/models/whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
