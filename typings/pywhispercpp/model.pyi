@@ -1,0 +1,57 @@
+from typing import Any, Callable, Dict, List, Optional, TextIO, Tuple, Union
+
+import numpy as np
+
+__author__: str
+__copyright__: str
+__license__: str
+__version__: str
+logger: Any
+
+class Segment:
+    """
+    A small class representing a transcription segment
+    """
+
+    def __init__(self, t0: int, t1: int, text: str) -> None: ...
+    def __str__(self) -> str: ...
+    def __repr__(self) -> str: ...
+    t0: int
+    t1: int
+    text: str
+
+class Model:
+    _new_segment_callback: Optional[Callable[[Segment], None]]
+
+    def __init__(
+        self,
+        model: str = ...,
+        models_dir: str = ...,
+        params_sampling_strategy: int = ...,
+        redirect_whispercpp_logs_to: Union[bool, TextIO, str, None] = ...,
+        **params: Any
+    ) -> None: ...
+    def transcribe(
+        self,
+        media: Union[str, np.ndarray[Any, Any]],
+        n_processors: int = ...,
+        new_segment_callback: Optional[Callable[[Segment], None]] = ...,
+        **params: Any
+    ) -> List[Segment]: ...
+    def get_params(self) -> Dict[str, Any]: ...
+    @staticmethod
+    def get_params_schema() -> Dict[str, Any]: ...
+    @staticmethod
+    def lang_max_id() -> int: ...
+    def print_timings(self) -> None: ...
+    @staticmethod
+    def system_info() -> None: ...
+    @staticmethod
+    def available_languages() -> List[str]: ...
+    def auto_detect_language(
+        self,
+        media: Union[str, np.ndarray[Any, Any]],
+        offset_ms: int = ...,
+        n_threads: int = ...,
+    ) -> Tuple[Tuple[str, np.float32], Dict[str, np.float32]]: ...
+    def __del__(self) -> None: ...
