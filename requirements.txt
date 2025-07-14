@@ -30,3 +30,4 @@ asyncpg
 vosk
 
 alembic
+pywhispercpp[examples]

@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { type RootState } from "../store";
 import useChatSocket from "../hooks/useChatSocket";
 import "./Chat.css";
+import { VoiceToggleButton } from "./VoiceToggleButton";
 
 export default function Chat() {
   const messages = useSelector((state: RootState) => state.chat.messages);
@@ -64,9 +65,11 @@ export default function Chat() {
             placeholder="Type a message..."
           />
           <div className="chat-button-row">
+           
             <button className="chat-button" onClick={handleSend}>
               Send
             </button>
+             <VoiceToggleButton />
           </div>
         </div>
       </div>

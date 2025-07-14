@@ -117,4 +117,6 @@
 .chat-button-row {
   display: flex;
   justify-content: flex-end;
+  align-items: stretch;
+  gap: 0.5rem;
 }
