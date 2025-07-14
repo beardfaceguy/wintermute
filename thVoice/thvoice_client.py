@@ -2,15 +2,12 @@ import sys
 import sounddevice as sd
 import queue
 import json
-import requests
-import threading
 import subprocess
 import os
 from vosk import Model, KaldiRecognizer
 import soundfile as sf
 import asyncio
 import websockets
-import time
 
 MODEL_PATH = "vosk-model-small-en-us-0.15"
 SAMPLE_RATE = 48000
