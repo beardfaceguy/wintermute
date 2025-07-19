@@ -1,18 +1,24 @@
 import json
 import os
 import shutil
+from typing import Optional
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from llama_index.core import (
     Settings,
     SimpleDirectoryReader,
-    StorageContext,
-    VectorStoreIndex,
     load_index_from_storage,
 )
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
+from llama_index.core.chat_engine.types import BaseChatEngine
+from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.memory.types import BaseMemory
+from llama_index.core.query_engine import BaseQueryEngine
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core.schema import Document
+from llama_index.core.storage.storage_context import StorageContext
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from utils.config_utils import (
@@ -46,7 +52,8 @@ class RAGService:
         try:
             base_url = get_vllm_url()
             model_name = get_llm_model_name()
-            Settings.llm = VLLM(base_url=base_url, model_name=model_name)
+            llm_instance = VLLM(base_url=base_url, model_name=model_name)
+            self.llm = llm_instance
         except Exception as e:
             print(f"⚠️ Failed to set VLLM instance: {e}")
 
@@ -83,26 +90,26 @@ class RAGService:
             client.delete_collection(self.collection_name)
         except Exception:
             pass
+
         collection = client.get_or_create_collection(self.collection_name)
         vector_store = ChromaVectorStore(chroma_collection=collection)
 
+        docs = []
         if os.path.isdir(self.docs_path):
-            docs = SimpleDirectoryReader(self.docs_path).load_data()
+            docs = SimpleDirectoryReader(self.docs_path).load_data()  # type: ignore
         elif os.path.isfile(self.docs_path):
-            from llama_index.core import Document
-
             with open(self.docs_path, "r", encoding="utf-8", errors="ignore") as f:
-                docs = [Document(f.read())]
-        else:
-            docs = []
+                text = f.read()
+                docs = [Document(text=text)]
 
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)  # type: ignore
         _index = (
             VectorStoreIndex.from_documents(docs, storage_context=storage_context)
             if docs
             else VectorStoreIndex([], storage_context=storage_context)
         )
-        storage_context.persist(persist_dir=self.storage_dir)
+
+        storage_context.persist(persist_dir=self.storage_dir)  # type: ignore
 
         with open(self.meta_path, "w") as f:
             json.dump({"embedding_model": self.embed_model_name}, f)
@@ -117,7 +124,7 @@ class RAGService:
         collection = client.get_collection(self.collection_name)
         vector_store = ChromaVectorStore(chroma_collection=collection)
         storage_context = StorageContext.from_defaults(
-            vector_store=vector_store, persist_dir=self.storage_dir
+            vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
         )
         try:
             index = load_index_from_storage(storage_context)
@@ -130,12 +137,12 @@ class RAGService:
             collection = client.get_collection(self.collection_name)
             vector_store = ChromaVectorStore(chroma_collection=collection)
             storage_context = StorageContext.from_defaults(
-                vector_store=vector_store, persist_dir=self.storage_dir
+                vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
             )
             index = load_index_from_storage(storage_context)
 
-        query_engine = index.as_query_engine()
-        return str(query_engine.query(question))
+        query_engine: BaseQueryEngine = index.as_query_engine()  # type: ignore
+        return str(query_engine.query(question))  # type: ignore
 
     def _load_index(self):
         client = chromadb.PersistentClient(
@@ -144,11 +151,11 @@ class RAGService:
         collection = client.get_collection(self.collection_name)
         vector_store = ChromaVectorStore(chroma_collection=collection)
         storage_context = StorageContext.from_defaults(
-            vector_store=vector_store, persist_dir=self.storage_dir
+            vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
         )
         return load_index_from_storage(storage_context)
 
-    def get_chat_engine(self, memory=None):
+    def get_chat_engine(self, memory: Optional[BaseMemory] = None) -> BaseChatEngine:
         if not self.is_valid():
             self.init()
 
@@ -156,6 +163,8 @@ class RAGService:
         if memory is None:
             memory = ChatMemoryBuffer(token_limit=2048)
 
+        retriever = index.as_retriever()  # type: ignore
+        rqe = RetrieverQueryEngine(retriever=retriever)  # type: ignore
         return CondenseQuestionChatEngine.from_defaults(
-            retriever=index.as_retriever(), memory=memory, llm=Settings.llm
+            query_engine=rqe, memory=memory, llm=self.llm
         )

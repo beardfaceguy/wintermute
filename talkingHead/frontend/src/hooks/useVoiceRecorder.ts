@@ -1,52 +1,85 @@
-import { useState, useRef, useCallback } from "react";
+// src/hooks/useVoiceRecorder.ts
+import { useCallback, useRef, useState } from "react";
+import { debugLog } from "../utils/debug";
+type UseVoiceRecorderProps = {
+  onTranscriptionResult: (text: string) => void;
+};
 
-export function useVoiceRecorder(onTranscript: (text: string) => void) {
+const useVoiceRecorder = ({ onTranscriptionResult }: UseVoiceRecorderProps) => {
+  debugLog("useVoiceRecorder initialized");
+
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  const sendAudio = async (blob: Blob) => {
+  const sendAudio = useCallback(async (audioBlob: Blob) => {
     const formData = new FormData();
-    formData.append("file", blob, "audio.wav");
+    formData.append("file", audioBlob, "audio.wav");
 
     try {
-      const response = await fetch("/api/chat/voice", {
+      const response = await fetch("http://localhost:8000/api/chat/voice", {
         method: "POST",
         body: formData,
       });
-      const data = await response.json();
-      onTranscript(data.transcript ?? "");
-    } catch (err) {
-      console.error("Transcription failed:", err);
+
+      if (!response.ok) {
+        throw new Error("Failed to upload audio");
+      }
+
+      const result = await response.json();
+      console.log("📥 Full backend response:", result);
+
+      if (result.transcript) {
+        console.log("📤 Passing transcript to callback:", result.transcript);
+        onTranscriptionResult(result.transcript);
+      } else {
+        console.warn("⚠️ No transcript found in response");
+      }
+    } catch (error) {
+      console.error("❌ Error sending audio:", error);
     }
-  };
+  }, [onTranscriptionResult]);
 
   const startRecording = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    audioChunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        audioChunksRef.current.push(e.data);
-      }
-    };
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
 
-    recorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
-      await sendAudio(audioBlob);
-      stream.getTracks().forEach((track) => track.stop());
-    };
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" });
+        sendAudio(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+      };
 
-    recorder.start();
-    mediaRecorderRef.current = recorder;
-    setIsRecording(true);
-  }, []);
+      mediaRecorder.start();
+      setIsRecording(true);
+      console.log("🔴 Recording started");
+    } catch (error) {
+      console.error("❌ Error starting recording:", error);
+    }
+  }, [sendAudio]);
 
   const stopRecording = useCallback(() => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
-  }, []);
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      console.log("⏹️ Recording stopped");
+    }
+  }, [isRecording]);
 
-  return { isRecording, startRecording, stopRecording };
-}
+  return {
+    isRecording,
+    onStartRecording: startRecording,
+    onStopRecording: stopRecording,
+  };
+};
+
+export default useVoiceRecorder;

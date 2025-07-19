@@ -2,10 +2,11 @@
  * /src/hooks/useChatSocket.ts
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { addMessage, updateLastAssistantMessage } from "../store/chatSlice";
 import { connectToChatWS, buildChatWSUrl } from "../utils/websocket";
+import {debugLog} from "../utils/debug";
 
 export default function useChatSocket() {
   const dispatch = useDispatch();
@@ -19,9 +20,9 @@ export default function useChatSocket() {
     };
   }, []);
 
-  const sendMessage = (inputText: string) => {
+  const sendMessage = useCallback((inputText: string) => {
     if (!inputText.trim()) return;
-
+    debugLog("inside sendMessage: Sending message:", inputText);
     // Add user's message to chat
     dispatch(addMessage({ role: "user", text: inputText }));
 
@@ -29,6 +30,7 @@ export default function useChatSocket() {
     dispatch(addMessage({ role: "assistant", text: "" }));
     const payload = JSON.stringify({ message: inputText });
     if (!isConnected.current) {
+      debugLog("🔗 Connecting to WebSocket...");
       const socketUrl = buildChatWSUrl();
 
       const socket = connectToChatWS(socketUrl, {
@@ -49,9 +51,10 @@ export default function useChatSocket() {
       socketRef.current = socket;
     } else {
       // Reuse existing socket
+      debugLog("🔗 Reusing existing WebSocket connection.  Payload:", payload);
       socketRef.current?.send(payload);
     }
-  };
+  }, [dispatch]); ;
 
   return { sendMessage };
 }

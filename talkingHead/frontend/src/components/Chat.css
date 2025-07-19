@@ -120,3 +120,9 @@
   align-items: stretch;
   gap: 0.5rem;
 }
+
+.chat-button.recording {
+  background-color: red;
+  color: white;
+  font-weight: bold;
+}

@@ -31,3 +31,4 @@ vosk
 
 alembic
 pywhispercpp[examples]
+pydub

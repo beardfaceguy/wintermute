@@ -3,8 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { type RootState } from "../store";
 import useChatSocket from "../hooks/useChatSocket";
+import VoiceToggleButton from "./VoiceToggleButton";
 import "./Chat.css";
-import { VoiceToggleButton } from "./VoiceToggleButton";
+import { debugLog } from "../utils/debug";
+import { useCallback } from "react";
 
 export default function Chat() {
   const messages = useSelector((state: RootState) => state.chat.messages);
@@ -34,17 +36,22 @@ export default function Chat() {
     return () => el.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSend = () => {
-    if (!inputText.trim()) return;
-    sendMessage(inputText);
+  // Shared logic for both text input and voice transcription
+  const handleSend = useCallback( (text: string) => {
+    debugLog("💬 handleSend called with:", text);
+    if (!text.trim()) return;
+    sendMessage(text);
     setInputText("");
-  };
+  }, [sendMessage]);
 
   return (
     <>
       <div className="chat-floating-messages" ref={scrollRef}>
         {messages.map((msg, i) => (
-          <div key={i} className={`chat-line ${msg.role === "user" ? "chat-user" : "chat-assistant"}`}>
+          <div
+            key={i}
+            className={`chat-line ${msg.role === "user" ? "chat-user" : "chat-assistant"}`}
+          >
             {msg.text}
           </div>
         ))}
@@ -59,17 +66,16 @@ export default function Chat() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                handleSend(inputText);
               }
             }}
             placeholder="Type a message..."
           />
           <div className="chat-button-row">
-           
-            <button className="chat-button" onClick={handleSend}>
+            <button className="chat-button" onClick={() => handleSend(inputText)}>
               Send
             </button>
-             <VoiceToggleButton />
+            <VoiceToggleButton onVoiceSubmit={handleSend} />
           </div>
         </div>
       </div>

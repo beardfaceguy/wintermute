@@ -1,4 +1,6 @@
 // src/utils/websocket.ts
+
+import { debugLog } from "./debug";
 export type OnToken = (token: string) => void;
 export type OnClose = () => void;
 
@@ -36,6 +38,7 @@ export function connectToChatWS(
   socketUrl: string,
   { onToken, onClose }: WebSocketCallbacks
 ): WebSocket {
+  debugLog("websocket.connectToChatWS: Connecting to WebSocket at:", socketUrl);
   const socket = new WebSocket(socketUrl);
 
   socket.onmessage = (event) => onToken(event.data);

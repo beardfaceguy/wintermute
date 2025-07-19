@@ -19,6 +19,7 @@ export RAY_disable_usage_stats=1
 
 # Start vLLM in background
 python -m vllm.entrypoints.openai.api_server \
+  --host 0.0.0.0 \
   --model "$HOME/models/wizard-vicuna-awq" \
   --served-model-name wizard-vicuna-7b-awq \
   --quantization awq \

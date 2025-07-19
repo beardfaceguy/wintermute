@@ -3,7 +3,7 @@
  */
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-
+import {debugLog} from '../utils/debug';
 export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
@@ -22,9 +22,11 @@ const chatSlice = createSlice({
   initialState,
   reducers: {
     addMessage: (state, action: PayloadAction<ChatMessage>) => {
+      debugLog("chatSlice.addMessage: Adding message to chat:", action.payload);
       state.messages.push(action.payload);
     },
     updateLastAssistantMessage: (state, action: PayloadAction<string>) => {
+      debugLog("chatSlice.updateLastAssistantMessage: Updating last assistant message with:", action.payload);
       const lastMsg = [...state.messages].reverse().find((msg) => msg.role === "assistant");
       if (lastMsg) {
         lastMsg.text += action.payload;
