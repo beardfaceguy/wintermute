@@ -1,4 +1,4 @@
-Wintermute Master Spec (v0.4)
+Wintermute Master Spec (v0.5)
 
 Project Codename: Wintermute
 
@@ -228,6 +228,50 @@ Frontend communicates with backend via ChatML-formatted payloads
 Token streaming via WebSocket (preferred) or HTTP long-polling for responsive interactions
 
 File upload and audio I/O modules designed for modular integration with other MCP agents
+
+### 💡 UI Feature: Context-Popover Term Definition
+
+**Status:** Proposed  
+**Created:** 2025-08-07  
+**Author:** Patrick
+
+---
+
+#### Summary
+
+Adds a “Define Term” option to the right-click context menu of the main chat interface. When triggered, opens a small in-place sub-chat window that allows Wintermute to define or expand upon the selected text.
+
+---
+
+#### Purpose
+
+Enables lightweight semantic exploration without breaking conversational flow. Sub-chat sessions are ephemeral, but include an option to escalate to a full tab for deeper interaction.
+
+---
+
+#### Components
+
+- `ContextMenu`: Adds right-click `Define Term`
+- `MiniChat`: Small floating assistant-only response window
+- `OpenFullChat`: Button to spawn full window with carried context
+
+---
+
+#### Dependencies
+
+- TalkingHead UI update (context menu + component mount)
+- Backend routing to reuse vLLM thread with injected subcontext
+- Support for parent message carryover and message scope limits
+
+---
+
+#### Future Expansion
+
+- Add options like `Explain reasoning`, `Summarize`, `Translate`
+- Pin or promote mini chats to session memory
+- Track semantic curiosity metrics for user modeling
+
+
 
 🔧 Implementation Stack
 Frontend: Vite + TypeScript + React + Redux (project name: talkingHead)
