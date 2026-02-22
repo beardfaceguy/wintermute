@@ -133,5 +133,9 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 - Remote SSH note: ensure EC2 accepts `alix-pc-llm-training-key.pem` for user `ubuntu` (add to `~/.ssh/authorized_keys` on the instance or rely on EC2 keypair injection at launch).
 
 ## Open Items
-- Await Daniil approval to create IAM role/profile and S3 bucket.
-- After approval: execute steps 1–3, then proceed with setup and training.
+- Launch training runner (spot-first g5.xlarge in us-east-1f, fallback 1d/1a/1c or on-demand).
+- Bootstrap instance (format/mount gp3 300 GB to /mnt/data; sync code/data).
+- Run baseline training and checkpoint to S3 (sync frequently to survive spot evictions).
+
+## Progress Log
+- 2026-02-22: Env hook set (`AWS_PROFILE=experimental-admin`, `AWS_DEFAULT_REGION=us-east-1` via `.envrc`). New bucket created: `alix-ai-ml-staging-data`. IAM role `alix-llm-training-role` (EC2 trust) with inline S3 RW to `s3://alix-ai-ml-staging-data/titan/*` and `AmazonSSMManagedInstanceCore` attached. Instance profile `alix-llm-training-profile` created and linked to the role.
