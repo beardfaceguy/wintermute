@@ -3,6 +3,13 @@
 ## Overview
 Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), using spot-first with on-demand fallback. All resources are dedicated to avoid impacting existing systems: new IAM role/profile, new S3 bucket/prefix, existing training-dedicated SG, new EBS volume.
 
+## Workload context (from prior plan)
+- Code: `model_training/titanProject/` (train.py, model.py, data.py, configs/*; scripts: generate.py, memory_test_eval.py, finetune_memory_qa.py, memory_test_gen.py).
+- Baseline config in use: `configs/config_baseline_nomem.yaml` (MAC variant, dim 384, depth 5, heads 6, seq_len 512, batch 6, lr 5e-4, cosine, 4k steps, no memory tokens).
+- Tokenizer/data: `model_training/LLM/tokenizers/bpe_50k_bf.model`; TinyStories sampled train/val at `model_training/LLM/data/tinystories_sampled/`.
+- Checkpoints: only `ckpt_step_4000.pt` (memory-enabled; no clean baseline checkpoint yet).
+- Local hardware used earlier: M3/MPS 16 GB unified memory (slow for longer runs).
+
 ## Approvals & Dependencies
 - Admin approval needed: create IAM role/profile and new S3 bucket (Daniil; Tim already aware/approved).
 - Network: use existing SG `alix-pc-llm-model-training` (SSH only to approved /32).
@@ -18,8 +25,17 @@ Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), u
 - EC2: `g5.xlarge`, spot-first (AZ order: 1f → 1d → 1a → 1c), on-demand fallback
 - AMI: `ami-0ad8dd83d01a01d3a` (DL OSS GPU PyTorch 2.7, Ubuntu 22.04, 20260118)
 - EBS: gp3 300 GB (can bump IOPS if needed), mount `/mnt/data`
+- EBS throughput/Iops: gp3 default 3000 IOPS / 125 MB/s; bump to ~6000 IOPS / 250 MB/s if dataloader or checkpoint writes bottleneck.
+- Security group: `alix-pc-llm-model-training` (`sg-0bec109715d614af7`), ingress 22 from `23.93.208.154/32`; widen or add 8888/6006 only if browser access without tunnels is required.
+- Key pair: `alix-pc-llm-training-key` in `~/.ssh/alix-pc-llm-training-key.pem` (chmod 600); SSH config entry suggested for Host `alix-llm-ec2`.
 - Ports: SSH 22 only (tunnel for TB/Jupyter)
+- Data locality: keep S3/ECR in us-east-1 to avoid cross-region egress surprises.
 - Cost guardrail: $50/mo alert; per-run soft cap 2h
+
+## Instance choice & pricing notes (from prior plan)
+- g5.xlarge (A10G 24 GB) target; spot price samples in us-east-1: 1f ~$0.4009/hr (cheapest), 1d ~$0.4089/hr, 1a ~$0.4134/hr, 1c ~$0.4200/hr, 1b ~$0.4545/hr. On-demand ~$1.006/hr. Set max spot price to on-demand.
+- Alternatives: `g4dn.xlarge` is cheaper/slower (T4 16 GB); `g6.xlarge` (L4 24 GB) comparable vRAM, check pricing if capacity tight. P3/P5 overkill for this tiny run unless configs scale up significantly.
+- Expected runtime/cost for current 4k-step small run: ~0.4–1.4 hours on g5.xlarge; ~$0.20–0.60 on spot, ~$0.40–1.40 on on-demand (depends on dataloader throughput and config changes).
 
 ## Step-by-Step (after admin approval)
 1) Create S3 bucket (if not already present)
@@ -137,5 +153,16 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 - Bootstrap instance (format/mount gp3 300 GB to /mnt/data; sync code/data).
 - Run baseline training and checkpoint to S3 (sync frequently to survive spot evictions).
 
+## Onboarding checklist (for new agent)
+- Plan doc: `.cursor/docs/PLAN_AWS_hosting.md`.
+- Titans code: `model_training/titanProject/` (`train.py`, `model.py`, `data.py`).
+- Configs: `model_training/titanProject/configs/` (esp. `config_baseline_nomem.yaml`).
+- Scripts: `generate.py`, `memory_test_eval.py`, `finetune_memory_qa.py`, `memory_test_gen.py`.
+- Data/tokenizer: `model_training/LLM/tokenizers/bpe_50k_bf.model`; data at `model_training/LLM/data/tinystories_sampled/{train_sample.txt,val_sample.txt}`.
+- Project notes: `model_training/titanProject/todo.md`, `run_log.md`.
+- Checkpoints: `model_training/titanProject/ckpt_step_4000.pt` (memory-enabled; no clean baseline ckpt yet).
+- Past terminal logs (if needed): `.cursor/projects/Users-beardface-lab-wintermute/terminals/`.
+
 ## Progress Log
 - 2026-02-22: Env hook set (`AWS_PROFILE=experimental-admin`, `AWS_DEFAULT_REGION=us-east-1` via `.envrc`). New bucket created: `alix-ai-ml-staging-data`. IAM role `alix-llm-training-role` (EC2 trust) with inline S3 RW to `s3://alix-ai-ml-staging-data/titan/*` and `AmazonSSMManagedInstanceCore` attached. Instance profile `alix-llm-training-profile` created and linked to the role.
+- 2026-02-22: Verified AWS CLI/profile on workstation (`491794274773_AdministratorAccess` works). No `g5.xlarge` instances currently running (describe-instances returned empty). Expected SG `alix-pc-llm-model-training` / `sg-0bec109715d614af7` is not present in this account/region; will need to create a new SG in us-east-1 (SSH 22 from approved /32, tunnel TB/Jupyter) before launch. Next session (Linux): create SG, then launch spot g5.xlarge with the existing IAM profile/bucket/tag settings.
