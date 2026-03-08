@@ -71,6 +71,13 @@ Context: local runs are on M3/MPS (16 GB unified). AWS profile `225079546399_Adm
   - Cost on-demand (~$1.01/hr): ~$0.40–$1.40/run.
 Notes: actuals depend on dataloader throughput, host CPU contention, and larger model/batch configs; bigger configs will scale time/cost up proportionally.
 
+### Latest run state (experimental account)
+- Instance: on-demand `g5.xlarge` (i-050bce8db858dfa89), AZ `us-east-1f`, SG `sg-05ca8b4be3b26ef52`, key `alix-pc-llm-training-key`.
+- Storage: using bind-mount `/opt/dlami/nvme` → `/mnt/data` (~217G free).
+- Repo: cloned to `/mnt/data/code/wintermute`.
+- Tokenizer: copied `bpe_50k_bf.model` to `/mnt/data/code/wintermute/model_training/LLM/tokenizers/`.
+- Last error: running `python train.py --config configs/config_combo_all.yaml --device cuda --log-every 100` failed earlier due to missing tokenizer (fixed); pending rerun after restart.
+
 ### Still needed to finalize launch/runbook
 - IAM role/instance profile for EC2 with S3 access (specify role name or policy).
 - S3 bucket/prefix for code/data/checkpoints (or confirm git clone + download path).

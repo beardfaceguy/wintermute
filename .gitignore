@@ -54,4 +54,5 @@ ehthumbs.db
 
 memory/chroma_store/
 
-build/
+build/model_training/LLM/data/
+model_training/hf.env
