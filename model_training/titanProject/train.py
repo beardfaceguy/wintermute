@@ -6,6 +6,7 @@ Fill in tokenizer init and paths; adjust config as needed.
 import math
 import argparse
 import time
+import subprocess
 from pathlib import Path
 import yaml
 import torch
@@ -60,6 +61,34 @@ def resolve_path(path_str: str) -> Path:
     return repo_root / p
 
 
+def sync_checkpoints_to_s3(checkpoint_dir: Path, s3_uri: str, aws_bin: str, log_fn) -> None:
+    cmd = [
+        aws_bin,
+        "s3",
+        "sync",
+        str(checkpoint_dir),
+        s3_uri,
+        "--exclude",
+        "*",
+        "--include",
+        "ckpt_step_*.pt",
+        "--only-show-errors",
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+    except FileNotFoundError:
+        log_fn(f"[sync] warning: aws binary not found: {aws_bin}")
+        return
+    if proc.returncode != 0:
+        log_fn(f"[sync] warning: command failed (exit={proc.returncode})")
+        if proc.stderr.strip():
+            log_fn(f"[sync] stderr: {proc.stderr.strip()}")
+        elif proc.stdout.strip():
+            log_fn(f"[sync] stdout: {proc.stdout.strip()}")
+        return
+    log_fn(f"[sync] checkpoints synced to {s3_uri}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Titans MAC small-model trainer")
     parser.add_argument("--config", type=str, default="config_small.yaml", help="Path to YAML config (relative or absolute)")
@@ -70,6 +99,20 @@ def main():
     parser.add_argument("--max-tokens", type=int, default=None, help="Optional cap on tokens to load (per split)")
     parser.add_argument("--debug-every", type=int, default=1, help="If --debug, log every N steps (default 1)")
     parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pt) to resume from")
+    parser.add_argument("--save-every", type=int, default=None, help="Override checkpoint save interval (steps)")
+    parser.add_argument(
+        "--checkpoint-dir",
+        type=str,
+        default=None,
+        help="Directory to write checkpoints (default: model_training/titanProject)",
+    )
+    parser.add_argument(
+        "--s3-checkpoint-uri",
+        type=str,
+        default=None,
+        help="Optional S3 URI (s3://bucket/prefix/) to sync checkpoints after each save",
+    )
+    parser.add_argument("--aws-bin", type=str, default="aws", help="AWS CLI binary for checkpoint sync")
     amp_group = parser.add_mutually_exclusive_group()
     amp_group.add_argument("--amp", dest="amp", action="store_true", help="Force enable AMP")
     amp_group.add_argument("--no-amp", dest="amp", action="store_false", help="Force disable AMP (default on MPS/CPU)")
@@ -171,11 +214,25 @@ def main():
     warmup = cfg["train"]["warmup_steps"]
     lr_min = cfg["train"].get("lr_min", 0.0)
     log_every = args.debug_every if args.debug else args.log_every
+    save_every = args.save_every or cfg["train"]["save_every"]
+    if save_every <= 0:
+        raise ValueError("--save-every must be > 0")
+
+    if args.checkpoint_dir:
+        checkpoint_dir = Path(args.checkpoint_dir).expanduser()
+        if not checkpoint_dir.is_absolute():
+            checkpoint_dir = (Path.cwd() / checkpoint_dir).resolve()
+    else:
+        checkpoint_dir = Path(__file__).parent
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     log(
-        f"[init] max_steps={max_steps}, warmup={warmup}, log_every={log_every}, "
+        f"[init] max_steps={max_steps}, warmup={warmup}, log_every={log_every}, save_every={save_every}, "
         f"batch_size={cfg['train']['batch_size']}, seq_len={cfg['train']['seq_len']}"
     )
+    log(f"[init] checkpoint_dir={checkpoint_dir}")
+    if args.s3_checkpoint_uri:
+        log(f"[init] periodic checkpoint sync enabled -> {args.s3_checkpoint_uri}")
     if args.debug:
         log(f"[debug] model cfg: {mcfg}")
 
@@ -219,39 +276,41 @@ def main():
             if args.debug:
                 log(f"[debug] step {global_step} lr {lr:.6f} loss {loss.item():.4f}")
 
+            # Step-based eval/checkpoint hooks so long epochs do not delay persistence.
+            if global_step % cfg["train"]["eval_every"] == 0:
+                model.eval()
+                total_loss = 0.0
+                count = 0
+                log(f"[eval] running eval at step {global_step} ...")
+                with torch.no_grad():
+                    for x, y in val_loader:
+                        x, y = x.to(device), y.to(device)
+                        out = model(x, return_loss=False)
+                        logits = out if not isinstance(out, dict) else out.get("logits", out)
+                        val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+                        total_loss += val_loss.item()
+                        count += 1
+                ppl = math.exp(total_loss / max(count, 1))
+                log(f"[eval] step {global_step} loss {total_loss/max(count,1):.4f} ppl {ppl:.2f}")
+                model.train()
+
+            if global_step % save_every == 0:
+                ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
+                torch.save(
+                    {
+                        "model": model.state_dict(),
+                        "opt": opt.state_dict(),
+                        "step": global_step,
+                        "scaler": scaler.state_dict() if scaler else None,
+                    },
+                    ckpt_path,
+                )
+                log(f"Saved {ckpt_path}")
+                if args.s3_checkpoint_uri:
+                    sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
+
             if global_step >= max_steps:
                 break
-
-        # Simple eval
-        if global_step % cfg["train"]["eval_every"] == 0:
-            model.eval()
-            total_loss = 0.0
-            count = 0
-            log(f"[eval] running eval at step {global_step} ...")
-            with torch.no_grad():
-                for x, y in val_loader:
-                    x, y = x.to(device), y.to(device)
-                    out = model(x, return_loss=False)
-                    logits = out if not isinstance(out, dict) else out.get("logits", out)
-                    val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
-                    total_loss += val_loss.item()
-                    count += 1
-            ppl = math.exp(total_loss / max(count, 1))
-            log(f"[eval] step {global_step} loss {total_loss/max(count,1):.4f} ppl {ppl:.2f}")
-            model.train()
-
-        if global_step % cfg["train"]["save_every"] == 0:
-            ckpt_path = Path(__file__).parent / f"ckpt_step_{global_step}.pt"
-            torch.save(
-                {
-                    "model": model.state_dict(),
-                    "opt": opt.state_dict(),
-                    "step": global_step,
-                    "scaler": scaler.state_dict() if scaler else None,
-                },
-                ckpt_path,
-            )
-            log(f"Saved {ckpt_path}")
 
 
 if __name__ == "__main__":

@@ -64,6 +64,33 @@
 - **Multiple instances**: Old ts-node-dev processes weren't properly killed, causing conflicts
 - **Clean startup**: Kill all existing processes before restarting services
 
+### AWS Training Environment Audit
+- **Use repo helper for AWS checks**: `python model_training/titanProject/aws_titan_next_steps.py audit` provides a done/pending checklist for S3/IAM/SG/key/instances/spot/checkpoints.
+- **Idempotent continuation flow**: Run `ensure-sg`, then `launch-spot` (or `launch-ondemand`) from the same helper script for repeatable setup.
+- **WSL AWS CLI fallback**: helper now tries `aws`, `aws.exe`, and `/mnt/c/Program Files/Amazon/AWSCLIV2/aws.exe`; set `AWS_CLI_BIN` if your executable is elsewhere.
+- **WSL install gotcha**: when `awscli` apt package is unavailable, install AWS CLI v2 from zip into `~/.local/bin` and export `AWS_CLI_BIN=/home/zombi/.local/bin/aws` for script runs.
+- **Zip extraction gotcha**: Python `zipfile` extraction may drop executable bits for AWS installer files; restore execute perms (`/tmp/aws/install`, `/tmp/aws/dist/aws`) before install.
+- **Auth clarity improvement**: `aws_titan_next_steps.py audit` now prints explicit `AuthError` when the selected profile is missing, instead of silently showing all resources as `False`.
+- **WSL context gotcha**: running `wsl -d ...` inside an existing WSL shell can invoke the Linux `wsl` (Wsman Shell), not Windows WSL launcher; in WSL use AWS commands directly.
+- **SSM fallback pattern**: when SSH key is missing locally but IAM role includes `AmazonSSMManagedInstanceCore`, use SSM `send-command`/`get-command-invocation` for bootstrap and diagnostics.
+- **EC2 bootstrap path**: using SSM, sync code from `s3://alix-ai-ml-staging-data/titan/code/wintermute` to `/mnt/data/code/wintermute` and verify with `ls`; this avoids dependence on SSH key presence.
+- **Ubuntu Python packaging gotcha**: some WSL images have `python3` without `pip` and without `ensurepip`; install pip via `get-pip.py --user --break-system-packages` before installing CLI tools.
+- **Local HF CLI path**: `hf` installs to `/home/<user>/.local/bin/hf`; use absolute path or add `~/.local/bin` to PATH.
+- **HF token sanity check**: before scripted `hf auth login --token`, verify token file has non-zero stripped length to avoid non-obvious `Option '--token' requires an argument` failures.
+- **HF CLI command variant**: with `huggingface_hub` 1.6.0, use `hf auth whoami` for identity check (plain `hf whoami` is not a valid command).
+- **HF auth on remote via SSM**: safest pattern is upload token file as short-lived encrypted S3 object, run `hf auth login` on EC2 via SSM using that object, then delete the object in script cleanup.
+- **Remote AWS CLI compatibility**: some EC2 images still have AWS CLI variant that rejects `--no-cli-pager`; for SSM-run `aws s3 sync/cp` commands, avoid that flag unless version is confirmed.
+- **Titans checkpoint persistence**: run eval/checkpoint hooks at step-level (inside the batch loop), not epoch-end, or long datasets delay checkpointing too much; `train.py` now supports `--save-every`, `--checkpoint-dir`, and `--s3-checkpoint-uri` for periodic durable sync.
+- **Sync resilience**: when wiring periodic S3 sync into training loops, treat sync as best-effort (log warning on missing `aws`/sync failure) so model training itself continues.
+- **Inference regression check**: keep a single-command smoke harness (`inference_smoke.py`) that loads checkpoint once and runs a fixed prompt suite with JSON pass/fail output; this is the fastest end-to-end health check after training/infrastructure changes.
+- **Qualitative interface check**: keep a minimal interactive REPL (`chat_repl.py`) for fast human sanity checks after a successful smoke test; include `/reset` and context trimming so multi-turn prompts stay within seq_len budget.
+- **No-dependency serving option**: use a stdlib HTTP server (`chat_http.py`) for quick model integration tests without adding web dependencies; provide `/health`, `/chat`, `/reset`, keep per-session in-memory history, and guard generation with a lock for thread safety.
+- **Built-in browser tester**: serving a simple HTML page at `GET /` (same `chat_http.py`) is enough for manual chat checks without Gradio; keep JSON API endpoints unchanged for scripts.
+- **Safe exposure pattern for testing**: when publishing model HTTP endpoint, open SG app port only to operator `/32` (not `0.0.0.0/0` on ingress) and verify with `curl` health check before sharing the link.
+- **Path proxy gotcha (`/titan`)**: when placing the model UI behind an nginx path prefix, frontend calls must be path-relative (derive API base from `window.location.pathname`) or requests will incorrectly hit root paths (`/health`, `/chat`) and fail.
+- **Domain bring-up checklist**: for custom domain + path (`wint3rmute.com/titan`), you need three aligned layers: DNS A record -> EC2 public IP, SG ingress on `80/443`, and nginx reverse proxy location to backend (`/titan/` -> `127.0.0.1:8000/`).
+- **SFT pilot recipe**: a practical first chat-improvement pass is `OASST1 + Dolly` converted to one-line `User: ... Assistant: ...` examples and trained for a short 600-step supervised run from the base checkpoint; this quickly shifts behavior toward assistant-style responses without a full retrain.
+
 ### Database User Setup
 - **patrickclawson user**: Requires specific permissions for Prisma migrations
 - **Permission setup commands** (run immediately after database restore):

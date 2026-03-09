@@ -56,3 +56,6 @@ memory/chroma_store/
 
 build/model_training/LLM/data/
 model_training/hf.env
+
+# Cursor temp artifacts
+.cursor/tmp/

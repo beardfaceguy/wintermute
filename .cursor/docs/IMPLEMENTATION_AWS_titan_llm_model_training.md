@@ -149,9 +149,8 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 - Remote SSH note: ensure EC2 accepts `alix-pc-llm-training-key.pem` for user `ubuntu` (add to `~/.ssh/authorized_keys` on the instance or rely on EC2 keypair injection at launch).
 
 ## Open Items
-- Launch training runner (spot-first g5.xlarge in us-east-1f, fallback 1d/1a/1c or on-demand).
-- Bootstrap instance (format/mount gp3 300 GB to /mnt/data; sync code/data).
-- Run baseline training and checkpoint to S3 (sync frequently to survive spot evictions).
+- Optional: tune regeneration sample sizes for TinyStories subsets if we want smaller/faster iterations than current regenerated corpus.
+- Cost-control follow-up: decide whether to keep or terminate the additional spot runner `i-0b788d7634d3a40c4` after validation.
 
 ## Onboarding checklist (for new agent)
 - Plan doc: `.cursor/docs/PLAN_AWS_hosting.md`.
@@ -166,3 +165,176 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 ## Progress Log
 - 2026-02-22: Env hook set (`AWS_PROFILE=experimental-admin`, `AWS_DEFAULT_REGION=us-east-1` via `.envrc`). New bucket created: `alix-ai-ml-staging-data`. IAM role `alix-llm-training-role` (EC2 trust) with inline S3 RW to `s3://alix-ai-ml-staging-data/titan/*` and `AmazonSSMManagedInstanceCore` attached. Instance profile `alix-llm-training-profile` created and linked to the role.
 - 2026-02-22: Verified AWS CLI/profile on workstation (`491794274773_AdministratorAccess` works). No `g5.xlarge` instances currently running (describe-instances returned empty). Expected SG `alix-pc-llm-model-training` / `sg-0bec109715d614af7` is not present in this account/region; will need to create a new SG in us-east-1 (SSH 22 from approved /32, tunnel TB/Jupyter) before launch. Next session (Linux): create SG, then launch spot g5.xlarge with the existing IAM profile/bucket/tag settings.
+- 2026-03-08: Added helper script `model_training/titanProject/aws_titan_next_steps.py` to make AWS continuation repeatable and idempotent.
+  - `audit`: compares live AWS state to open items and reports done/pending for bucket, role/profile, SG, key pair, runners, spot requests, and checkpoint objects.
+  - `ensure-sg`: creates `alix-pc-llm-model-training` in the selected VPC if missing, with SSH ingress on 22 for the approved CIDR.
+  - `launch-spot`: launches `g5.xlarge` spot with AZ fallback order `us-east-1f, us-east-1d, us-east-1a, us-east-1c`.
+  - `launch-ondemand`: launches on-demand `g5.xlarge` in a single-AZ fallback path.
+  - Recommended operator flow: `audit` -> `ensure-sg` (if needed) -> `launch-spot` -> `audit` again.
+- 2026-03-08: Hardened CLI detection in `aws_titan_next_steps.py` for WSL environments.
+  - `run_aws()` now tries `aws`, `aws.exe`, and `/mnt/c/Program Files/Amazon/AWSCLIV2/aws.exe`.
+  - Supports explicit override via `AWS_CLI_BIN` when AWS CLI is installed in a non-standard location.
+- 2026-03-08: Executed AWS continuation commands and resolved local tooling blockers:
+  - Installed AWS CLI v2 in WSL at `/home/zombi/.local/bin/aws` using zip installer (no apt package available in this environment).
+  - Verified `audit` runs successfully with `AWS_CLI_BIN=/home/zombi/.local/bin/aws`.
+  - Added explicit auth error surfacing in `audit` output (`AuthError: ... profile ... could not be found`) to avoid misleading all-false resource checks.
+  - Current blocker: AWS profile `experimental-admin` is not configured in WSL and `/mnt/c/Users/zombi/.aws` does not exist, so no credentials/profile could be copied.
+  - Next unblock step: configure SSO profile in WSL (`/home/zombi/.local/bin/aws configure sso --profile experimental-admin`), then re-run `audit`, `ensure-sg`, and `launch-spot`.
+- 2026-03-08: Post-SSO execution completed and environment state advanced:
+  - Confirmed identity for profile `experimental-admin`: account `491794274773`, role `AWSReservedSSO_AdministratorAccess`.
+  - Live audit now resolves real resources:
+    - S3 bucket exists: `alix-ai-ml-staging-data`
+    - IAM role/profile exist and attached correctly (`alix-llm-training-role`, `alix-llm-training-profile`)
+    - SG exists by name: `alix-pc-llm-model-training` with ID `sg-05ca8b4be3b26ef52`
+    - Key pair exists: `alix-pc-llm-training-key`
+    - Titan instance present: `i-050bce8db858dfa89` (`g5.xlarge`)
+  - Started `i-050bce8db858dfa89`; state confirmed `running` and public IP `3.238.84.152`.
+  - SSH path is currently blocked from local because private key file `/home/zombi/.ssh/alix-pc-llm-training-key.pem` is missing locally; switched to SSM control path.
+  - SSM check confirms instance is online, `/mnt/data` is mounted, but `/mnt/data/code` is absent (no repo checkout on disk).
+  - SSM dependency probe confirms training deps are missing on instance Python: `torch`, `sentencepiece`, `titans_pytorch` not installed.
+  - Synced `model_training/titanProject` code to `s3://alix-ai-ml-staging-data/titan/code/wintermute/model_training/titanProject` (excluded `*.pt`).
+  - Attempted tokenizer/data upload from local failed because local files are missing:
+    - expected tokenizer `model_training/LLM/tokenizers/bpe_50k_bf.model` not present in workspace
+    - expected sampled data files under `model_training/LLM/data/tinystories_sampled/` not present in workspace
+  - New blocker to start training: need source of tokenizer + TinyStories sampled train/val, then complete EC2 bootstrap (pull code/data, install deps, run baseline).
+- 2026-03-08: Additional execution completed after auth:
+  - SSM confirms instance online and manageable (`PingStatus=Online`), so SSH key absence is not a hard blocker for automation.
+  - Synced Titans code to S3 and restored on instance:
+    - Local -> S3: `s3://alix-ai-ml-staging-data/titan/code/wintermute/model_training/titanProject`
+    - S3 -> EC2 via SSM: `/mnt/data/code/wintermute/model_training/titanProject`
+  - Installed Python deps on EC2 via SSM: `torch`, `sentencepiece`, `titans-pytorch` (plus transitive CUDA deps); follow-up check reports all required modules import successfully.
+  - Verified current live audit state:
+    - Titan instance is now `running` (`i-050bce8db858dfa89`, `g5.xlarge`, `us-east-1f`)
+    - `titan/code/` prefix exists; `titan/data/` and `titan/checkpoints/` remain empty.
+  - Asset search on EC2 for required files returned no matches:
+    - `bpe_50k_bf.model`
+    - `train_sample.txt`
+    - `val_sample.txt`
+  - Remaining blocker to start baseline run is now strictly data/tokenizer availability (restore original assets or regenerate replacements).
+- 2026-03-09: Local Hugging Face CLI tooling installed in WSL for operator convenience.
+  - Local `python3` initially had no `pip` module and no `ensurepip`.
+  - Installed pip with `python3 /tmp/get-pip.py --user --break-system-packages`.
+  - Installed HF CLI with `python3 -m pip install --user --upgrade --break-system-packages huggingface_hub`.
+  - Verified local CLI at `/home/zombi/.local/bin/hf` (`hf --version` -> `1.6.0`).
+- 2026-03-09: Attempted local HF auth using token file `.cursor/tmp/huggingface_token.txt`.
+  - Token file is populated (non-empty), but `hf auth login --token ...` returns `Invalid user token`.
+  - On this CLI version, identity check command is `hf auth whoami` (not `hf whoami`).
+  - Current status: HF local CLI installed but not authenticated; requires refreshed/valid token.
+- 2026-03-09: Refreshed HF token and completed authentication on both local WSL and EC2.
+  - Local WSL:
+    - `hf auth login` succeeded with token label `linux_wintermute`.
+    - `hf auth whoami` returns user `beardface`.
+  - EC2 instance (`i-050bce8db858dfa89`):
+    - Logged in via SSM command using a short-lived encrypted token object in S3 (`titan/tmp/...`) that is removed at script exit.
+    - SSM command id: `63ee789d-9f7a-4457-82fc-77667cc6854b`
+    - Result: `Status=Success`, token valid (`read`), active token `linux_wintermute`, `whoami` user `beardface`.
+  - This removes anonymous HF rate-limit risk for future model/dataset pulls on the training instance.
+- 2026-03-09: Regenerated missing tokenizer/data assets directly on EC2 via SSM and synced to S3.
+  - Installed `datasets` on instance and loaded `roneneldan/TinyStories`.
+  - Generated sampled files:
+    - `/mnt/data/code/wintermute/model_training/LLM/data/tinystories_sampled/train_sample.txt` (250k stories, ~217 MB)
+    - `/mnt/data/code/wintermute/model_training/LLM/data/tinystories_sampled/val_sample.txt` (15k stories, ~13 MB)
+  - Trained SentencePiece tokenizer (`vocab_size=50000`, BPE, `byte_fallback=true`, `nfkc`):
+    - `/mnt/data/code/wintermute/model_training/LLM/tokenizers/bpe_50k_bf.model`
+    - `/mnt/data/code/wintermute/model_training/LLM/tokenizers/bpe_50k_bf.vocab`
+  - Synced assets to S3:
+    - `s3://alix-ai-ml-staging-data/titan/code/wintermute/model_training/LLM/tokenizers/bpe_50k_bf.model`
+    - `s3://alix-ai-ml-staging-data/titan/data/tinystories_sampled/{train_sample.txt,val_sample.txt}`
+- 2026-03-09: Baseline EC2 training run completed successfully and checkpoint synced to S3.
+  - SSM command: `839de07f-48ad-43d3-82db-6e5707716018`
+  - Runtime: ~22m25s (step 0 -> 4000)
+  - Final train loss at step 4000: `2.7927`
+  - Eval at step 4000: loss `2.8044`, perplexity `16.52`
+  - Checkpoint saved on instance: `/mnt/data/code/wintermute/model_training/titanProject/ckpt_step_4000.pt` (~678 MB)
+  - Synced checkpoint to `s3://alix-ai-ml-staging-data/titan/checkpoints/ckpt_step_4000.pt`
+- 2026-03-09: Completed spot-runner validation and periodic checkpoint sync automation.
+  - Spot validation:
+    - Launched spot runner via helper: instance `i-0b788d7634d3a40c4` (`us-east-1f`, `g5.xlarge`, spot fulfilled).
+    - Spot request observed active/fulfilled: `sir-zxezf49j`.
+    - SSM registration check confirms `PingStatus=Online` for the new spot instance.
+  - Checkpoint sync automation:
+    - Updated `model_training/titanProject/train.py` with CLI hooks:
+      - `--save-every` (override checkpoint interval)
+      - `--checkpoint-dir` (separate output path per run)
+      - `--s3-checkpoint-uri` + `--aws-bin` (auto sync to S3 after each save)
+      - Missing `aws` binary now logs a warning and skips sync instead of crashing training.
+    - Moved eval/save hooks to step-level execution so long epochs do not delay checkpoint persistence.
+    - Compatibility fix: removed `--no-cli-pager` from remote `aws s3 sync` invocation because instance AWS CLI rejected that flag.
+  - Smoke verification on EC2 (`i-050bce8db858dfa89`):
+    - Final successful SSM command: `bcab2033-f5b6-4eac-a8af-61e6ade3e38b` (runtime ~20s).
+    - Config: `--max-steps 10 --save-every 5 --max-tokens 20000`.
+    - Observed saves at steps `5` and `10` with successful sync after each save.
+    - Verified objects under `s3://alix-ai-ml-staging-data/titan/checkpoints/sync_smoke_20260309034822/`:
+      - `ckpt_step_5.pt`
+      - `ckpt_step_10.pt`
+- 2026-03-09: Added and validated inference smoke test for checkpoint usability.
+  - New script: `model_training/titanProject/inference_smoke.py`
+    - Loads config/tokenizer/checkpoint once and runs a fixed 3-prompt suite.
+    - Emits pass/fail and structured JSON (`ok`, latencies, completion lengths).
+  - EC2 validation command id: `35d9cc4e-d630-4f37-a082-ef00bb878065`
+    - Result: `Status=Success`, `ok=true`, `device=cuda`, runtime ~12.7s.
+    - Confirms end-to-end inference path (checkpoint load -> tokenization -> generation) is operational.
+    - Output quality is coherent tiny-story continuation but not instruction-accurate chat behavior yet (expected for current baseline training objective).
+- 2026-03-09: Added interactive qualitative test interface (`chat_repl.py`) and validated on EC2.
+  - New script: `model_training/titanProject/chat_repl.py`
+    - Interactive terminal loop with `/reset` and `/exit`.
+    - Multi-turn history with context-budget trimming (`max_prompt_tokens`, default from `train.seq_len`).
+    - Uses existing sampling knobs (`--top-k`, `--temperature`, `--max-new`) and checkpoint/config paths.
+  - EC2 smoke command id: `a9d91143-ac27-4cb3-918c-cefacd1d78c3`
+    - Result: `Status=Success`.
+    - One-turn scripted interaction returns assistant text and exits cleanly.
+  - Quick run command on instance:
+    - `python3 chat_repl.py --config configs/config_baseline_nomem.yaml --ckpt ckpt_step_4000.pt --device cuda`
+- 2026-03-09: Added lightweight HTTP chat endpoint and validated request/response flow on EC2.
+  - New script: `model_training/titanProject/chat_http.py`
+    - `GET /health` -> model/device/config health metadata.
+    - `POST /chat` -> body fields: `session_id`, `message`, optional `reset`, `max_new`, `top_k`, `temperature`.
+    - `POST /reset` -> clears in-memory session history for a `session_id`.
+    - In-memory multi-turn sessions with context trimming against prompt token budget.
+  - EC2 smoke command id: `899ef90e-2185-4c10-8944-34fbe88f02dd`
+    - Result: `Status=Success`.
+    - Verified `GET /health`, two sequential `POST /chat` calls on same session, and `POST /reset`.
+  - Quick run command on instance:
+    - `python3 chat_http.py --config configs/config_baseline_nomem.yaml --ckpt ckpt_step_4000.pt --device cuda --host 0.0.0.0 --port 8000`
+- 2026-03-09: Published HTTP endpoint for direct browser testing.
+  - Opened SG ingress rule on `sg-05ca8b4be3b26ef52` for TCP `8000` from `23.93.208.154/32` (same restricted CIDR pattern as SSH).
+  - Updated `chat_http.py` to serve a lightweight browser UI at `GET /` in addition to JSON endpoints.
+  - Started server on instance `i-050bce8db858dfa89` via SSM command `c41c87e0-30d7-4f7f-ac2a-e5c70e051aa4`.
+  - Verified remote reachability from workstation:
+    - `curl http://3.238.84.152:8000/` returns the chat UI HTML page.
+    - `curl http://3.238.84.152:8000/health` returns `ok=true`.
+  - Browser test URL (while server is running): `http://3.238.84.152:8000/`
+- 2026-03-09: Commenced SFT pilot on OASST1 + Dolly instruction mix and deployed pilot checkpoint to HTTP endpoint.
+  - Added new project scripts/config:
+    - `model_training/titanProject/prepare_sft_mix.py` (builds one-line `User: ... Assistant: ...` corpus from `OpenAssistant/oasst1` + `databricks/dolly-15k`)
+    - `model_training/titanProject/finetune_sft.py` (short supervised finetune loop with eval/save/s3-sync hooks)
+    - `model_training/titanProject/configs/config_sft_pilot_oasst1_dolly.yaml`
+  - SSM pilot run command: `72155daf-eb1f-4499-bbba-0e825d9eabaa` (status `Success`, runtime ~4m41s).
+  - Data prep output:
+    - OASST1 pairs extracted: train `23398`, val `1212`
+    - Dolly pairs extracted: `14996`
+    - Pilot corpus written: train `18000` lines, val `1600` lines at `model_training/LLM/data/sft_mix/`
+  - Finetune summary (from `ckpt_step_4000.pt`):
+    - 600 SFT steps on CUDA, checkpoints at steps `200`, `400`, `600`
+    - Eval loss trend (40 val batches): `7.48` -> `7.08` -> `6.80` -> `6.64` -> `6.51` -> `6.41`
+    - Final checkpoint: `/mnt/data/checkpoints/sft_pilot_20260309054346/ckpt_sft_step_600.pt`
+    - Synced artifacts:
+      - `s3://alix-ai-ml-staging-data/titan/checkpoints/sft_pilot_20260309054346/ckpt_sft_step_{200,400,600}.pt`
+      - `.../inference_smoke.json`
+      - `.../sample_chat.txt`
+  - Live endpoint switched to the SFT checkpoint via SSM command `d6acfb2a-88d4-40f3-b8b6-ba337eb39913`.
+    - `/health` now reports `ckpt_sft_step_600.pt`.
+    - Browser URL remains: `http://3.238.84.152:8000/`
+- 2026-03-09: Added domain-friendly path routing for `wint3rmute.com/titan` via nginx reverse proxy.
+  - Opened SG ingress for TCP `80` on `sg-05ca8b4be3b26ef52` (restricted to `23.93.208.154/32`).
+  - Installed/configured nginx on EC2 (`i-050bce8db858dfa89`) with:
+    - `location = /titan` -> redirect to `/titan/`
+    - `location /titan/` -> reverse proxy to `http://127.0.0.1:8000/`
+  - Updated `chat_http.py` UI JS to call relative API paths based on current URL path (so `/titan/` correctly uses `/titan/health`, `/titan/chat`, `/titan/reset`).
+  - Verified:
+    - `http://3.238.84.152/titan/health` returns `ok=true`
+    - `http://3.238.84.152/titan/chat` accepts POST and returns model reply
+    - host header override test works: `curl --resolve wint3rmute.com:80:3.238.84.152 http://wint3rmute.com/titan/health`
+  - DNS note:
+    - Current public DNS lookup for `wint3rmute.com` resolves to `23.93.208.154` (operator network), not EC2 `3.238.84.152`.
+    - To use `http://wint3rmute.com/titan` publicly, set/adjust DNS `A` record for `wint3rmute.com` to `3.238.84.152` (or CNAME via your preferred fronting layer).
