@@ -162,6 +162,33 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 - Checkpoints: `model_training/titanProject/ckpt_step_4000.pt` (memory-enabled; no clean baseline ckpt yet).
 - Past terminal logs (if needed): `.cursor/projects/Users-beardface-lab-wintermute/terminals/`.
 
+## Serving option (vLLM / TGI on EC2)
+- Preferred self-hosted inference: run vLLM or Hugging Face TGI on the same EC2 GPU stack (DLAMI) after training.
+- vLLM quick start (example):
+  - `pip install vllm`
+  - `python -m vllm.entrypoints.api_server --model /mnt/data/code/wintermute/model_training/titanProject/ckpt_step_4000.pt --tokenizer /mnt/data/code/wintermute/model_training/LLM/tokenizers/bpe_50k_bf.model --host 0.0.0.0 --port 8000`
+  - Adjust model/tokenizer paths to the restored checkpoint; open SG port 8000 only to trusted CIDR (or tunnel/SSM).
+- TGI quick start (example):
+  - `pip install text-generation` (or use TGI container)
+  - `text-generation-launcher --model <org/model-or-local-path> --port 8000 --num-shard 1`
+  - Same SG guidance; front with nginx if exposing via `/titan/`.
+- Keep HTTP surface minimal; prefer SSM/SSH or tunnel. Tag and stop/terminate instances when idle.
+
+### Important: model format compatibility
+- The Titans checkpoints are not in standard Hugging Face/transformers format. vLLM/TGI expect HF-compatible model artifacts.
+- New helpers:
+  - `model_training/titanProject/export_to_hf.py` exports a HF-style folder (`config.json`, `pytorch_model.bin`, tokenizer copy, auto_map entries).
+  - `model_training/titanProject/modeling_titans.py` provides a minimal HF-compatible config/model wrapper (`TitansConfig`, `TitansForCausalLM`) that loads titans-pytorch checkpoints and exposes logits/loss for basic generation.
+- Until a HF-compatible model class is provided, continue to use `chat_http.py`/custom server for inference.
+
+## Security hardening (latest)
+- Enforced IMDSv2 on `i-050bce8db858dfa89` (instance metadata requires tokens).
+- Removed SSH ingress from the training SG `sg-05ca8b4be3b26ef52` (SSH now closed; use SSM).
+- SG ingress now limited to:
+  - TCP 80: 23.93.208.154/32, 104.7.12.166/32
+  - TCP 8000: 23.93.208.154/32, 104.7.12.166/32
+- Pending Twingate: once connector SG/CIDR is known, restrict SG to Twingate and drop public ingress. Consider removing the public IP after that.
+
 ## Progress Log
 - 2026-02-22: Env hook set (`AWS_PROFILE=experimental-admin`, `AWS_DEFAULT_REGION=us-east-1` via `.envrc`). New bucket created: `alix-ai-ml-staging-data`. IAM role `alix-llm-training-role` (EC2 trust) with inline S3 RW to `s3://alix-ai-ml-staging-data/titan/*` and `AmazonSSMManagedInstanceCore` attached. Instance profile `alix-llm-training-profile` created and linked to the role.
 - 2026-02-22: Verified AWS CLI/profile on workstation (`491794274773_AdministratorAccess` works). No `g5.xlarge` instances currently running (describe-instances returned empty). Expected SG `alix-pc-llm-model-training` / `sg-0bec109715d614af7` is not present in this account/region; will need to create a new SG in us-east-1 (SSH 22 from approved /32, tunnel TB/Jupyter) before launch. Next session (Linux): create SG, then launch spot g5.xlarge with the existing IAM profile/bucket/tag settings.
@@ -304,6 +331,10 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
     - `curl http://3.238.84.152:8000/` returns the chat UI HTML page.
     - `curl http://3.238.84.152:8000/health` returns `ok=true`.
   - Browser test URL (while server is running): `http://3.238.84.152:8000/`
+- 2026-03-09: Added HF export shim and tightened security.
+  - Added `export_to_hf.py` to produce a HF-style folder (config + state_dict + tokenizer copy) with auto_map entries.
+  - Added `modeling_titans.py` HF wrapper (`TitansConfig`, `TitansForCausalLM`) to load Titans checkpoints in a HF-style flow; still depends on titans-pytorch and is a minimal implementation.
+  - Hardened instance: enforced IMDSv2; removed SSH ingress (SSM-only); SG now only allows 80/8000 to the two /32s (work/home). Pending Twingate info to drop public ingress entirely.
 - 2026-03-09: Commenced SFT pilot on OASST1 + Dolly instruction mix and deployed pilot checkpoint to HTTP endpoint.
   - Added new project scripts/config:
     - `model_training/titanProject/prepare_sft_mix.py` (builds one-line `User: ... Assistant: ...` corpus from `OpenAssistant/oasst1` + `databricks/dolly-15k`)
@@ -338,3 +369,8 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
   - DNS note:
     - Current public DNS lookup for `wint3rmute.com` resolves to `23.93.208.154` (operator network), not EC2 `3.238.84.152`.
     - To use `http://wint3rmute.com/titan` publicly, set/adjust DNS `A` record for `wint3rmute.com` to `3.238.84.152` (or CNAME via your preferred fronting layer).
+- 2026-03-10: HF GPT-2 no-memory smoke via SSM (timed out).
+  - Added `model_training/titanProject/scripts/run_gpt2_nomem_ssm.sh` (pins `numpy<2`, installs CPU-only `torch==2.2.2`, pulls `train_gpt2_nomem.py`, syncs outputs) and updated `train_gpt2_nomem.py` to drop empty lines before tokenization.
+  - SSM command `18bd3237-5bab-442a-849d-a753ccc3efa8` ran ~1h and hit `ExecutionTimedOut` while mapping the dataset; no checkpoint or metrics produced.
+  - Log stored at `s3://alix-ai-ml-staging-data/titan/logs/hf_gpt2_nomem.log`.
+  - Next options: install GPU `torch` and rerun on CUDA; or limit work (smaller sampled corpus and low `--max_steps`/`save_steps`/`eval_steps`) to finish quickly via SSM; or pre-shrink the dataset on S3 and rerun the same script.

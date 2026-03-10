@@ -45,6 +45,7 @@ Thumbs.db
 ehthumbs.db
 *.swp
 *.swo
+.DS_Store
 
 # Optional: ignore shell history
 .history
@@ -56,6 +57,12 @@ memory/chroma_store/
 
 build/model_training/LLM/data/
 model_training/hf.env
+# Training artifacts / checkpoints
+*.pt
+*.npz
+model_training/titanProject/logs/
+titans-pytorch/
 
 # Cursor temp artifacts
 .cursor/tmp/
+*.pem
