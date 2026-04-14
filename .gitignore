@@ -66,3 +66,15 @@ titans-pytorch/
 # Cursor temp artifacts
 .cursor/tmp/
 *.pem
+
+# Local workstation-only Titan / AWS scratch state
+.venv_docs/
+.cursor/mcp.json
+.cursor/docs/online_docs/
+Untitled
+hf_token
+params_*.json
+params_*.py.json
+aws-doc-sdk-examples/
+mcp_aws/
+openclaw/
