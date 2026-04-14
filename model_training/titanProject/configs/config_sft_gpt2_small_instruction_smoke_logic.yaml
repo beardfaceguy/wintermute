@@ -1,0 +1,30 @@
+model:
+  variant: hf_gpt2
+  vocab_size: 50257
+  dim: 768
+  depth: 12
+  heads: 12
+  ff_mult: 4
+  max_seq_len: 1024
+  hf_model_name: gpt2
+
+train:
+  seq_len: 256
+  batch_size: 1
+  lr: 0.00003
+  lr_min: 0.00001
+  weight_decay: 0.01
+  warmup_steps: 10
+  max_steps: 40
+  grad_clip: 1.0
+  betas: [0.9, 0.98]
+  eps: 1.0e-8
+  cosine_decay: false
+  save_every: 20
+  eval_every: 20
+
+data:
+  train_path: model_training/LLM/data/sft_smoke_instruction_logic/train_sft_instruction.jsonl
+  val_path: model_training/LLM/data/sft_smoke_instruction_logic/val_sft_instruction.jsonl
+  tokenizer_path: hf://gpt2
+  shuffle_buffer: 1000

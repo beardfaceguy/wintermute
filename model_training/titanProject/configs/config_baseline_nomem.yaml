@@ -25,9 +25,12 @@ train:
   eval_every: 500
 
 data:
-  train_path: model_training/LLM/data/tinystories_sampled/train_sample.txt
-  val_path: model_training/LLM/data/tinystories_sampled/val_sample.txt
-  tokenizer_path: model_training/LLM/tokenizers/bpe_50k_bf.model
+  # New S3-backed corpus (fineweb sample + stack-smol) and tokenizer
+  train_path: s3://alix-ai-ml-staging-data/titan/data/processed/train.txt
+  val_path: s3://alix-ai-ml-staging-data/titan/data/processed/val.txt
+  tokenizer_path: s3://alix-ai-ml-staging-data/titan/tokenizers/new_bpe_50k/bpe_50k_fw_stack.model
+  max_tokens: 50000000        # cap train tokens loaded
+  max_tokens_val: 2000000     # cap val tokens loaded
   shuffle_buffer: 100000
 
 

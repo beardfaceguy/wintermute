@@ -1,0 +1,10 @@
+{
+  "source": "cla99_micro_balanced_exact_prompt_family",
+  "base_train": 72,
+  "self_intro_train_added": 4,
+  "microstory_train_added": 8,
+  "arith_stabilizer_train_added": 4,
+  "train_total": 88,
+  "val_copied_from": "cla99_story_curated",
+  "val_total": 20
+}

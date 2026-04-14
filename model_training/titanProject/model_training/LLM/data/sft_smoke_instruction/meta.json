@@ -1,0 +1,32 @@
+{
+  "seed": 42,
+  "output_format": "instruction_jsonl",
+  "filters": {
+    "max_user_chars": 512,
+    "max_assistant_chars": 512,
+    "max_digit_ratio": 0.25,
+    "allow_http": false,
+    "reject_role_markers": true,
+    "oasst_best_only": true,
+    "oasst_min_quality": null,
+    "oasst_min_helpfulness": null,
+    "oasst_max_fails_task": null,
+    "oasst_max_spam": null
+  },
+  "counts": {
+    "train_total": 48,
+    "val_total": 12,
+    "oasst_train_used": 48,
+    "oasst_val_used": 12,
+    "openhermes_train_used": 0,
+    "openhermes_val_used": 0,
+    "slimorca_train_used": 0,
+    "slimorca_val_used": 0,
+    "logic_train_used": 0,
+    "logic_val_used": 0
+  },
+  "paths": {
+    "train": "model_training/LLM/data/sft_smoke_instruction/train_sft_instruction.jsonl",
+    "val": "model_training/LLM/data/sft_smoke_instruction/val_sft_instruction.jsonl"
+  }
+}

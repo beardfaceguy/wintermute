@@ -1,0 +1,9 @@
+{
+  "source": "cla98_curated_merge",
+  "base_train": 48,
+  "base_val": 12,
+  "curated_train_added": 24,
+  "curated_val_added": 4,
+  "train_total": 72,
+  "val_total": 16
+}

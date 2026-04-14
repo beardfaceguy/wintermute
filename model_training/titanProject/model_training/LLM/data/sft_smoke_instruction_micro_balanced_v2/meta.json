@@ -1,0 +1,15 @@
+{
+  "source": "cla99_micro_balanced_v2_intro_focus",
+  "base_train": 72,
+  "base_val": 20,
+  "intro_train_added": 8,
+  "story_train_added": 8,
+  "arith_train_added": 4,
+  "train_total": 92,
+  "val_total": 20,
+  "base_train_path": "model_training/LLM/data/sft_smoke_instruction_curated/train_sft_instruction.jsonl",
+  "base_val_path": "model_training/LLM/data/sft_smoke_instruction_story_curated/val_sft_instruction.jsonl",
+  "intro_boosters_path": "data/smoke_instruction_intro_boosters.jsonl",
+  "story_boosters_path": "data/smoke_instruction_story_exact_boosters.jsonl",
+  "arith_boosters_path": "data/smoke_instruction_arith_boosters.jsonl"
+}

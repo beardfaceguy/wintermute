@@ -7,18 +7,20 @@ Usage:
 """
 
 import argparse
-import math
-import random
 from pathlib import Path
+from typing import List, Optional
 
 import torch
 import yaml
-import sentencepiece as spm
 
-from model import ModelConfig, build_model
+from model import ModelConfig, build_model, load_model_source
+from prompt_formats import default_stop_strings, infer_prompt_family
+from train import get_tokenizer
 
 
 def resolve_path(path_str: str) -> Path:
+    if path_str.startswith("hf://"):
+        return path_str  # type: ignore[return-value]
     p = Path(path_str)
     if p.is_absolute():
         return p
@@ -41,11 +43,8 @@ def load_config(path: Path):
         return yaml.safe_load(f)
 
 
-def load_tokenizer(path: Path):
-    sp = spm.SentencePieceProcessor()
-    if not sp.load(str(path)):
-        raise RuntimeError(f"Failed to load tokenizer at {path}")
-    return sp
+def load_tokenizer(path):
+    return get_tokenizer(str(path))
 
 
 @torch.no_grad()
@@ -57,10 +56,12 @@ def generate(
     max_new_tokens: int,
     top_k: int = 20,
     temperature: float = 0.8,
+    stop_strings: Optional[List[str]] = None,
 ):
     ids = tokenizer.encode(prompt)
     x = torch.tensor(ids, dtype=torch.long, device=device).unsqueeze(0)  # (1, seq)
     temp = max(temperature, 1e-5)
+    eos_id = getattr(tokenizer, "eos_id", -1)
     for _ in range(max_new_tokens):
         logits = model(x)  # (1, seq, vocab)
         logits = logits[:, -1, :] / temp
@@ -72,6 +73,13 @@ def generate(
         probs = torch.softmax(logits, dim=-1)
         next_id = torch.multinomial(probs, num_samples=1)  # (1,1)
         x = torch.cat([x, next_id], dim=1)
+        if isinstance(eos_id, int) and eos_id >= 0 and next_id.item() == eos_id:
+            break
+        if stop_strings:
+            decoded = tokenizer.decode(x.squeeze(0).tolist())
+            completion = decoded[len(prompt) :] if decoded.startswith(prompt) else decoded
+            if any(stop in completion for stop in stop_strings):
+                break
     return tokenizer.decode(x.squeeze(0).tolist())
 
 
@@ -84,6 +92,13 @@ def main():
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
     parser.add_argument("--temperature", type=float, default=0.8, help="Sampling temperature")
     parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--prompt-family",
+        type=str,
+        default="none",
+        choices=["none", "auto", "chat", "instruction"],
+        help="Optional prompt family for stop handling; 'auto' infers from config data paths",
+    )
     args = parser.parse_args()
 
     cfg = load_config(resolve_path(args.config))
@@ -108,9 +123,13 @@ def main():
     model = build_model(mcfg).to(device)
 
     ckpt_path = resolve_path(args.ckpt)
-    state = torch.load(ckpt_path, map_location=device)
-    model.load_state_dict(state["model"])
+    load_model_source(model, ckpt_path, map_location=device, strict=True)
     model.eval()
+    if args.prompt_family == "none":
+        stop_strings = None
+    else:
+        prompt_family = infer_prompt_family(cfg) if args.prompt_family == "auto" else args.prompt_family
+        stop_strings = default_stop_strings(prompt_family)
 
     out = generate(
         model,
@@ -120,6 +139,7 @@ def main():
         max_new_tokens=args.max_new,
         top_k=args.top_k,
         temperature=args.temperature,
+        stop_strings=stop_strings,
     )
     print(out)
 

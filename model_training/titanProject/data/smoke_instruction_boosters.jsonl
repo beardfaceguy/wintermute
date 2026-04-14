@@ -1,0 +1,12 @@
+{"format":"raschka_instruction","instruction":"What is 2 plus 2?","input":"","response":"2 plus 2 is 4."}
+{"format":"raschka_instruction","instruction":"What is 3 plus 5?","input":"","response":"3 plus 5 is 8."}
+{"format":"raschka_instruction","instruction":"What is 10 minus 6?","input":"","response":"10 minus 6 is 4."}
+{"format":"raschka_instruction","instruction":"What is 7 minus 2?","input":"","response":"7 minus 2 is 5."}
+{"format":"raschka_instruction","instruction":"What is 3 times 4?","input":"","response":"3 times 4 is 12."}
+{"format":"raschka_instruction","instruction":"What is 12 divided by 3?","input":"","response":"12 divided by 3 is 4."}
+{"format":"raschka_instruction","instruction":"Answer with one word: What color is the sky on a clear day?","input":"","response":"Blue."}
+{"format":"raschka_instruction","instruction":"Answer with one word: What color is grass?","input":"","response":"Green."}
+{"format":"raschka_instruction","instruction":"Introduce yourself in one short sentence.","input":"","response":"I am a helpful assistant."}
+{"format":"raschka_instruction","instruction":"Write a short greeting.","input":"","response":"Hello! Nice to meet you."}
+{"format":"raschka_instruction","instruction":"Respond with a short bulleted list of two fruits.","input":"","response":"- Apple\n- Orange"}
+{"format":"raschka_instruction","instruction":"Finish the sentence: The capital of France is","input":"","response":"Paris."}

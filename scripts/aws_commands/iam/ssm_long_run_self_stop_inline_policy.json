@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DescribeTitanTrainingInstances",
+      "Effect": "Allow",
+      "Action": "ec2:DescribeInstances",
+      "Resource": "*"
+    },
+    {
+      "Sid": "StopTaggedTitanTrainingInstances",
+      "Effect": "Allow",
+      "Action": "ec2:StopInstances",
+      "Resource": "arn:aws:ec2:us-east-1:491794274773:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Purpose": "titan-training"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "source": "cla99_broad_story_plus_arith_stabilizer",
+  "base_train": 72,
+  "broader_story_train_added": 12,
+  "arith_stabilizer_train_added": 4,
+  "train_total": 88,
+  "val_copied_from": "cla99_story_curated",
+  "val_total": 20
+}

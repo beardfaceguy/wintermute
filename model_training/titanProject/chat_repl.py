@@ -11,7 +11,8 @@ from typing import List, Tuple
 import torch
 
 from generate import generate, load_config, load_tokenizer, resolve_path
-from model import ModelConfig, build_model
+from model import ModelConfig, build_model, load_model_source
+from prompt_formats import default_stop_strings, extract_completion
 
 
 def pick_device(device_arg: str) -> torch.device:
@@ -52,17 +53,23 @@ def build_prompt(
 
 
 def postprocess_completion(raw_completion: str, user_prefix: str) -> str:
-    completion = raw_completion.strip()
-    marker = f"\n{user_prefix}"
-    if marker in completion:
-        completion = completion.split(marker, 1)[0].strip()
-    return completion
+    return extract_completion(
+        raw_completion,
+        prompt="",
+        prompt_family="chat",
+        user_prefix=user_prefix,
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Interactive chat REPL for Titans checkpoint.")
     parser.add_argument("--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path")
-    parser.add_argument("--ckpt", type=str, default="ckpt_step_4000.pt", help="Checkpoint path")
+    parser.add_argument(
+        "--ckpt",
+        type=str,
+        default="ckpt_step_4000.pt",
+        help="Checkpoint path or Hugging Face ref like hf://gpt2",
+    )
     parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
     parser.add_argument("--max-new", type=int, default=80, help="Max new tokens per assistant turn")
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
@@ -79,12 +86,12 @@ def main() -> int:
 
     model = build_model(mcfg).to(device)
     ckpt_path = resolve_path(args.ckpt)
-    state = torch.load(ckpt_path, map_location=device)
-    model.load_state_dict(state["model"])
+    load_model_source(model, ckpt_path, map_location=device, strict=True)
     model.eval()
 
     max_prompt_tokens = args.max_prompt_tokens or int(cfg["train"]["seq_len"])
     history: List[Tuple[str, str]] = []
+    stop_strings = default_stop_strings("chat")
 
     print("Titans chat REPL ready.")
     print("Commands: /reset, /exit")
@@ -124,6 +131,7 @@ def main() -> int:
             max_new_tokens=args.max_new,
             top_k=args.top_k,
             temperature=args.temperature,
+            stop_strings=stop_strings,
         )
 
         raw_completion = out[len(prompt) :] if out.startswith(prompt) else out

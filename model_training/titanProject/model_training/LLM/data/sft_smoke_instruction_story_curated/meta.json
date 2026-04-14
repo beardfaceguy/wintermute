@@ -1,0 +1,9 @@
+{
+  "source": "cla99_story_merge_from_cla98_curated",
+  "base_train": 72,
+  "base_val": 16,
+  "story_train_added": 12,
+  "story_val_added": 4,
+  "train_total": 84,
+  "val_total": 20
+}

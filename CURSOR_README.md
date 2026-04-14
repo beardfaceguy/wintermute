@@ -10,7 +10,7 @@ This project uses a comprehensive `.cursor/` directory system to maintain consis
 The `.cursor/` directory serves as a comprehensive knowledge base and rule system for AI-assisted development on the Alix Estate Manager project. It contains:
 
 ### 📁 **rules/** - AI Assistant Behavior Rules
-- **11 specialized rule files** governing different aspects of AI behavior
+- **12 specialized rule files** governing different aspects of AI behavior
 - **MANDATORY COMPLIANCE** - these rules MUST be followed and kept in context
 - Covers command execution, memory management, package manager consistency, code quality validation, minimal changes principle, deprecated code alerts, AI response boundaries, and safety protocols
 - **CRITICAL**: Always keep `.cursor/rules/` directory contents in context for every session
@@ -46,6 +46,7 @@ The `.cursor/` directory serves as a comprehensive knowledge base and rule syste
 9. **Deprecated Code Alert**: ALWAYS ALERT WHEN WORKING WITH DEPRECATED CODE - Stop and ask for team discussion or explicit approval before modifying deprecated code
 10. **AI Response Boundaries**: Clearly distinguish between capabilities and actions in AI responses
 11. **Git Review Tagging**: Use appropriate git tags for review milestone tracking
+12. **SSM Command Completion**: Do not call `shutdown` inside SSM training/eval commands; stop/terminate separately after SSM completes (add brief sleep if shutdown is unavoidable)
 
 ### 📋 **Project Status**
 - Check `.cursor/memory/memory.md` for cross-cutting insights and patterns

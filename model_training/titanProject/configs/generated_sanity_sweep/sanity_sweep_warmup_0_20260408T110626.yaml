@@ -1,0 +1,33 @@
+model:
+  variant: gpt
+  vocab_size: 50000
+  dim: 768
+  depth: 12
+  heads: 12
+  ff_mult: 4
+  max_seq_len: 2048
+train:
+  seq_len: 256
+  batch_size: 2
+  grad_accum_steps: 1
+  lr: 0.0006
+  lr_min: 0.0006
+  weight_decay: 0.0
+  warmup_steps: 0
+  max_steps: 1000
+  target_tokens: 50000
+  grad_clip: 1.0
+  betas:
+  - 0.9
+  - 0.98
+  eps: 1.0e-08
+  cosine_decay: false
+  save_every: 500
+  eval_every: 100
+data:
+  train_path: s3://alix-ai-ml-staging-data/titan/data/processed/train.txt
+  val_path: s3://alix-ai-ml-staging-data/titan/data/processed/train.txt
+  tokenizer_path: s3://alix-ai-ml-staging-data/titan/tokenizers/new_bpe_50k/bpe_50k_fw_stack.model
+  max_tokens: 50000
+  max_tokens_val: 50000
+  shuffle_buffer: 10000

@@ -27,12 +27,12 @@ DEFAULT_INSTANCE_PROFILE = "alix-llm-training-profile"
 DEFAULT_SG_NAME = "alix-pc-llm-model-training"
 DOC_SG_ID = "sg-0bec109715d614af7"
 DEFAULT_KEY_NAME = "alix-pc-llm-training-key"
-DEFAULT_INSTANCE_TYPE = "g5.xlarge"
+DEFAULT_INSTANCE_TYPE = "g6.2xlarge"
 DEFAULT_AMI = "ami-0ad8dd83d01a01d3a"
 DEFAULT_SSH_CIDR = "23.93.208.154/32"
-DEFAULT_AZ = "us-east-1f"
-DEFAULT_AZ_FALLBACKS = ["us-east-1f", "us-east-1d", "us-east-1a", "us-east-1c"]
-DEFAULT_VOLUME_SIZE = 300
+DEFAULT_AZ = "us-east-1d"
+DEFAULT_AZ_FALLBACKS = ["us-east-1d", "us-east-1c", "us-east-1b", "us-east-1f", "us-east-1a"]
+DEFAULT_VOLUME_SIZE = 500
 
 DEFAULT_TAGS: List[Dict[str, str]] = [
     {"Key": "Owner", "Value": "patrick.clawson"},
@@ -40,7 +40,7 @@ DEFAULT_TAGS: List[Dict[str, str]] = [
     {"Key": "Env", "Value": "staging"},
     {"Key": "CostCenter", "Value": "ai-ml-training"},
     {"Key": "Purpose", "Value": "titan-training"},
-    {"Key": "Name", "Value": "titan-train-staging-g5xlarge"},
+    {"Key": "Name", "Value": "titan-train-staging-g6-2xlarge"},
 ]
 
 
@@ -258,7 +258,7 @@ def launch_instance(
     bdm = json.dumps(
         [
             {
-                "DeviceName": "/dev/sda1",
+                "DeviceName": "/dev/sdf",
                 "Ebs": {"VolumeSize": volume_size, "VolumeType": "gp3"},
             }
         ]
@@ -469,21 +469,22 @@ def check_audit(ctx: AwsContext) -> Dict[str, Any]:
             "ec2",
             "describe-instances",
             "--filters",
-            "Name=instance-type,Values=g5.xlarge",
+            "Name=instance-type,Values=g6.2xlarge,g6.xlarge,g5.2xlarge,g5.xlarge",
             "Name=instance-state-name,Values=pending,running,stopping,stopped",
         ],
         expect_json=True,
         allow_failure=True,
     )
-    g5_instances = flatten_instances(g5_payload)
-    out["g5_instances"] = [
+    gpu_runner_instances = flatten_instances(g5_payload)
+    out["gpu_runner_instances"] = [
         {
             "InstanceId": i.get("InstanceId", ""),
             "State": i.get("State", {}).get("Name", ""),
+            "Type": i.get("InstanceType", ""),
             "AZ": i.get("Placement", {}).get("AvailabilityZone", ""),
             "NameTag": next((t.get("Value") for t in i.get("Tags", []) if t.get("Key") == "Name"), ""),
         }
-        for i in g5_instances
+        for i in gpu_runner_instances
     ]
 
     _, spot_payload, _, _ = run_aws(
@@ -529,7 +530,7 @@ def checklist_from_audit(audit: Dict[str, Any]) -> List[Dict[str, str]]:
 
     return [
         {
-            "item": "Launch training runner (spot-first g5.xlarge with fallback)",
+            "item": "Launch training runner (spot-first g6.2xlarge with fallback)",
             "status": launch_status,
             "detail": (
                 f"{len(running_instances)} runner(s) currently pending/running."
@@ -583,7 +584,7 @@ def print_audit(audit: Dict[str, Any], ctx: AwsContext) -> None:
     print(f"Documented SG ID `{DOC_SG_ID}` exists: {audit.get('doc_sg_id_exists')}")
     print(f"Key pair `{DEFAULT_KEY_NAME}` exists: {audit.get('key_pair_exists')}")
     print(f"Titan-tagged instances: {audit.get('project_instances', [])}")
-    print(f"All g5.xlarge instances: {audit.get('g5_instances', [])}")
+    print(f"Known Titan GPU runner instances: {audit.get('gpu_runner_instances', [])}")
     print(f"Spot requests: {audit.get('spot_requests', [])}")
     print()
 
@@ -691,9 +692,12 @@ def handle_launch(args: argparse.Namespace, spot: bool) -> int:
     print()
     print("Bootstrap/run reminder:")
     print("ssh ubuntu@<public-ip>  # or use your SSH config host")
-    print("sudo mkfs -t xfs /dev/sda1")
     print("sudo mkdir -p /mnt/data")
-    print('echo "/dev/sda1 /mnt/data xfs defaults,nofail 0 2" | sudo tee -a /etc/fstab')
+    print('ROOT_DISK="/dev/$(lsblk -no PKNAME \\"$(findmnt -n -o SOURCE /)\\")"')
+    print('DATA_DEV="$(lsblk -dpno NAME,TYPE | awk \'$2==\\"disk\\"{print $1}\' | grep -v \\"^${ROOT_DISK}$\\" | head -1)"')
+    print('sudo mkfs -t xfs "$DATA_DEV"')
+    print('UUID="$(sudo blkid -s UUID -o value "$DATA_DEV")"')
+    print('echo "UUID=$UUID /mnt/data xfs defaults,nofail 0 2" | sudo tee -a /etc/fstab')
     print("sudo mount -a")
     print("cd /mnt/data/code/wintermute/model_training/titanProject")
     print("python train.py --config configs/config_baseline_nomem.yaml --device cuda --log-every 100")

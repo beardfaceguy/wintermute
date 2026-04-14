@@ -1,0 +1,37 @@
+model:
+  variant: gpt
+  vocab_size: 50000
+  dim: 768
+  depth: 12
+  heads: 12
+  ff_mult: 4
+  max_seq_len: 2048
+
+train:
+  seq_len: 256
+  batch_size: 2
+  grad_accum_steps: 1
+  # Make the sanity gate aggressively overfit-oriented without touching
+  # the real long-run pretraining config.
+  # The 4e-4 constant-LR sweep was the strongest validated local overfit baseline.
+  lr: 0.0004
+  lr_min: 0.0004
+  weight_decay: 0.0
+  warmup_steps: 10
+  max_steps: 1000
+  target_tokens: 50000
+  grad_clip: 1.0
+  betas: [0.9, 0.98]
+  eps: 1.0e-8
+  cosine_decay: false
+  save_every: 500
+  eval_every: 100
+
+data:
+  # Intentional overfit check: same source for train/val and tiny token cap.
+  train_path: s3://alix-ai-ml-staging-data/titan/data/processed/train.txt
+  val_path: s3://alix-ai-ml-staging-data/titan/data/processed/train.txt
+  tokenizer_path: s3://alix-ai-ml-staging-data/titan/tokenizers/new_bpe_50k/bpe_50k_fw_stack.model
+  max_tokens: 50000
+  max_tokens_val: 50000
+  shuffle_buffer: 10000

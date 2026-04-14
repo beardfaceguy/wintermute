@@ -19,19 +19,22 @@ Context: local runs are on M3/MPS (16 GB unified). AWS profile `225079546399_Adm
 - P3 (V100 16 GB).
 - P5 (H100 80 GB) — expensive/overkill for current tiny model.
 
-### Pricing (g5.xlarge, Linux, us-east-1)
-- On-demand: ~$1.006/hr.
-- Spot (recent samples):
-  - us-east-1f: ~$0.4009/hr (lowest)
-  - us-east-1d: ~$0.4089/hr
-  - us-east-1a: ~$0.4134/hr
-  - us-east-1c: ~$0.4200/hr
-  - us-east-1b: ~$0.4545/hr
+### Pricing snapshot (Linux, us-east-1)
+- On-demand:
+  - `g5.xlarge`: ~$1.006/hr
+  - `g5.2xlarge`: ~$1.212/hr
+  - `g6.xlarge`: ~$0.8048/hr
+  - `g6.2xlarge`: ~$0.9776/hr
+- Spot (recent samples gathered during the CLA-42 hardware review):
+  - `g6.2xlarge`: us-east-1d ~$0.4227/hr, us-east-1c ~$0.4571/hr, us-east-1b ~$0.5268/hr
+  - `g5.2xlarge`: us-east-1f ~$0.4656/hr, us-east-1b ~$0.4649/hr, us-east-1a ~$0.5065/hr
+  - `g6.xlarge`: us-east-1c ~$0.3486/hr, us-east-1a ~$0.3991/hr, us-east-1f ~$0.4797/hr
 
 ### Recommended target
-- Use `g5.xlarge` (1× A10G 24 GB) in AZ `us-east-1f` for best spot price; fall back to 1d/1a/1c or on-demand if capacity is tight.
-- If cost is critical, `g4dn.xlarge` is cheaper but slower and only 16 GB vRAM.
-- If you need similar cost but newer GPU, compare `g6.xlarge` (L4 24 GB) prices.
+- Use `g6.2xlarge` (1x L4 24 GB, 32 GiB system RAM) as the default Titan pretraining runner.
+- Use `g6.xlarge` only for smoke tests, short capped bring-up runs, and dependency validation.
+- Spot-first AZ order for `g6.2xlarge`: `us-east-1d` -> `us-east-1c` -> `us-east-1b` -> `us-east-1f` -> `us-east-1a`, then fall back to on-demand if capacity is tight.
+- Do not treat the hardware switch as a full fix: the current `data.py` path still materializes token IDs in RAM, so the long-term solution remains a disk-backed streaming or memmap dataset.
 
 ### Next steps (CLI-ready)
 1) Confirm/align with admins on region/AZ usage and quotas.
@@ -65,10 +68,10 @@ Context: local runs are on M3/MPS (16 GB unified). AWS profile `225079546399_Adm
 
 ### Rough time/cost estimate (current small Titans run: 4k steps, seq_len 512, batch 6)
 - Local M3/MPS: ~2–2.8 hours (based on ~2–2.5s/step).
-- g5.xlarge (A10G): expect ~3–5× faster (range 2–6×):
+- `g6.2xlarge` (L4) should be in the same general single-GPU class as the prior `g5` bring-up runs while adding safer host RAM headroom:
   - Time: ~0.4–1.4 hours (most likely ~0.55–1.0h).
-  - Cost spot (~$0.40/hr in us-east-1f): ~$0.20–$0.60/run.
-  - Cost on-demand (~$1.01/hr): ~$0.40–$1.40/run.
+  - Cost spot (~$0.42–$0.53/hr in recent `g6.2xlarge` samples): ~$0.20–$0.75/run.
+  - Cost on-demand (~$0.98/hr): ~$0.40–$1.40/run.
 Notes: actuals depend on dataloader throughput, host CPU contention, and larger model/batch configs; bigger configs will scale time/cost up proportionally.
 
 ### Latest run state (experimental account)
@@ -87,9 +90,9 @@ Notes: actuals depend on dataloader throughput, host CPU contention, and larger 
 - Spot vs on-demand policy (spot-first fallback or on-demand only).
 
 ### EBS recommendation
-- Volume: gp3 300 GB (default 3000 IOPS / 125 MB/s). Bump to 6000 IOPS / 250 MB/s if dataloader or checkpoint write throughput becomes a bottleneck.
+- Volume: gp3 500 GB (default 3000 IOPS / 125 MB/s). Bump to 6000 IOPS / 250 MB/s if dataloader or checkpoint write throughput becomes a bottleneck.
 - Mount: single volume mounted at `/mnt/data` (or `/data`); place code checkout, virtualenv, cache, and checkpoints there.
-- Rationale: TinyStories + checkpoints are modest in size; 300 GB leaves headroom for multiple runs, logs, and future larger samples without paying for overprovisioned storage.
+- Rationale: the current Titan flow preloads large processed train/val text locally before training. `500 GB` is a safer baseline for dataset copies, checkpoints, logs, and retries, and avoids repeating the prior disk-pressure pattern while staying well within the documented monthly budget discipline.
 
 ### Ports
 - For now, open only SSH (22) from the approved CIDR. TensorBoard/Jupyter can be tunneled over SSH; no additional inbound ports required unless browser access without tunnels is desired later.
@@ -104,8 +107,8 @@ Notes: actuals depend on dataloader throughput, host CPU contention, and larger 
 
 ### Spot policy (agreed)
 - Strategy: spot-first; fallback to on-demand if spot unavailable after a few attempts.
-- AZ order: `us-east-1f` first (cheapest recent), then `1d`, `1a`, `1c`.
-- Instance type: `g5.xlarge` (default max price = on-demand).
+- AZ order for `g6.2xlarge`: `us-east-1d`, then `1c`, `1b`, `1f`, `1a` based on the recent spot samples above. Refresh this ordering periodically.
+- Instance type: `g6.2xlarge` for main pretraining; `g6.xlarge` for smoke-only runs.
 - Interruption handling: checkpoint to S3 prefix frequently so runs can resume after spot interruption.
 
 ### Quotas (align with spot policy)
@@ -116,10 +119,11 @@ Notes: actuals depend on dataloader throughput, host CPU contention, and larger 
 - Current quotas (us-east-1): On-Demand G/VT vCPUs = **768** (`L-DB2E81BA`), Spot G/VT vCPUs = **64** (`L-3819A6DF`). Both comfortably cover a g5.xlarge (4 vCPUs); no increase needed for this plan.
 
 ### Cost guardrails (proposed)
-- Expected per-run cost (current config): ~$0.20–$0.60 on spot, ~$0.40–$1.40 on on-demand for a 4k-step run.
+- Expected per-run cost (current config on `g6.2xlarge`): roughly ~$0.20–$0.75 on spot, ~$0.40–$1.40 on on-demand for a 4k-step-class run.
 - Soft cap per run: stop/fallback if runtime exceeds 2 hours (way above expected) to avoid runaway spend.
 - Usage discipline: stop/terminate instances after jobs complete; do not leave on-demand instances idle.
 - Billing alert: set a project tag-based monthly alarm at **$50**; if exceeded, pause and re-evaluate the plan.
+- Budget implication: `g6.2xlarge` yields about `51` on-demand hours/month under the `$50` guardrail, or roughly `94–118` spot hours/month at the recent observed prices. This fits the current bursty-run model, but not a 24/7 always-on runner.
 
 ### Proposed IAM role/profile (pending admin approval; not created yet)
 - Role: `alix-llm-training-role`

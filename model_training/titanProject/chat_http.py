@@ -18,7 +18,7 @@ import torch
 
 from chat_repl import build_prompt, pick_device, postprocess_completion
 from generate import generate, load_config, load_tokenizer, resolve_path
-from model import ModelConfig, build_model
+from model import ModelConfig, build_model, load_model_source
 
 CHAT_UI_HTML = """<!doctype html>
 <html>
@@ -138,8 +138,7 @@ class ChatService:
         self.model = build_model(mcfg).to(self.device)
 
         ckpt_resolved = resolve_path(ckpt_path)
-        state = torch.load(ckpt_resolved, map_location=self.device)
-        self.model.load_state_dict(state["model"])
+        load_model_source(self.model, ckpt_resolved, map_location=self.device, strict=True)
         self.model.eval()
 
         self.default_max_new = max_new

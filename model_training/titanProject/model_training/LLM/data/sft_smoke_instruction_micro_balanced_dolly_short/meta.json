@@ -1,0 +1,75 @@
+{
+  "source": "cla99_micro_balanced_dolly_short",
+  "base_train": 88,
+  "base_val": 20,
+  "hf_dataset_id": "databricks/databricks-dolly-15k",
+  "hf_split": "train",
+  "hf_categories": [
+    "classification",
+    "open_qa",
+    "closed_qa",
+    "information_extraction",
+    "creative_writing"
+  ],
+  "hf_added": 12,
+  "hf_category_counts": {
+    "classification": 3,
+    "open_qa": 3,
+    "closed_qa": 2,
+    "information_extraction": 2,
+    "creative_writing": 2
+  },
+  "filters": {
+    "max_instruction_chars": 180,
+    "max_input_chars": 220,
+    "min_response_chars": 20,
+    "max_response_chars": 180,
+    "max_response_newlines": 3,
+    "rejected_response_substrings": [
+      "as an ai",
+      "language model",
+      "open assistant",
+      "i do not have access",
+      "i don't have access",
+      "i do not have personal",
+      "i don't have personal"
+    ]
+  },
+  "train_total": 100,
+  "val_total": 20,
+  "base_train_path": "model_training/LLM/data/sft_smoke_instruction_micro_balanced/train_sft_instruction.jsonl",
+  "base_val_path": "model_training/LLM/data/sft_smoke_instruction_micro_balanced/val_sft_instruction.jsonl",
+  "hf_slice_path": "model_training/LLM/data/sft_smoke_instruction_micro_balanced_dolly_short/hf_slice_instruction.jsonl",
+  "selected_preview": [
+    {
+      "category": "classification",
+      "instruction": "Identify which instrument is string or percussion: Cantaro, Gudok",
+      "input": "",
+      "response": "Gudok is string, Cantaro is percussion."
+    },
+    {
+      "category": "open_qa",
+      "instruction": "Why can camels survive for long without water?",
+      "input": "",
+      "response": "Camels use the fat in their humps to keep them filled with energy and hydration for long periods of time."
+    },
+    {
+      "category": "closed_qa",
+      "instruction": "Where was the 2018 UCI Track Cycling World Championships held?",
+      "input": "The 2018 UCI Track Cycling World Championships were the World Championships for track cycling in 2018. They took place in the Netherlands at the Omnisport Apeldoorn from 28 February to 4 March 2018.",
+      "response": "The UCI Track Cycling World Championships were held in Omnisport Apeldoorn velodrome, in the Netherlands."
+    },
+    {
+      "category": "information_extraction",
+      "instruction": "Where is Shuyga?",
+      "input": "Shuyga (Russian: \u0428\u0443\u0439\u0433\u0430) is a rural locality (a settlement) in Surskoye Rural Settlement of Pinezhsky District, Arkhangelsk Oblast, Russia. The population was 472 as of 2010. There are 11 streets.",
+      "response": "Shuyga is located on the Shuyga River, 99 km southeast of Karpogory (the district's administrative centre) by road. Shulomen is the nearest rural locality."
+    },
+    {
+      "category": "creative_writing",
+      "instruction": "Write a haiku about how much I love pickles.",
+      "input": "",
+      "response": "Caressed by sweet brine,\nyou are crispy and crunchy.\nOh, won\u2019t you be mine?"
+    }
+  ]
+}

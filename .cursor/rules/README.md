@@ -89,6 +89,14 @@ This directory contains rules and guidelines for AI assistant behavior when work
 - Maintain clear version tracking for review purposes
 - Follow established tagging conventions
 
+### 12. `ssm-command-completion.md`
+**Purpose**: Keep SSM runs observable; avoid in-script shutdown
+**Key Requirements**:
+- Do not call `shutdown` inside SSM training/eval commands; stop/terminate separately after SSM completes
+- If shutdown is unavoidable, add a short sleep after training/sync so SSM can report `Success`
+- Do not background training; ensure training and sync finish before exit
+- Use S3/CloudWatch output for logs when possible
+
 ## Usage Guidelines
 
 ### When Starting a New Session
