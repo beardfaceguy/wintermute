@@ -18,7 +18,7 @@ import torch
 import yaml
 
 from model import ModelConfig, build_model
-from train import resolve_path
+from train_utils import resolve_path
 
 
 def load_config(path: Path):

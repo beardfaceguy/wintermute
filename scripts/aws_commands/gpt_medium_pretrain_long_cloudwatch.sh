@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Long GPT-small pretrain (config_gpt_small.yaml max_steps from YAML) on the current Titan single-GPU runner via SSM.
+# Long GPT-medium pretrain (config_gpt_medium.yaml, ~407M params) on the Titan single-GPU runner via SSM.
 # Stdout/stderr -> CloudWatch (/aws/ssm/titan-llm-training) and S3 (ssm-logs/...).
 # Default mode detaches the actual training process from SSM after bootstrap so long runs
 # survive the SSM command timeout window. Final checkpoint sync and optional self-stop then
@@ -15,7 +15,6 @@ set -euo pipefail
 INSTANCE_ID="${INSTANCE_ID:-i-REPLACE_ME}"
 REGION="${REGION:-us-east-1}"
 AWS_PROFILE="${AWS_PROFILE:-experimental-admin}"
-# Must match or exceed expected shell runtime; document default is 3600s without this.
 SSM_EXEC_TIMEOUT_SECONDS="${SSM_EXEC_TIMEOUT_SECONDS:-43200}"
 SSM_DELIVERY_TIMEOUT_SECONDS="${SSM_DELIVERY_TIMEOUT_SECONDS:-43200}"
 CW_LOG_GROUP="${CW_LOG_GROUP:-/aws/ssm/titan-llm-training}"
@@ -24,10 +23,17 @@ DETACH_TRAINING="${DETACH_TRAINING:-1}"
 STOP_INSTANCE_ON_EXIT="${STOP_INSTANCE_ON_EXIT:-1}"
 SYNC_FINAL_LOG_TO_S3="${SYNC_FINAL_LOG_TO_S3:-1}"
 # REMOTE_RUN_ROOT is set dynamically on-instance after DATA_ROOT detection
-LOG_PREFIX="ssm-logs/gpt-small-pretrain/$(date +%Y%m%d%H%M%S)"
+LOG_PREFIX="ssm-logs/gpt-medium-pretrain/$(date +%Y%m%d%H%M%S)"
 
 if [[ "${INSTANCE_ID}" == "i-REPLACE_ME" ]]; then
   echo "Set INSTANCE_ID to your Titan training instance id (recommended default: g6.2xlarge)." >&2
+  echo "" >&2
+  echo "IMPORTANT: If STOP_INSTANCE_ON_EXIT=1 (default), the instance MUST have:" >&2
+  echo "  1. The IAM policy from iam/ssm_long_run_self_stop_inline_policy.json attached to its role" >&2
+  echo "  2. Tag: Purpose=titan-training" >&2
+  echo "" >&2
+  echo "To tag an existing instance:" >&2
+  echo "  aws ec2 create-tags --resources <instance-id> --tags Key=Purpose,Value=titan-training" >&2
   exit 1
 fi
 
@@ -58,6 +64,9 @@ START_ISO=$(date -Iseconds)
 echo "[meta] run_start_iso=${START_ISO}"
 
 # ── Data root detection ──────────────────────────────────────────────
+# AWS DL AMI instances (g5.*) use LVM for NVMe ephemeral at /opt/dlami/nvme.
+# Other instances (g6.*) may have a separate EBS at /mnt/data.
+# Fall back to creating /mnt/data on root volume if neither exists.
 resolve_data_root() {
   if mountpoint -q /opt/dlami/nvme 2>/dev/null; then
     echo "/opt/dlami/nvme"
@@ -88,7 +97,7 @@ DATA_ROOT="$(resolve_data_root)"
 export DATA_ROOT
 echo "[data-root] DATA_ROOT=${DATA_ROOT}"
 
-RUN_ID="gpt_small_pretrain_$(date +%Y%m%d%H%M%S)"
+RUN_ID="gpt_medium_pretrain_$(date +%Y%m%d%H%M%S)"
 CHECKPOINT_DIR="${DATA_ROOT}/checkpoints/${RUN_ID}"
 S3_PREFIX="s3://alix-ai-ml-staging-data/titan/checkpoints/${RUN_ID}/"
 CODE_DIR="/home/ubuntu/wintermute"
@@ -98,7 +107,7 @@ CODE_BUNDLE_LOCAL="/tmp/titanProject_bundle.tar.gz"
 DATA_DIR="${DATA_ROOT}/datasets"
 TRAIN_LOCAL="${DATA_DIR}/train.txt"
 VAL_LOCAL="${DATA_DIR}/val.txt"
-CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_small.local.yaml"
+CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_medium.local.yaml"
 MAX_STEPS="${MAX_STEPS:-}"
 LOG_EVERY="${LOG_EVERY:-100}"
 SAVE_EVERY="${SAVE_EVERY:-}"
@@ -218,8 +227,8 @@ import yaml
 from pathlib import Path
 
 data_root = os.environ["DATA_ROOT"]
-src = Path("model_training/titanProject/configs/config_gpt_small.yaml")
-dst = Path("model_training/titanProject/configs/config_gpt_small.local.yaml")
+src = Path("model_training/titanProject/configs/config_gpt_medium.yaml")
+dst = Path("model_training/titanProject/configs/config_gpt_medium.local.yaml")
 
 cfg = yaml.safe_load(src.read_text())
 cfg["data"]["train_path"] = f"{data_root}/datasets/train.txt"
@@ -237,6 +246,17 @@ print(
     f" train_max_tokens={cfg['data'].get('max_tokens')}"
     f" val_max_tokens={cfg['data'].get('max_tokens_val')}"
 )
+
+mcfg = cfg["model"]
+params_est = (mcfg["vocab_size"] * mcfg["dim"] + mcfg.get("max_seq_len", 2048) * mcfg["dim"]
+    + mcfg["depth"] * (4 * mcfg["dim"]**2 + 2 * mcfg["dim"] * mcfg["dim"] * mcfg["ff_mult"] + 2 * mcfg["dim"])
+    + mcfg["dim"] + mcfg["vocab_size"] * mcfg["dim"])
+tcfg = cfg["train"]
+tok_per_step = tcfg["batch_size"] * tcfg["seq_len"] * tcfg.get("grad_accum_steps", 1)
+total_tok = tok_per_step * tcfg["max_steps"]
+print(f"[meta] model_params_est={params_est:,} ({params_est/1e6:.0f}M)")
+print(f"[meta] tokens_per_step={tok_per_step:,}")
+print(f"[meta] total_tokens_est={total_tok:,} ({total_tok/1e9:.1f}B)")
 PY
 
 if [[ "${DETACH_TRAINING}" == "1" ]]; then
@@ -391,7 +411,7 @@ jq -n --rawfile script "${REMOTE_SCRIPT}" \
 CMD_ID=$(AWS_PROFILE="${AWS_PROFILE}" aws ssm send-command \
   --region "${REGION}" \
   --document-name "AWS-RunShellScript" \
-  --comment "gpt-small long pretrain + CloudWatch + S3 logs" \
+  --comment "gpt-medium long pretrain (~407M params) + CloudWatch + S3 logs" \
   --timeout-seconds "${SSM_DELIVERY_TIMEOUT_SECONDS}" \
   --instance-ids "${INSTANCE_ID}" \
   --cloud-watch-output-config "CloudWatchLogGroupName=${CW_LOG_GROUP},CloudWatchOutputEnabled=true" \

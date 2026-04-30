@@ -1,11 +1,47 @@
-
 {
   "vllm": {
     "scheme": "http",
-    "host": "gaming-pc-linux",
-    "port": 8001,
+    "host": "${VLLM_HOST}",
+    "port": 8010,
     "path": "/v1/completions",
-    "model": "wizard-vicuna-7b-awq"
+    "model": "/model",
+    "aws": {
+      "profile": "experimental-admin",
+      "region": "us-east-1",
+      "account_id": "491794274773",
+      "instance_type": "g5.xlarge",
+      "ami": "ami-0ad8dd83d01a01d3a",
+      "security_group": "sg-05ca8b4be3b26ef52",
+      "key_pair": "alix-pc-llm-training-key",
+      "instance_profile": "alix-llm-training-profile",
+      "ecr_image": "491794274773.dkr.ecr.us-east-1.amazonaws.com/vllm-openai:latest",
+      "hf_export_s3": "s3://alix-ai-ml-staging-data/titan/hf_exports/gpt2_nomem_small/",
+      "serve_port": 8010,
+      "gpu_memory_utilization": 0.85
+    }
+  },
+  "codereview": {
+    "scheme": "http",
+    "host": "${CODEREVIEW_HOST}",
+    "port": 8020,
+    "paths": {
+      "review": "/v1/review",
+      "batch": "/v1/review/batch",
+      "health": "/health"
+    },
+    "aws": {
+      "profile": "experimental-admin",
+      "region": "us-east-1",
+      "instance_type": "g6.2xlarge",
+      "ami": "ami-0ad8dd83d01a01d3a",
+      "security_group": "sg-05ca8b4be3b26ef52",
+      "key_pair": "alix-pc-llm-training-key",
+      "instance_profile": "alix-llm-training-profile",
+      "ckpt_s3": "s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_medium_sft_codereview_20260430171019/ckpt_sft_step_3000.pt",
+      "tokenizer_s3": "s3://alix-ai-ml-staging-data/titan/tokenizers/new_bpe_50k/bpe_50k_fw_stack.model",
+      "code_bundle_s3": "s3://alix-ai-ml-staging-data/titan/code_bundles/titanProject_bundle.tar.gz",
+      "serve_port": 8020
+    }
   },
   "web_interface": {
     "scheme": "http",
@@ -23,6 +59,6 @@
     "port": 8000
   },
   "mcp_memory": {
-    "port": 8001
+    "port": 8002
   }
 }

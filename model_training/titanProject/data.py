@@ -81,20 +81,22 @@ class TextWindowDataset(Dataset):
         cache_key = build_cache_key(path, tokenizer_fingerprint, max_tokens, shard_size_tokens)
         cache_dir = cache_root / cache_key
         manifest_path = cache_dir / "manifest.json"
-        source_fingerprint = get_source_fingerprint(path)
+        trust_existing = os.environ.get("TITAN_TOKEN_CACHE_TRUST_EXISTING", "").strip() == "1"
+        source_fingerprint = None if trust_existing else get_source_fingerprint(path)
 
         if manifest_path.exists():
             try:
                 manifest = json.loads(manifest_path.read_text())
-                if (
-                    manifest.get("cache_version") == DEFAULT_CACHE_VERSION
-                    and manifest.get("source_fingerprint") == source_fingerprint
-                    and manifest.get("tokenizer_fingerprint") == tokenizer_fingerprint
-                    and int(manifest.get("shard_size_tokens", 0)) == shard_size_tokens
-                ):
+                version_ok = manifest.get("cache_version") == DEFAULT_CACHE_VERSION
+                tokenizer_ok = manifest.get("tokenizer_fingerprint") == tokenizer_fingerprint
+                shard_ok = int(manifest.get("shard_size_tokens", 0)) == shard_size_tokens
+                source_ok = trust_existing or manifest.get("source_fingerprint") == source_fingerprint
+                if version_ok and tokenizer_ok and shard_ok and source_ok:
+                    trust_note = " (trust_existing)" if trust_existing else ""
                     emit(
                         f"[data] [{progress_label}] reusing token cache dir={cache_dir} "
                         f"tokens={manifest.get('num_tokens', 0):,} shards={len(manifest.get('shards', []))}"
+                        f"{trust_note}"
                     )
                     return TokenCache(cache_dir=cache_dir, manifest_path=manifest_path, manifest=manifest)
             except Exception:
@@ -187,6 +189,8 @@ class TextWindowDataset(Dataset):
                 f"nonempty={nonempty_line_count:,} tokens={token_count:,} shards={len(shards):,} "
                 f"elapsed={elapsed:.1f}s tok/s={token_count/elapsed:,.0f}"
             )
+            if source_fingerprint is None:
+                source_fingerprint = get_source_fingerprint(path)
             manifest = {
                 "cache_version": DEFAULT_CACHE_VERSION,
                 "path": path,
@@ -333,8 +337,12 @@ def build_cache_key(
     max_tokens: Optional[int],
     shard_size_tokens: int,
 ) -> str:
+    # Use basename so the cache is portable across data root paths
+    # (e.g. /mnt/data/datasets/train.txt vs /opt/dlami/nvme/datasets/train.txt).
+    # Source fingerprint (file content hash) guarantees correctness.
+    canonical = os.path.basename(path) if not path.startswith("s3://") else path
     digest = hashlib.sha256()
-    digest.update(path.encode("utf-8"))
+    digest.update(canonical.encode("utf-8"))
     digest.update(b"\0")
     digest.update(tokenizer_fingerprint.encode("utf-8"))
     digest.update(b"\0")

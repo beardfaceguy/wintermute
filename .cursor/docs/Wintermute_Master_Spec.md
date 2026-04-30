@@ -178,17 +178,23 @@ Next Steps
 
 [ ] Integrate thVoice interface into talkingHead
 
-[ ] "Wrap vLLM pipeline in MCP-compatible agent interface
+[x] "Wrap vLLM pipeline in MCP-compatible agent interface (2026-04-19: AgentRunner built in agents/runner.py)
 
-[ ] Build test-driven SQL agent proof-of-concept
+[x] Build test-driven SQL agent proof-of-concept (2026-04-19: agents/sql_agent.py, 6/6 tests passing)
 
-[ ] Begin work on mcp-memory
+[x] Begin work on mcp-memory (2026-04-19: Real FastMCP server in mcp_memory/server.py, 6 tools + 1 resource)
 
 [ ] Start organizing training data formats for future wintermute-trainer
 
 [ ] Implement sanity audit scheduler for Freud
 
 [ ] Spec promotion policies for Live ➜ Cold memory
+
+[ ] Wire mcp-memory into talkingHead chat flow (CLA-140)
+
+[ ] Connect SQL agent to live vLLM for LLM-driven query generation (CLA-141)
+
+[ ] Implement Freud sanity auditor for memory entries (CLA-142)
 
 ---
 

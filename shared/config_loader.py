@@ -1,5 +1,6 @@
 # config_loader.py
 import json
+import os
 from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlunparse
@@ -23,12 +24,32 @@ def _load_config() -> dict[str, dict[str, Any]]:
     return _config_cache
 
 
-def load_vllm_config():
+def load_vllm_config() -> tuple[str, str]:
+    """Load vLLM endpoint URL and model name.
+
+    The host field supports ${VLLM_HOST} env var substitution so the
+    same config works across environments. Set VLLM_HOST to the public
+    IP of the running EC2 instance.
+    """
     raw = _load_config()["vllm"]
+    host = raw["host"]
+    if host.startswith("${") and host.endswith("}"):
+        env_var = host[2:-1]
+        host = os.environ.get(env_var, "")
+        if not host:
+            raise RuntimeError(
+                f"vLLM host requires env var {env_var} — "
+                f"set it to the public IP of the running EC2 instance"
+            )
     url = urlunparse(
-        (raw["scheme"], f"{raw['host']}:{raw['port']}", raw["path"], "", "", "")
+        (raw["scheme"], f"{host}:{raw['port']}", raw["path"], "", "", "")
     )
     return url, raw["model"]
+
+
+def load_vllm_aws_config() -> dict[str, Any]:
+    """Load AWS infrastructure config for launching/managing the vLLM instance."""
+    return _load_config()["vllm"].get("aws", {})
 
 
 def get_rag_config() -> RagConfig:

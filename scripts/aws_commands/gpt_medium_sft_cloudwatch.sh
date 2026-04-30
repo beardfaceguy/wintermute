@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Detached GPT-small SFT pilot launcher via SSM.
-# Prepares the current instruction mix, downloads the canonical base checkpoint + tokenizer,
-# writes a GPT-small SFT config derived from the pretrain config, and runs finetune_sft.py.
-# Stdout/stderr go to CloudWatch (/aws/ssm/titan-llm-training) and S3 (ssm-logs/...).
-# Default mode detaches the actual SFT process from SSM after bootstrap so monitoring,
-# final artifact sync, and optional instance self-stop happen on the instance itself.
-# Set INSTANCE_ID before running.
+# Detached GPT-medium SFT launcher via SSM.
+# Prepares the current instruction mix, downloads the base pretrain checkpoint + tokenizer,
+# writes a GPT-medium SFT config, and runs finetune_sft.py.
+# Stdout/stderr -> CloudWatch (/aws/ssm/titan-llm-training) and S3 (ssm-logs/...).
+# Set INSTANCE_ID and BASE_CKPT_S3_URI before running.
 
 set -euo pipefail
 
@@ -19,23 +17,22 @@ S3_BUCKET="${S3_BUCKET:-alix-ai-ml-staging-data}"
 DETACH_TRAINING="${DETACH_TRAINING:-1}"
 STOP_INSTANCE_ON_EXIT="${STOP_INSTANCE_ON_EXIT:-1}"
 SYNC_FINAL_LOG_TO_S3="${SYNC_FINAL_LOG_TO_S3:-1}"
-REMOTE_RUN_ROOT="${REMOTE_RUN_ROOT:-/mnt/data/ssm_runs}"
-RUN_ID_PREFIX="${RUN_ID_PREFIX:-gpt_small_sft_pilot}"
-BASE_CKPT_S3_URI="${BASE_CKPT_S3_URI:-s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_small_pretrain_20260414162538/ckpt_step_40000.pt}"
+# REMOTE_RUN_ROOT, SFT_OUTPUT_DIR, HF_CACHE_DIR set dynamically after DATA_ROOT detection
+RUN_ID_PREFIX="${RUN_ID_PREFIX:-gpt_medium_sft}"
+BASE_CKPT_S3_URI="${BASE_CKPT_S3_URI:-REPLACE_WITH_PRETRAIN_CHECKPOINT_URI}"
 TOKENIZER_S3_URI="${TOKENIZER_S3_URI:-s3://alix-ai-ml-staging-data/titan/tokenizers/new_bpe_50k/bpe_50k_fw_stack.model}"
-SFT_OUTPUT_DIR="${SFT_OUTPUT_DIR:-/mnt/data/data/sft_mix}"
-HF_CACHE_DIR="${HF_CACHE_DIR:-/mnt/data/cache/huggingface}"
 CLEAN_STALE_ROOT_HF_CACHE="${CLEAN_STALE_ROOT_HF_CACHE:-1}"
-STEPS="${STEPS:-200}"
+STEPS="${STEPS:-5000}"
 LOG_EVERY="${LOG_EVERY:-20}"
-EVAL_EVERY="${EVAL_EVERY:-100}"
+EVAL_EVERY="${EVAL_EVERY:-500}"
 EVAL_BATCHES="${EVAL_BATCHES:-20}"
-SAVE_EVERY="${SAVE_EVERY:-100}"
-LR="${LR:-3.0e-05}"
-LR_MIN="${LR_MIN:-1.0e-05}"
+SAVE_EVERY="${SAVE_EVERY:-1000}"
+LR="${LR:-5.0e-05}"
+LR_MIN="${LR_MIN:-5.0e-06}"
 WEIGHT_DECAY="${WEIGHT_DECAY:-0.01}"
-WARMUP_STEPS="${WARMUP_STEPS:-25}"
+WARMUP_STEPS="${WARMUP_STEPS:-300}"
 BATCH_SIZE="${BATCH_SIZE:-2}"
+GRAD_ACCUM_STEPS="${GRAD_ACCUM_STEPS:-8}"
 SEQ_LEN="${SEQ_LEN:-1024}"
 MIN_FREE_GB="${MIN_FREE_GB:-20}"
 SHUFFLE_BUFFER="${SHUFFLE_BUFFER:-100000}"
@@ -57,10 +54,16 @@ OASST_MIN_QUALITY="${OASST_MIN_QUALITY:-}"
 OASST_MIN_HELPFULNESS="${OASST_MIN_HELPFULNESS:-}"
 OASST_MAX_FAILS_TASK="${OASST_MAX_FAILS_TASK:-}"
 OASST_MAX_SPAM="${OASST_MAX_SPAM:-}"
-LOG_PREFIX="ssm-logs/gpt-small-sft/$(date +%Y%m%d%H%M%S)"
+LOG_PREFIX="ssm-logs/gpt-medium-sft/$(date +%Y%m%d%H%M%S)"
 
 if [[ "${INSTANCE_ID}" == "i-REPLACE_ME" ]]; then
   echo "Set INSTANCE_ID to your Titan training instance id." >&2
+  exit 1
+fi
+
+if [[ "${BASE_CKPT_S3_URI}" == "REPLACE_WITH_PRETRAIN_CHECKPOINT_URI" ]]; then
+  echo "Set BASE_CKPT_S3_URI to the S3 URI of the GPT-medium pretrain checkpoint." >&2
+  echo "Example: s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_medium_pretrain_YYYYMMDDHHMMSS/ckpt_step_125000.pt" >&2
   exit 1
 fi
 
@@ -80,12 +83,9 @@ printf 'REGION=%q\n' "${REGION}"
 printf 'DETACH_TRAINING=%q\n' "${DETACH_TRAINING}"
 printf 'STOP_INSTANCE_ON_EXIT=%q\n' "${STOP_INSTANCE_ON_EXIT}"
 printf 'SYNC_FINAL_LOG_TO_S3=%q\n' "${SYNC_FINAL_LOG_TO_S3}"
-printf 'REMOTE_RUN_ROOT=%q\n' "${REMOTE_RUN_ROOT}"
 printf 'RUN_ID_PREFIX=%q\n' "${RUN_ID_PREFIX}"
 printf 'BASE_CKPT_S3_URI=%q\n' "${BASE_CKPT_S3_URI}"
 printf 'TOKENIZER_S3_URI=%q\n' "${TOKENIZER_S3_URI}"
-printf 'SFT_OUTPUT_DIR=%q\n' "${SFT_OUTPUT_DIR}"
-printf 'HF_CACHE_DIR=%q\n' "${HF_CACHE_DIR}"
 printf 'CLEAN_STALE_ROOT_HF_CACHE=%q\n' "${CLEAN_STALE_ROOT_HF_CACHE}"
 printf 'STEPS=%q\n' "${STEPS}"
 printf 'LOG_EVERY=%q\n' "${LOG_EVERY}"
@@ -97,6 +97,7 @@ printf 'LR_MIN=%q\n' "${LR_MIN}"
 printf 'WEIGHT_DECAY=%q\n' "${WEIGHT_DECAY}"
 printf 'WARMUP_STEPS=%q\n' "${WARMUP_STEPS}"
 printf 'BATCH_SIZE=%q\n' "${BATCH_SIZE}"
+printf 'GRAD_ACCUM_STEPS=%q\n' "${GRAD_ACCUM_STEPS}"
 printf 'SEQ_LEN=%q\n' "${SEQ_LEN}"
 printf 'MIN_FREE_GB=%q\n' "${MIN_FREE_GB}"
 printf 'SHUFFLE_BUFFER=%q\n' "${SHUFFLE_BUFFER}"
@@ -122,17 +123,51 @@ cat <<'EOF'
 START_ISO=$(date -Iseconds)
 echo "[meta] run_start_iso=${START_ISO}"
 
+# ── Data root detection ──────────────────────────────────────────────
+resolve_data_root() {
+  if mountpoint -q /opt/dlami/nvme 2>/dev/null; then
+    echo "/opt/dlami/nvme"
+    return
+  fi
+  if mountpoint -q /mnt/data 2>/dev/null; then
+    echo "/mnt/data"
+    return
+  fi
+  if command -v lvm >/dev/null 2>&1; then
+    vgchange -ay 2>/dev/null || true
+    local lv_path
+    lv_path=$(lvs --noheadings -o lv_path 2>/dev/null | head -1 | tr -d ' ')
+    if [[ -n "${lv_path}" ]]; then
+      mkdir -p /opt/dlami/nvme
+      mount "${lv_path}" /opt/dlami/nvme 2>/dev/null || true
+      if mountpoint -q /opt/dlami/nvme 2>/dev/null; then
+        echo "/opt/dlami/nvme"
+        return
+      fi
+    fi
+  fi
+  mkdir -p /mnt/data
+  echo "/mnt/data"
+}
+
+DATA_ROOT="$(resolve_data_root)"
+export DATA_ROOT
+echo "[data-root] DATA_ROOT=${DATA_ROOT}"
+
 RUN_ID="${RUN_ID_PREFIX}_$(date +%Y%m%d%H%M%S)"
-CHECKPOINT_DIR="/mnt/data/checkpoints/${RUN_ID}"
+CHECKPOINT_DIR="${DATA_ROOT}/checkpoints/${RUN_ID}"
 S3_PREFIX="s3://alix-ai-ml-staging-data/titan/checkpoints/${RUN_ID}/"
 CODE_DIR="/home/ubuntu/wintermute"
 CODE_BUNDLE_URI="${CODE_BUNDLE_URI:-s3://alix-ai-ml-staging-data/titan/code_bundles/titanProject_bundle.tar.gz}"
 CODE_SYNC_DEST="${CODE_DIR}/model_training/titanProject"
 CODE_BUNDLE_LOCAL="/tmp/titanProject_bundle.tar.gz"
-TOKENIZER_DIR="/mnt/data/tokenizers"
+SFT_OUTPUT_DIR="${DATA_ROOT}/data/sft_mix"
+HF_CACHE_DIR="${DATA_ROOT}/cache/huggingface"
+TOKENIZER_DIR="${DATA_ROOT}/tokenizers"
 TOKENIZER_LOCAL="${TOKENIZER_DIR}/$(basename "${TOKENIZER_S3_URI}")"
 BASE_CKPT_LOCAL="${CHECKPOINT_DIR}/$(basename "${BASE_CKPT_S3_URI}")"
-CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_small.sft.local.yaml"
+CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_medium.sft.local.yaml"
+REMOTE_RUN_ROOT="${DATA_ROOT}/ssm_runs"
 RUN_WORK_DIR="${REMOTE_RUN_ROOT}/${RUN_ID}"
 TRAIN_LOG="${RUN_WORK_DIR}/train.log"
 RUN_STATUS_JSON="${RUN_WORK_DIR}/run_status.json"
@@ -153,7 +188,7 @@ export RUN_ID CHECKPOINT_DIR S3_PREFIX CODE_DIR CFG_LOCAL RUN_WORK_DIR TRAIN_LOG
 export RUN_STATUS_JSON REGION S3_RUN_ARTIFACT_PREFIX BASE_CKPT_S3_URI TOKENIZER_S3_URI
 export BASE_CKPT_LOCAL TOKENIZER_LOCAL SFT_OUTPUT_DIR SFT_META_JSON SFT_TRAIN_TXT SFT_VAL_TXT
 export STEPS LOG_EVERY EVAL_EVERY EVAL_BATCHES SAVE_EVERY MIN_FREE_GB
-export LR LR_MIN WEIGHT_DECAY WARMUP_STEPS BATCH_SIZE SEQ_LEN SHUFFLE_BUFFER
+export LR LR_MIN WEIGHT_DECAY WARMUP_STEPS BATCH_SIZE GRAD_ACCUM_STEPS SEQ_LEN SHUFFLE_BUFFER
 export STOP_INSTANCE_ON_EXIT SYNC_FINAL_LOG_TO_S3
 TMPDIR="${HF_CACHE_DIR}/tmp"
 XDG_CACHE_HOME="${HF_CACHE_DIR}"
@@ -165,12 +200,13 @@ echo "=== host ==="
 date -Iseconds
 uname -a || true
 echo "=== disk ==="
-df -h / /mnt/data 2>/dev/null || df -h || true
+df -h / "${DATA_ROOT}" 2>/dev/null || df -h || true
 echo "=== memory ==="
 free -h 2>/dev/null || true
 echo "=== gpu ==="
 nvidia-smi 2>/dev/null || echo "[warn] nvidia-smi unavailable"
 echo "=== paths ==="
+echo "DATA_ROOT=${DATA_ROOT}"
 echo "RUN_ID=${RUN_ID}"
 echo "CHECKPOINT_DIR=${CHECKPOINT_DIR}"
 echo "S3_PREFIX=${S3_PREFIX}"
@@ -186,7 +222,9 @@ echo "SAVE_EVERY=${SAVE_EVERY}"
 echo "LR=${LR}"
 echo "SEQ_LEN=${SEQ_LEN}"
 echo "BATCH_SIZE=${BATCH_SIZE}"
+echo "GRAD_ACCUM_STEPS=${GRAD_ACCUM_STEPS}"
 
+mkdir -p "${CODE_DIR}"
 mkdir -p "${CHECKPOINT_DIR}"
 mkdir -p "${TOKENIZER_DIR}"
 mkdir -p "${SFT_OUTPUT_DIR}"
@@ -199,7 +237,7 @@ if [[ "${CLEAN_STALE_ROOT_HF_CACHE}" == "1" ]]; then
   du -sh /root/.cache 2>/dev/null || true
   rm -rf /root/.cache/huggingface /root/.cache/pip
   du -sh /root/.cache 2>/dev/null || true
-  df -h / /mnt/data 2>/dev/null || df -h || true
+  df -h / "${DATA_ROOT}" 2>/dev/null || df -h || true
 fi
 
 echo "=== code bundle download start ==="
@@ -226,27 +264,20 @@ export HUGGINGFACE_HUB_TOKEN="${HUGGINGFACE_HUB_TOKEN:-${HF_TOKEN:-${HUGGINGFACE
 export HF_TOKEN="${HF_TOKEN:-${HUGGINGFACE_TOKEN:-${HUGGINGFACE_HUB_TOKEN:-}}}"
 export HUGGINGFACE_TOKEN="${HUGGINGFACE_TOKEN:-${HF_TOKEN:-${HUGGINGFACE_HUB_TOKEN:-}}}"
 
-echo "=== pip install: numpy ==="
+echo "=== pip install ==="
 date -Iseconds
-python3 -m pip install --no-cache-dir numpy==1.26.4
-echo "=== pip install: torch stack ==="
-date -Iseconds
-python3 -m pip install --upgrade --no-cache-dir \
+python3 -m pip install -q --no-cache-dir numpy==1.26.4
+python3 -m pip install -q --upgrade --no-cache-dir \
   torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 \
   --extra-index-url https://download.pytorch.org/whl/cu121
-echo "=== pip install: tokenizer/io deps ==="
-date -Iseconds
-python3 -m pip install --no-cache-dir sentencepiece boto3 pyarrow
-echo "=== pip install: model deps ==="
-date -Iseconds
-python3 -m pip install --no-cache-dir titans-pytorch==0.5.3 --no-deps
-python3 -m pip install --no-cache-dir \
+python3 -m pip install -q --no-cache-dir sentencepiece boto3 pyarrow
+python3 -m pip install -q --no-cache-dir titans-pytorch==0.5.3 --no-deps
+python3 -m pip install -q --no-cache-dir \
   einops==0.8.2 einx==0.4.2 hyper-connections==0.4.9 axial-positional-embedding==0.3.12 \
   assoc-scan==0.0.4 ema-pytorch==0.7.9 tqdm fire loguru orjson tensordict==0.11.0 \
   x-transformers==2.17.7 rotary-embedding-torch==0.8.9 ninja pyvers cloudpickle frozendict --no-deps
-echo "=== pip install: datasets ==="
-date -Iseconds
-python3 -m pip install --no-cache-dir datasets huggingface_hub
+python3 -m pip install -q --no-cache-dir datasets huggingface_hub
+echo "=== pip install done ==="
 
 echo "=== torch cuda (after install) ==="
 python3 -c "import torch; print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available());
@@ -325,8 +356,8 @@ import os
 import yaml
 from pathlib import Path
 
-src = Path("model_training/titanProject/configs/config_gpt_small.yaml")
-dst = Path("model_training/titanProject/configs/config_gpt_small.sft.local.yaml")
+src = Path("model_training/titanProject/configs/config_gpt_medium.yaml")
+dst = Path("model_training/titanProject/configs/config_gpt_medium.sft.local.yaml")
 cfg = yaml.safe_load(src.read_text())
 
 cfg["data"]["train_path"] = os.environ["SFT_TRAIN_TXT"]
@@ -336,6 +367,7 @@ cfg["data"]["shuffle_buffer"] = int(os.environ["SHUFFLE_BUFFER"])
 
 cfg["train"]["seq_len"] = int(os.environ["SEQ_LEN"])
 cfg["train"]["batch_size"] = int(os.environ["BATCH_SIZE"])
+cfg["train"]["grad_accum_steps"] = int(os.environ["GRAD_ACCUM_STEPS"])
 cfg["train"]["lr"] = float(os.environ["LR"])
 cfg["train"]["lr_min"] = float(os.environ["LR_MIN"])
 cfg["train"]["weight_decay"] = float(os.environ["WEIGHT_DECAY"])
@@ -343,8 +375,7 @@ cfg["train"]["warmup_steps"] = int(os.environ["WARMUP_STEPS"])
 cfg["train"]["max_steps"] = int(os.environ["STEPS"])
 cfg["train"]["save_every"] = int(os.environ["SAVE_EVERY"])
 cfg["train"]["eval_every"] = int(os.environ["EVAL_EVERY"])
-cfg["train"]["cosine_decay"] = False
-cfg["train"].pop("grad_accum_steps", None)
+cfg["train"]["cosine_decay"] = True
 cfg["train"].pop("target_tokens", None)
 cfg["data"].pop("max_tokens", None)
 cfg["data"].pop("max_tokens_val", None)
@@ -355,7 +386,9 @@ print(
     "[meta] local SFT config:"
     f" seq_len={cfg['train']['seq_len']}"
     f" batch={cfg['train']['batch_size']}"
+    f" grad_accum={cfg['train']['grad_accum_steps']}"
     f" lr={cfg['train']['lr']}"
+    f" steps={cfg['train']['max_steps']}"
     f" train_path={cfg['data']['train_path']}"
     f" val_path={cfg['data']['val_path']}"
 )
@@ -390,7 +423,7 @@ sync_final_artifacts() {
       echo "[warn] final run_status upload failed"
   fi
   if [[ -f "${CFG_LOCAL}" ]]; then
-    aws s3 cp "${CFG_LOCAL}" "${S3_RUN_ARTIFACT_PREFIX}/config_gpt_small.sft.local.yaml" --only-show-errors || \
+    aws s3 cp "${CFG_LOCAL}" "${S3_RUN_ARTIFACT_PREFIX}/config_gpt_medium.sft.local.yaml" --only-show-errors || \
       echo "[warn] final config upload failed"
   fi
   if [[ -f "${SFT_META_JSON}" ]]; then
@@ -431,10 +464,20 @@ PY
     local instance_id=""
     instance_id="$(get_instance_id 2>/dev/null || true)"
     if [[ -n "${instance_id}" ]]; then
-      aws ec2 stop-instances --instance-ids "${instance_id}" --region "${REGION}" --output json >/dev/null || \
-        echo "[warn] instance self-stop failed; attach the self-stop IAM policy if this should be automatic"
+      echo "[self-stop] attempting to stop instance ${instance_id} in region ${REGION}"
+      aws ec2 create-tags --resources "${instance_id}" --region "${REGION}" \
+        --tags Key=Purpose,Value=titan-training 2>/dev/null || \
+        echo "[self-stop] could not ensure Purpose tag (non-fatal)"
+      if aws ec2 stop-instances --instance-ids "${instance_id}" --region "${REGION}" --output json 2>&1; then
+        echo "[self-stop] stop-instances succeeded"
+      else
+        echo "[self-stop] FAILED — instance will keep running and incurring charges!"
+        echo "[self-stop] ensure the instance role has ec2:StopInstances permission"
+        echo "[self-stop] and the instance has tag Purpose=titan-training"
+        echo "[self-stop] see: scripts/aws_commands/iam/ssm_long_run_self_stop_inline_policy.json"
+      fi
     else
-      echo "[warn] could not determine instance id for self-stop"
+      echo "[self-stop] FAILED — could not determine instance id from metadata service"
     fi
   fi
   trap - EXIT
@@ -506,7 +549,7 @@ jq -n --rawfile script "${REMOTE_SCRIPT}" \
 CMD_ID=$(AWS_PROFILE="${AWS_PROFILE}" aws ssm send-command \
   --region "${REGION}" \
   --document-name "AWS-RunShellScript" \
-  --comment "gpt-small SFT pilot + CloudWatch + S3 logs" \
+  --comment "gpt-medium SFT (~407M params) + CloudWatch + S3 logs" \
   --timeout-seconds "${SSM_DELIVERY_TIMEOUT_SECONDS}" \
   --instance-ids "${INSTANCE_ID}" \
   --cloud-watch-output-config "CloudWatchLogGroupName=${CW_LOG_GROUP},CloudWatchOutputEnabled=true" \

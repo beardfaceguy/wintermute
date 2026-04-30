@@ -1,0 +1,53 @@
+# Test cases for the SQL agent against the memory_entries table.
+# Each case has a natural-language question, an expected SQL pattern,
+# and a validation function (row_count check, column check, or value match).
+
+- id: count_all
+  question: "How many memory entries are stored in total?"
+  expected:
+    type: row_count
+    min: 1
+  hints:
+    - "Use COUNT(*) on the memory_entries table"
+
+- id: count_by_zone
+  question: "How many entries are in the 'live' zone vs the 'cold' zone?"
+  expected:
+    type: columns_present
+    columns: ["zone", "count"]
+  hints:
+    - "GROUP BY zone"
+
+- id: find_flagged
+  question: "Show me all entries that have been flagged for audit."
+  expected:
+    type: column_value
+    column: "audit_flagged"
+    value: true
+  hints:
+    - "Filter where audit_flagged = true"
+
+- id: high_trust
+  question: "List entries with a trust score above 0.5, ordered by trust score descending."
+  expected:
+    type: row_count
+    min: 1
+  hints:
+    - "WHERE trust_score > 0.5 ORDER BY trust_score DESC"
+
+- id: tag_filter
+  question: "Find all memory entries tagged with domain='sql'."
+  expected:
+    type: row_count
+    min: 1
+  hints:
+    - "JSONB containment: tags @> '{\"domain\": \"sql\"}'"
+    - "Or: tags->>'domain' = 'sql'"
+
+- id: recent_entries
+  question: "Show the 3 most recently created entries with their text and zone."
+  expected:
+    type: columns_present
+    columns: ["text", "zone"]
+  hints:
+    - "ORDER BY created_at DESC LIMIT 3"

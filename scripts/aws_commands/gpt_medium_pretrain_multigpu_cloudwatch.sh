@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# Long GPT-small pretrain (config_gpt_small.yaml max_steps from YAML) on the current Titan single-GPU runner via SSM.
+# Multi-GPU GPT-medium pretrain (config_gpt_medium.yaml, ~407M params, DDP via torchrun) via SSM.
 # Stdout/stderr -> CloudWatch (/aws/ssm/titan-llm-training) and S3 (ssm-logs/...).
 # Default mode detaches the actual training process from SSM after bootstrap so long runs
 # survive the SSM command timeout window. Final checkpoint sync and optional self-stop then
 # happen on the instance itself.
+#
+# Requires a multi-GPU instance (g5.12xlarge = 4x A10G, g5.24xlarge = 4x A10G, etc.).
+# NPROC_PER_NODE defaults to all available GPUs.
+#
 # One-time:
 #   - create log group + attach scripts/aws_commands/iam/ssm_cloudwatch_logs_inline_policy.json
 #   - if STOP_INSTANCE_ON_EXIT=1, also attach scripts/aws_commands/iam/ssm_long_run_self_stop_inline_policy.json
 #   to alix-llm-training-role (see policy file headers).
+#   - instance must have tag Purpose=titan-training (auto-applied on self-stop, but pre-tagging is safer).
 # Set INSTANCE_ID before running.
 
 set -euo pipefail
@@ -15,7 +20,6 @@ set -euo pipefail
 INSTANCE_ID="${INSTANCE_ID:-i-REPLACE_ME}"
 REGION="${REGION:-us-east-1}"
 AWS_PROFILE="${AWS_PROFILE:-experimental-admin}"
-# Must match or exceed expected shell runtime; document default is 3600s without this.
 SSM_EXEC_TIMEOUT_SECONDS="${SSM_EXEC_TIMEOUT_SECONDS:-43200}"
 SSM_DELIVERY_TIMEOUT_SECONDS="${SSM_DELIVERY_TIMEOUT_SECONDS:-43200}"
 CW_LOG_GROUP="${CW_LOG_GROUP:-/aws/ssm/titan-llm-training}"
@@ -24,10 +28,18 @@ DETACH_TRAINING="${DETACH_TRAINING:-1}"
 STOP_INSTANCE_ON_EXIT="${STOP_INSTANCE_ON_EXIT:-1}"
 SYNC_FINAL_LOG_TO_S3="${SYNC_FINAL_LOG_TO_S3:-1}"
 # REMOTE_RUN_ROOT is set dynamically on-instance after DATA_ROOT detection
-LOG_PREFIX="ssm-logs/gpt-small-pretrain/$(date +%Y%m%d%H%M%S)"
+NPROC_PER_NODE="${NPROC_PER_NODE:-auto}"
+LOG_PREFIX="ssm-logs/gpt-medium-pretrain-multigpu/$(date +%Y%m%d%H%M%S)"
 
 if [[ "${INSTANCE_ID}" == "i-REPLACE_ME" ]]; then
-  echo "Set INSTANCE_ID to your Titan training instance id (recommended default: g6.2xlarge)." >&2
+  echo "Set INSTANCE_ID to your Titan multi-GPU training instance id." >&2
+  echo "" >&2
+  echo "IMPORTANT: If STOP_INSTANCE_ON_EXIT=1 (default), the instance MUST have:" >&2
+  echo "  1. The IAM policy from iam/ssm_long_run_self_stop_inline_policy.json attached to its role" >&2
+  echo "  2. Tag: Purpose=titan-training" >&2
+  echo "" >&2
+  echo "To tag an existing instance:" >&2
+  echo "  aws ec2 create-tags --resources <instance-id> --tags Key=Purpose,Value=titan-training" >&2
   exit 1
 fi
 
@@ -49,15 +61,19 @@ printf 'SAVE_EVERY=%q\n' "${SAVE_EVERY:-}"
 printf 'REGION=%q\n' "${REGION}"
 printf 'RESUME_CKPT_S3_URI=%q\n' "${RESUME_CKPT_S3_URI:-}"
 printf 'TRAIN_MAX_TOKENS_OVERRIDE=%q\n' "${TRAIN_MAX_TOKENS_OVERRIDE:-}"
-printf 'VAL_MAX_TOKENS_OVERRIDE=%q\n\n' "${VAL_MAX_TOKENS_OVERRIDE:-}"
+printf 'VAL_MAX_TOKENS_OVERRIDE=%q\n' "${VAL_MAX_TOKENS_OVERRIDE:-}"
 printf 'DETACH_TRAINING=%q\n' "${DETACH_TRAINING}"
 printf 'STOP_INSTANCE_ON_EXIT=%q\n' "${STOP_INSTANCE_ON_EXIT}"
-printf 'SYNC_FINAL_LOG_TO_S3=%q\n\n' "${SYNC_FINAL_LOG_TO_S3}"
+printf 'SYNC_FINAL_LOG_TO_S3=%q\n' "${SYNC_FINAL_LOG_TO_S3}"
+printf 'NPROC_PER_NODE=%q\n\n' "${NPROC_PER_NODE}"
 cat <<'EOF'
 START_ISO=$(date -Iseconds)
 echo "[meta] run_start_iso=${START_ISO}"
 
 # ── Data root detection ──────────────────────────────────────────────
+# AWS DL AMI instances (g5.*) use LVM for NVMe ephemeral at /opt/dlami/nvme.
+# Other instances (g6.*) may have a separate EBS at /mnt/data.
+# Fall back to creating /mnt/data on root volume if neither exists.
 resolve_data_root() {
   if mountpoint -q /opt/dlami/nvme 2>/dev/null; then
     echo "/opt/dlami/nvme"
@@ -88,7 +104,17 @@ DATA_ROOT="$(resolve_data_root)"
 export DATA_ROOT
 echo "[data-root] DATA_ROOT=${DATA_ROOT}"
 
-RUN_ID="gpt_small_pretrain_$(date +%Y%m%d%H%M%S)"
+# Auto-detect GPU count if NPROC_PER_NODE=auto
+if [[ "${NPROC_PER_NODE}" == "auto" ]]; then
+  NPROC_PER_NODE=$(nvidia-smi -L 2>/dev/null | wc -l)
+  if [[ "${NPROC_PER_NODE}" -lt 1 ]]; then
+    echo "[error] no GPUs detected and NPROC_PER_NODE=auto" >&2
+    exit 1
+  fi
+  echo "[meta] auto-detected NPROC_PER_NODE=${NPROC_PER_NODE}"
+fi
+
+RUN_ID="gpt_medium_pretrain_multigpu_$(date +%Y%m%d%H%M%S)"
 CHECKPOINT_DIR="${DATA_ROOT}/checkpoints/${RUN_ID}"
 S3_PREFIX="s3://alix-ai-ml-staging-data/titan/checkpoints/${RUN_ID}/"
 CODE_DIR="/home/ubuntu/wintermute"
@@ -98,7 +124,7 @@ CODE_BUNDLE_LOCAL="/tmp/titanProject_bundle.tar.gz"
 DATA_DIR="${DATA_ROOT}/datasets"
 TRAIN_LOCAL="${DATA_DIR}/train.txt"
 VAL_LOCAL="${DATA_DIR}/val.txt"
-CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_small.local.yaml"
+CFG_LOCAL="${CODE_DIR}/model_training/titanProject/configs/config_gpt_medium.local.yaml"
 MAX_STEPS="${MAX_STEPS:-}"
 LOG_EVERY="${LOG_EVERY:-100}"
 SAVE_EVERY="${SAVE_EVERY:-}"
@@ -117,7 +143,7 @@ RUNNER_SCRIPT="${RUN_WORK_DIR}/run_training.sh"
 DETACHED_LAUNCH_LOG="${RUN_WORK_DIR}/launcher.log"
 S3_RUN_ARTIFACT_PREFIX="${S3_PREFIX%/}/run_artifacts"
 export TRAIN_MAX_TOKENS_OVERRIDE VAL_MAX_TOKENS_OVERRIDE
-export MAX_STEPS LOG_EVERY SAVE_EVERY
+export MAX_STEPS LOG_EVERY SAVE_EVERY NPROC_PER_NODE
 export RESUME_CKPT_S3_URI
 export RUN_ID CHECKPOINT_DIR S3_PREFIX CODE_DIR CFG_LOCAL DETACH_TRAINING
 export STOP_INSTANCE_ON_EXIT SYNC_FINAL_LOG_TO_S3 RUN_WORK_DIR TRAIN_LOG
@@ -134,6 +160,7 @@ echo "=== gpu ==="
 nvidia-smi 2>/dev/null || echo "[warn] nvidia-smi unavailable"
 echo "=== paths ==="
 echo "DATA_ROOT=${DATA_ROOT}"
+echo "NPROC_PER_NODE=${NPROC_PER_NODE}"
 echo "CHECKPOINT_DIR=${CHECKPOINT_DIR}"
 echo "S3_PREFIX=${S3_PREFIX}"
 echo "CODE_BUNDLE_URI=${CODE_BUNDLE_URI}"
@@ -182,7 +209,9 @@ echo "=== pip install done ==="
 
 echo "=== torch cuda (after install) ==="
 python3 -c "import torch; print('torch', torch.__version__, 'cuda_available', torch.cuda.is_available());
-print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'no cuda')"
+gpus = torch.cuda.device_count();
+print(f'gpu_count={gpus}');
+[print(f'  gpu{i}: {torch.cuda.get_device_name(i)}') for i in range(gpus)]"
 
 echo "=== dataset preload to local disk ==="
 date -Iseconds
@@ -218,8 +247,8 @@ import yaml
 from pathlib import Path
 
 data_root = os.environ["DATA_ROOT"]
-src = Path("model_training/titanProject/configs/config_gpt_small.yaml")
-dst = Path("model_training/titanProject/configs/config_gpt_small.local.yaml")
+src = Path("model_training/titanProject/configs/config_gpt_medium.yaml")
+dst = Path("model_training/titanProject/configs/config_gpt_medium.local.yaml")
 
 cfg = yaml.safe_load(src.read_text())
 cfg["data"]["train_path"] = f"{data_root}/datasets/train.txt"
@@ -237,6 +266,18 @@ print(
     f" train_max_tokens={cfg['data'].get('max_tokens')}"
     f" val_max_tokens={cfg['data'].get('max_tokens_val')}"
 )
+
+mcfg = cfg["model"]
+params_est = (mcfg["vocab_size"] * mcfg["dim"] + mcfg.get("max_seq_len", 2048) * mcfg["dim"]
+    + mcfg["depth"] * (4 * mcfg["dim"]**2 + 2 * mcfg["dim"] * mcfg["dim"] * mcfg["ff_mult"] + 2 * mcfg["dim"])
+    + mcfg["dim"] + mcfg["vocab_size"] * mcfg["dim"])
+tcfg = cfg["train"]
+nproc = int(os.environ["NPROC_PER_NODE"])
+tok_per_step = tcfg["batch_size"] * tcfg["seq_len"] * tcfg.get("grad_accum_steps", 1) * nproc
+total_tok = tok_per_step * tcfg["max_steps"]
+print(f"[meta] model_params_est={params_est:,} ({params_est/1e6:.0f}M)")
+print(f"[meta] tokens_per_step={tok_per_step:,} (x{nproc} GPUs)")
+print(f"[meta] total_tokens_est={total_tok:,} ({total_tok/1e9:.1f}B)")
 PY
 
 if [[ "${DETACH_TRAINING}" == "1" ]]; then
@@ -285,6 +326,7 @@ payload = {
     "checkpoint_dir": os.environ["CHECKPOINT_DIR"],
     "s3_prefix": os.environ["S3_PREFIX"],
     "train_log": os.environ["TRAIN_LOG"],
+    "nproc_per_node": int(os.environ["NPROC_PER_NODE"]),
     "ended_at": os.environ["END_ISO"],
     "exit_code": int(os.environ["RUN_EXIT_CODE"]),
 }
@@ -326,10 +368,12 @@ if [[ -n "${RESUME_CKPT_S3_URI}" ]]; then
   aws s3 cp "${RESUME_CKPT_S3_URI}" "${RESUME_CKPT_LOCAL}" --only-show-errors
   RESUME_ARGS=(--resume "${RESUME_CKPT_LOCAL}")
 fi
-echo "[meta] detached runner start $(date -Iseconds)" | tee -a "${TRAIN_LOG}"
-PYTHONUNBUFFERED=1 python3 model_training/titanProject/train.py \
+echo "[meta] detached runner start $(date -Iseconds) nproc=${NPROC_PER_NODE}" | tee -a "${TRAIN_LOG}"
+PYTHONUNBUFFERED=1 torchrun \
+  --nproc_per_node="${NPROC_PER_NODE}" \
+  --master_port=29500 \
+  model_training/titanProject/train.py \
   --config "${CFG_LOCAL}" \
-  --device cuda \
   --checkpoint-dir "${CHECKPOINT_DIR}" \
   --s3-checkpoint-uri "${S3_PREFIX}" \
   "${RESUME_ARGS[@]}" \
@@ -356,8 +400,9 @@ RUNNER_EOF
   echo "[meta] detached launcher log=${DETACHED_LAUNCH_LOG}"
   echo "[meta] detached status json=${RUN_STATUS_JSON}"
   echo "[meta] final artifacts prefix=${S3_RUN_ARTIFACT_PREFIX}"
+  echo "[meta] nproc_per_node=${NPROC_PER_NODE}"
   echo "[meta] stop-on-exit=${STOP_INSTANCE_ON_EXIT} (requires ec2:StopInstances on the instance role)"
-  echo "[meta] bootstrap complete; training now continues independently of this SSM command"
+  echo "[meta] bootstrap complete; multi-GPU training now continues independently of this SSM command"
 else
   RESUME_ARGS=()
   if [[ -n "${RESUME_CKPT_S3_URI}" ]]; then
@@ -366,9 +411,11 @@ else
     aws s3 cp "${RESUME_CKPT_S3_URI}" "${RESUME_CKPT_LOCAL}" --only-show-errors
     RESUME_ARGS=(--resume "${RESUME_CKPT_LOCAL}")
   fi
-  PYTHONUNBUFFERED=1 python3 model_training/titanProject/train.py \
+  PYTHONUNBUFFERED=1 torchrun \
+    --nproc_per_node="${NPROC_PER_NODE}" \
+    --master_port=29500 \
+    model_training/titanProject/train.py \
     --config "${CFG_LOCAL}" \
-    --device cuda \
     --checkpoint-dir "${CHECKPOINT_DIR}" \
     --s3-checkpoint-uri "${S3_PREFIX}" \
     "${RESUME_ARGS[@]}" \
@@ -391,7 +438,7 @@ jq -n --rawfile script "${REMOTE_SCRIPT}" \
 CMD_ID=$(AWS_PROFILE="${AWS_PROFILE}" aws ssm send-command \
   --region "${REGION}" \
   --document-name "AWS-RunShellScript" \
-  --comment "gpt-small long pretrain + CloudWatch + S3 logs" \
+  --comment "gpt-medium multi-GPU pretrain (~407M params, DDP) + CloudWatch + S3 logs" \
   --timeout-seconds "${SSM_DELIVERY_TIMEOUT_SECONDS}" \
   --instance-ids "${INSTANCE_ID}" \
   --cloud-watch-output-config "CloudWatchLogGroupName=${CW_LOG_GROUP},CloudWatchOutputEnabled=true" \
@@ -406,7 +453,7 @@ echo "  Stream: ${CMD_ID}/${INSTANCE_ID}/aws-runShellScript/stdout (and stderr)"
 echo "  Tail: AWS_PROFILE=${AWS_PROFILE} aws logs tail ${CW_LOG_GROUP} --follow --region ${REGION}"
 echo "S3 SSM output (when flushed): s3://${S3_BUCKET}/${LOG_PREFIX}/${INSTANCE_ID}/awsrunShellScript/"
 if [[ "${DETACH_TRAINING}" == "1" ]]; then
-  echo "Detached mode: SSM only bootstraps and launches the remote runner."
+  echo "Detached mode: SSM only bootstraps and launches the remote multi-GPU runner."
   echo "The remote runner keeps training after SSM exits, uploads final artifacts, and can self-stop if the instance role allows it."
   echo "Check detached status: RUN_ID=<printed run id> INSTANCE_ID=${INSTANCE_ID} CMD_ID=${CMD_ID} bash scripts/aws_commands/check_detached_titan_status.sh"
 else

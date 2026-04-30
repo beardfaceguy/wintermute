@@ -1,277 +1,133 @@
 """
-Training loop scaffold for Titans small model.
-Fill in tokenizer init and paths; adjust config as needed.
+Unified training loop for Titans models.
+
+Supports single-GPU, multi-GPU (DDP), and CPU/MPS development:
+
+    # Single GPU
+    python train.py --config configs/config_gpt_medium.yaml
+
+    # Multi-GPU via torchrun
+    torchrun --nproc_per_node=4 train.py --config configs/config_gpt_medium.yaml
+
+    # CPU / Apple Silicon dev
+    python train.py --config config_small.yaml --device mps
 """
 
 import argparse
-import hashlib
 import math
-import shutil
 import time
-import subprocess
 from contextlib import nullcontext
 from pathlib import Path
-from urllib.parse import urlparse
-import yaml
+
 import torch
 import torch.nn.functional as F
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.amp import autocast as amp_autocast, GradScaler
-import sentencepiece as spm
-
-try:
-    import boto3  # type: ignore
-except Exception:
-    boto3 = None
 
 from data import build_dataloader
-from model import ModelConfig, build_model, is_hf_source, load_model_source, normalize_hf_source
-
-
-def load_config(path: Path):
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
-
-
-class TokenizerAdapter:
-    def __init__(
-        self,
-        *,
-        encode_fn,
-        decode_fn,
-        tokenizer_fingerprint: str,
-        tokenizer_source_path: str,
-        eos_id: int,
-        pad_id: int,
-    ):
-        self._encode_fn = encode_fn
-        self._decode_fn = decode_fn
-        self.tokenizer_fingerprint = tokenizer_fingerprint
-        self.tokenizer_source_path = tokenizer_source_path
-        self.eos_id = eos_id
-        self.pad_id = pad_id
-
-    def __call__(self, text: str):
-        return self.encode(text)
-
-    def encode(self, text: str):
-        return list(self._encode_fn(text))
-
-    def decode(self, ids):
-        return self._decode_fn(list(ids))
-
-
-def _hf_tokenizer_fingerprint(tokenizer) -> str:
-    digest = hashlib.sha256()
-    if hasattr(tokenizer, "backend_tokenizer"):
-        digest.update(tokenizer.backend_tokenizer.to_str().encode("utf-8"))
-    else:
-        for token, token_id in sorted(tokenizer.get_vocab().items(), key=lambda kv: kv[1]):
-            digest.update(f"{token_id}:{token}\n".encode("utf-8"))
-    return digest.hexdigest()
-
-
-def get_tokenizer(tokenizer_path: str):
-    if is_hf_source(tokenizer_path):
-        try:
-            from transformers import AutoTokenizer
-        except ImportError as e:
-            raise ImportError(
-                "transformers is required to load Hugging Face tokenizers. "
-                "Install it in the active Python environment first."
-            ) from e
-
-        hf_name = normalize_hf_source(tokenizer_path)
-        tokenizer = AutoTokenizer.from_pretrained(hf_name)
-        if tokenizer.pad_token_id is None and tokenizer.eos_token_id is not None:
-            tokenizer.pad_token = tokenizer.eos_token
-
-        return TokenizerAdapter(
-            encode_fn=lambda text: tokenizer.encode(text, add_special_tokens=False),
-            decode_fn=lambda ids: tokenizer.decode(
-                ids,
-                clean_up_tokenization_spaces=False,
-                skip_special_tokens=True,
-            ),
-            tokenizer_fingerprint=_hf_tokenizer_fingerprint(tokenizer),
-            tokenizer_source_path=tokenizer_path,
-            eos_id=tokenizer.eos_token_id if tokenizer.eos_token_id is not None else -1,
-            pad_id=tokenizer.pad_token_id if tokenizer.pad_token_id is not None else -1,
-        )
-
-    # Allow tokenizer on S3: download to a local temp path first.
-    if tokenizer_path.startswith("s3://"):
-        if boto3 is None:
-            raise RuntimeError("boto3 is required to load tokenizer from s3:// paths")
-        parsed = urlparse(tokenizer_path)
-        local_path = Path("/tmp") / Path(parsed.path).name
-        if not local_path.exists():
-            client = boto3.client("s3")
-            client.download_file(parsed.netloc, parsed.path.lstrip("/"), str(local_path))
-        tokenizer_path = str(local_path)
-
-    sp = spm.SentencePieceProcessor()
-    if not sp.load(tokenizer_path):
-        raise RuntimeError(f"Failed to load tokenizer at {tokenizer_path}")
-
-    tokenizer_fingerprint = sha256_file(Path(tokenizer_path))
-    return TokenizerAdapter(
-        encode_fn=lambda text: sp.encode(text, out_type=int),
-        decode_fn=lambda ids: sp.decode(ids),
-        tokenizer_fingerprint=tokenizer_fingerprint,
-        tokenizer_source_path=tokenizer_path,
-        eos_id=sp.eos_id(),
-        pad_id=sp.pad_id(),
-    )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def cosine_lr(step, warmup, max_steps, base_lr, min_lr=0.0):
-    if step < warmup:
-        return base_lr * step / max(warmup, 1)
-    progress = (step - warmup) / max(1, max_steps - warmup)
-    cos_val = 0.5 * (1 + math.cos(math.pi * progress))
-    return min_lr + (base_lr - min_lr) * cos_val
-
-
-def resolve_path(path_str: str) -> Path:
-    if path_str.startswith("s3://") or path_str.startswith("hf://"):
-        # For remote URIs we keep the raw string and let downstream loaders handle them.
-        return path_str  # type: ignore[return-value]
-    p = Path(path_str)
-    if p.is_absolute():
-        return p
-    # first try relative to current working directory
-    cwd_candidate = Path.cwd() / p
-    if cwd_candidate.exists():
-        return cwd_candidate
-    # then try relative to this script's directory
-    script_dir = Path(__file__).resolve().parent
-    script_candidate = script_dir / p
-    if script_candidate.exists():
-        return script_candidate
-    # fallback: repo root (wintermute) is two levels up from this file now that titanProject lives in model_training/
-    repo_root = Path(__file__).resolve().parents[2]
-    return repo_root / p
-
-
-def sync_checkpoints_to_s3(checkpoint_dir: Path, s3_uri: str, aws_bin: str, log_fn) -> None:
-    cmd = [
-        aws_bin,
-        "s3",
-        "sync",
-        str(checkpoint_dir),
-        s3_uri,
-        "--exclude",
-        "*",
-        "--include",
-        "ckpt_step_*.pt",
-        "--only-show-errors",
-    ]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True)
-    except FileNotFoundError:
-        log_fn(f"[sync] warning: aws binary not found: {aws_bin}")
-        return
-    if proc.returncode != 0:
-        log_fn(f"[sync] warning: command failed (exit={proc.returncode})")
-        if proc.stderr.strip():
-            log_fn(f"[sync] stderr: {proc.stderr.strip()}")
-        elif proc.stdout.strip():
-            log_fn(f"[sync] stdout: {proc.stdout.strip()}")
-        return
-    log_fn(f"[sync] checkpoints synced to {s3_uri}")
-
-
-def has_min_free_space(path: Path, min_free_gb: float, log_fn) -> bool:
-    try:
-        usage = shutil.disk_usage(path)
-    except FileNotFoundError:
-        return True
-
-    free_gb = usage.free / (1024**3)
-    if free_gb < min_free_gb:
-        log_fn(
-            f"[disk] free space low at {free_gb:.1f} GiB (< {min_free_gb:.1f} GiB); "
-            "skipping checkpoint to avoid filling disk"
-        )
-        return False
-    return True
+from model import ModelConfig, build_model, load_model_source
+from train_utils import (
+    build_distributed_dataloader,
+    cleanup_distributed,
+    cosine_lr,
+    get_tokenizer,
+    has_min_free_space,
+    is_main,
+    load_config,
+    pick_device,
+    reduce_scalar,
+    resolve_checkpoint_dir,
+    resolve_path,
+    save_checkpoint,
+    setup_distributed,
+    sync_checkpoints_to_s3,
+)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Titans MAC small-model trainer")
-    parser.add_argument("--config", type=str, default="config_small.yaml", help="Path to YAML config (relative or absolute)")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"], help="Device override")
+    parser = argparse.ArgumentParser(description="Titans model trainer (single & multi-GPU)")
+    parser.add_argument("--config", type=str, default="config_small.yaml",
+                        help="Path to YAML config (relative or absolute)")
+    parser.add_argument("--device", type=str, default="auto",
+                        choices=["auto", "cpu", "mps", "cuda"],
+                        help="Device override (ignored under torchrun, which forces CUDA)")
     parser.add_argument("--max-steps", type=int, default=None, help="Override max_steps")
     parser.add_argument(
-        "--grad-accum-steps",
-        type=int,
-        default=None,
-        help="Override gradient accumulation steps (effective batch = batch_size * grad_accum_steps)",
+        "--grad-accum-steps", type=int, default=None,
+        help="Override gradient accumulation steps (auto-scaled by world_size unless --no-accum-scale)",
     )
+    parser.add_argument("--no-accum-scale", action="store_true",
+                        help="Disable automatic grad_accum_steps scaling by world_size")
     parser.add_argument("--log-every", type=int, default=50, help="Log training loss every N steps")
     parser.add_argument("--debug", action="store_true", help="Verbose debug logging")
-    parser.add_argument("--max-tokens", type=int, default=None, help="Optional cap on tokens to load (per split)")
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="Optional cap on tokens to load (per split)")
     parser.add_argument(
-        "--data-log-every-lines",
-        type=int,
-        default=200000,
-        help="Emit dataset tokenization heartbeat every N input lines (set 0 to disable line-based heartbeats)",
+        "--data-log-every-lines", type=int, default=200000,
+        help="Emit dataset tokenization heartbeat every N input lines (set 0 to disable)",
     )
-    parser.add_argument("--debug-every", type=int, default=1, help="If --debug, log every N steps (default 1)")
-    parser.add_argument("--resume", type=str, default=None, help="Path to checkpoint (.pt) to resume from")
+    parser.add_argument("--debug-every", type=int, default=1,
+                        help="If --debug, log every N steps (default 1)")
+    parser.add_argument("--resume", type=str, default=None,
+                        help="Path to checkpoint (.pt) to resume from")
     parser.add_argument(
-        "--init-from",
-        type=str,
-        default=None,
+        "--init-from", type=str, default=None,
         help="Optional model init source (checkpoint path or Hugging Face ref like hf://gpt2)",
     )
-    parser.add_argument("--save-every", type=int, default=None, help="Override checkpoint save interval (steps)")
+    parser.add_argument("--save-every", type=int, default=None,
+                        help="Override checkpoint save interval (steps)")
     parser.add_argument(
-        "--checkpoint-dir",
-        type=str,
-        default=None,
+        "--checkpoint-dir", type=str, default=None,
         help="Directory to write checkpoints (default: model_training/titanProject)",
     )
     parser.add_argument(
-        "--s3-checkpoint-uri",
-        type=str,
-        default=None,
+        "--s3-checkpoint-uri", type=str, default=None,
         help="Optional S3 URI (s3://bucket/prefix/) to sync checkpoints after each save",
     )
-    parser.add_argument("--aws-bin", type=str, default="aws", help="AWS CLI binary for checkpoint sync")
+    parser.add_argument("--aws-bin", type=str, default="aws",
+                        help="AWS CLI binary for checkpoint sync")
     parser.add_argument(
-        "--target-tokens",
-        type=int,
-        default=None,
+        "--target-tokens", type=int, default=None,
         help="Optional token budget target for progress logging (e.g., 2300000000)",
     )
     parser.add_argument(
-        "--min-free-gb",
-        type=float,
-        default=20.0,
-        help="Minimum free disk space (GiB) required to write a checkpoint; below this, saves are skipped",
+        "--min-free-gb", type=float, default=20.0,
+        help="Minimum free disk space (GiB) required to write a checkpoint",
     )
     amp_group = parser.add_mutually_exclusive_group()
-    amp_group.add_argument("--amp", dest="amp", action="store_true", help="Force enable AMP")
-    amp_group.add_argument("--no-amp", dest="amp", action="store_false", help="Force disable AMP (default on MPS/CPU)")
+    amp_group.add_argument("--amp", dest="amp", action="store_true",
+                           help="Force enable AMP")
+    amp_group.add_argument("--no-amp", dest="amp", action="store_false",
+                           help="Force disable AMP (default on MPS/CPU)")
     parser.set_defaults(amp=None)
     args = parser.parse_args()
+
+    # ------------------------------------------------------------------
+    # Determine whether we are in DDP mode or single-process mode
+    # ------------------------------------------------------------------
+    import os
+    use_ddp = "RANK" in os.environ
+
+    if use_ddp:
+        rank, local_rank, world_size = setup_distributed()
+        device = torch.device("cuda", local_rank)
+    else:
+        rank, local_rank, world_size = 0, 0, 1
+        device = pick_device(args.device)
 
     start_time = time.time()
 
     def log(msg: str):
+        if not is_main(rank):
+            return
         elapsed = time.time() - start_time
         print(f"[{elapsed:7.1f}s] {msg}")
 
+    # ------------------------------------------------------------------
+    # Config, tokenizer, paths
+    # ------------------------------------------------------------------
     cfg = load_config(resolve_path(args.config))
     mcfg = ModelConfig(**cfg["model"])
 
@@ -284,41 +140,81 @@ def main():
     train_max_tokens = args.max_tokens or cfg["data"].get("max_tokens")
     val_max_tokens = args.max_tokens or cfg["data"].get("max_tokens_val", cfg["data"].get("max_tokens"))
 
-    log(f"[init] device_pref={args.device} | tokenizer={tokenizer_path}")
+    log(f"[init] world_size={world_size} rank={rank} local_rank={local_rank} device={device}")
+    log(f"[init] tokenizer={tokenizer_path}")
     log(f"[init] train_path={train_path}")
     log(f"[init] val_path={val_path}")
     log(f"[data] tokenization heartbeat every {args.data_log_every_lines} lines")
 
-    log("[data] building train dataloader (tokenization can take a while)")
-    train_loader = build_dataloader(
-        str(train_path),
-        tokenizer,
-        tokenizer_fingerprint=tokenizer_fingerprint,
-        seq_len=cfg["train"]["seq_len"],
-        batch_size=cfg["train"]["batch_size"],
-        shuffle_buffer=cfg["data"]["shuffle_buffer"],
-        max_tokens=train_max_tokens,
-        log_fn=log,
-        progress_every_lines=args.data_log_every_lines,
-        progress_label="train",
-    )
-    log("[data] building val dataloader (tokenization can take a while)")
-    val_loader = build_dataloader(
-        str(val_path),
-        tokenizer,
-        tokenizer_fingerprint=tokenizer_fingerprint,
-        seq_len=cfg["train"]["seq_len"],
-        batch_size=cfg["train"]["batch_size"],
-        shuffle_buffer=cfg["data"]["shuffle_buffer"],
-        shuffle=False,
-        max_tokens=val_max_tokens,
-        log_fn=log,
-        progress_every_lines=args.data_log_every_lines,
-        progress_label="val",
-    )
+    # ------------------------------------------------------------------
+    # Data loading
+    # ------------------------------------------------------------------
+    if world_size > 1:
+        if is_main(rank):
+            log("[data] rank 0 building token caches (other ranks waiting) ...")
+        if not is_main(rank):
+            dist.barrier()
+
+    if world_size > 1:
+        log("[data] building train dataloader")
+        train_loader, train_sampler = build_distributed_dataloader(
+            str(train_path), tokenizer, tokenizer_fingerprint,
+            seq_len=cfg["train"]["seq_len"],
+            batch_size=cfg["train"]["batch_size"],
+            rank=rank, world_size=world_size,
+            shuffle=True,
+            max_tokens=train_max_tokens,
+            log_fn=log if is_main(rank) else None,
+            progress_every_lines=args.data_log_every_lines,
+            progress_label="train",
+        )
+        log("[data] building val dataloader")
+        val_loader, _ = build_distributed_dataloader(
+            str(val_path), tokenizer, tokenizer_fingerprint,
+            seq_len=cfg["train"]["seq_len"],
+            batch_size=cfg["train"]["batch_size"],
+            rank=rank, world_size=world_size,
+            shuffle=False,
+            max_tokens=val_max_tokens,
+            log_fn=log if is_main(rank) else None,
+            progress_every_lines=args.data_log_every_lines,
+            progress_label="val",
+        )
+    else:
+        train_sampler = None
+        log("[data] building train dataloader (tokenization can take a while)")
+        train_loader = build_dataloader(
+            str(train_path), tokenizer,
+            tokenizer_fingerprint=tokenizer_fingerprint,
+            seq_len=cfg["train"]["seq_len"],
+            batch_size=cfg["train"]["batch_size"],
+            shuffle_buffer=cfg["data"]["shuffle_buffer"],
+            max_tokens=train_max_tokens,
+            log_fn=log,
+            progress_every_lines=args.data_log_every_lines,
+            progress_label="train",
+        )
+        log("[data] building val dataloader (tokenization can take a while)")
+        val_loader = build_dataloader(
+            str(val_path), tokenizer,
+            tokenizer_fingerprint=tokenizer_fingerprint,
+            seq_len=cfg["train"]["seq_len"],
+            batch_size=cfg["train"]["batch_size"],
+            shuffle_buffer=cfg["data"]["shuffle_buffer"],
+            shuffle=False,
+            max_tokens=val_max_tokens,
+            log_fn=log,
+            progress_every_lines=args.data_log_every_lines,
+            progress_label="val",
+        )
+
+    if world_size > 1 and is_main(rank):
+        dist.barrier()
+        log("[data] all ranks have loaded data")
 
     log(
-        f"[init] train_dataset_size={len(train_loader.dataset)} windows, tokens={train_loader.dataset.num_tokens}"
+        f"[init] train_dataset_size={len(train_loader.dataset)} windows, "
+        f"tokens={train_loader.dataset.num_tokens}"
     )
     log(f"[init] val_dataset_size={len(val_loader.dataset)} windows, tokens={val_loader.dataset.num_tokens}")
     if train_max_tokens:
@@ -326,29 +222,40 @@ def main():
     if val_max_tokens:
         log(f"[init] val max_tokens cap: {val_max_tokens}")
 
-    # device selection
-    if args.device == "cuda" and torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif args.device == "mps" and torch.backends.mps.is_available():
-        device = torch.device("mps")
-    elif args.device == "auto":
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            device = torch.device("mps")
-        else:
-            device = torch.device("cpu")
+    # ------------------------------------------------------------------
+    # AMP configuration
+    # ------------------------------------------------------------------
+    if args.amp is not None:
+        amp_enabled = args.amp
+    elif device.type == "cuda":
+        amp_enabled = True
     else:
-        device = torch.device("cpu")
+        amp_enabled = False
 
-    # Decide AMP: default on CUDA, off on MPS/CPU unless forced on.
-    amp_enabled = args.amp if args.amp is not None else device.type == "cuda"
     amp_device = device.type if amp_enabled and device.type in ("cuda", "mps") else None
+    log(f"[init] amp_enabled={amp_enabled}, amp_device={amp_device}")
 
-    log(f"[init] using device={device}, amp_enabled={amp_enabled}, amp_device={amp_device}")
-
+    # ------------------------------------------------------------------
+    # Model
+    # ------------------------------------------------------------------
     model = build_model(mcfg).to(device)
 
+    if args.resume:
+        ckpt_path = resolve_path(args.resume)
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt["model"], strict=True)
+        log(f"[resume] loaded weights from {ckpt_path}")
+    elif args.init_from:
+        init_source = load_model_source(model, resolve_path(args.init_from), map_location=device, strict=True)
+        log(f"[init] loaded model weights from {init_source}")
+
+    if world_size > 1:
+        model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+    raw_model = model.module if world_size > 1 else model
+
+    # ------------------------------------------------------------------
+    # Optimizer
+    # ------------------------------------------------------------------
     opt = AdamW(
         model.parameters(),
         lr=cfg["train"]["lr"],
@@ -360,22 +267,25 @@ def main():
 
     global_step = 0
     if args.resume:
-        ckpt_path = resolve_path(args.resume)
-        ckpt = torch.load(ckpt_path, map_location=device)
-        model.load_state_dict(ckpt["model"], strict=True)
         opt.load_state_dict(ckpt["opt"])
         if scaler and ckpt.get("scaler") is not None:
             scaler.load_state_dict(ckpt["scaler"])
         global_step = ckpt.get("step", 0)
-        log(f"[resume] loaded {ckpt_path} at step {global_step}")
-    elif args.init_from:
-        init_source = load_model_source(model, resolve_path(args.init_from), map_location=device, strict=True)
-        log(f"[init] loaded model weights from {init_source}")
+        log(f"[resume] optimizer restored at step {global_step}")
 
+    # ------------------------------------------------------------------
+    # Training params
+    # ------------------------------------------------------------------
     max_steps = args.max_steps or cfg["train"]["max_steps"]
     grad_accum_steps = args.grad_accum_steps or cfg["train"].get("grad_accum_steps", 1)
     if grad_accum_steps <= 0:
         raise ValueError("--grad-accum-steps must be > 0")
+
+    if world_size > 1 and not args.no_accum_scale:
+        original_accum = grad_accum_steps
+        grad_accum_steps = max(1, grad_accum_steps // world_size)
+        log(f"[init] auto-scaled grad_accum_steps: {original_accum} -> {grad_accum_steps} (world_size={world_size})")
+
     warmup = cfg["train"]["warmup_steps"]
     lr_min = cfg["train"].get("lr_min", 0.0)
     target_tokens = args.target_tokens or cfg["train"].get("target_tokens")
@@ -384,20 +294,15 @@ def main():
     if save_every <= 0:
         raise ValueError("--save-every must be > 0")
 
-    if args.checkpoint_dir:
-        checkpoint_dir = Path(args.checkpoint_dir).expanduser()
-        if not checkpoint_dir.is_absolute():
-            checkpoint_dir = (Path.cwd() / checkpoint_dir).resolve()
-    else:
-        checkpoint_dir = Path(__file__).parent
-    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_dir = resolve_checkpoint_dir(args.checkpoint_dir, Path(__file__).parent)
 
     micro_batch_tokens = cfg["train"]["batch_size"] * cfg["train"]["seq_len"]
-    effective_tokens_per_step = micro_batch_tokens * grad_accum_steps
+    effective_tokens_per_step = micro_batch_tokens * grad_accum_steps * world_size
     log(
         f"[init] max_steps={max_steps}, warmup={warmup}, log_every={log_every}, save_every={save_every}, "
         f"batch_size={cfg['train']['batch_size']}, seq_len={cfg['train']['seq_len']}, "
-        f"grad_accum_steps={grad_accum_steps}, effective_tokens/step={effective_tokens_per_step:,}"
+        f"grad_accum_steps={grad_accum_steps}, world_size={world_size}, "
+        f"effective_tokens/step={effective_tokens_per_step:,}"
     )
     if target_tokens:
         est_steps_to_target = math.ceil(target_tokens / max(effective_tokens_per_step, 1))
@@ -411,19 +316,29 @@ def main():
     if args.debug:
         log(f"[debug] model cfg: {mcfg}")
 
+    # ------------------------------------------------------------------
+    # Training loop
+    # ------------------------------------------------------------------
     if args.debug:
-        # grab a tiny batch to inspect shape
         xb, yb = next(iter(train_loader))
         log(f"[debug] first batch shapes x={xb.shape}, y={yb.shape}")
+
     model.train()
     total_tokens_seen = global_step * effective_tokens_per_step
     accum_in_step = 0
     accum_loss_sum = 0.0
     opt.zero_grad(set_to_none=True)
+    epoch = 0
+
     while global_step < max_steps:
+        if train_sampler is not None:
+            train_sampler.set_epoch(epoch)
+        epoch += 1
+
         for batch_idx, (x, y) in enumerate(train_loader):
-            x, y = x.to(device), y.to(device)
-            total_tokens_seen += int(x.numel())
+            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
+            total_tokens_seen += int(x.numel()) * world_size
+
             lr = (
                 cosine_lr(global_step, warmup, max_steps, cfg["train"]["lr"], lr_min)
                 if cfg["train"]["cosine_decay"]
@@ -432,32 +347,30 @@ def main():
             for pg in opt.param_groups:
                 pg["lr"] = lr
 
-            if amp_device:
-                if amp_device == "cuda":
-                    amp_ctx = amp_autocast(device_type="cuda", dtype=torch.float16)
-                elif amp_device == "mps":
-                    amp_ctx = amp_autocast(device_type="mps", dtype=torch.float16)
-                else:
-                    amp_ctx = nullcontext()
+            is_last_accum = (accum_in_step + 1) == grad_accum_steps
+            sync_context = nullcontext() if (world_size <= 1 or is_last_accum) else model.no_sync()
 
-                with amp_ctx:
+            with sync_context:
+                if amp_device:
+                    with amp_autocast(device_type=amp_device, dtype=torch.float16):
+                        out = model(x, return_loss=False)
+                        logits = out if not isinstance(out, dict) else out.get("logits", out)
+                        raw_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+                        loss = raw_loss / grad_accum_steps
+                    scaler.scale(loss).backward()
+                else:
                     out = model(x, return_loss=False)
                     logits = out if not isinstance(out, dict) else out.get("logits", out)
                     raw_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
                     loss = raw_loss / grad_accum_steps
-                scaler.scale(loss).backward()
-            else:
-                out = model(x, return_loss=False)
-                logits = out if not isinstance(out, dict) else out.get("logits", out)
-                raw_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
-                loss = raw_loss / grad_accum_steps
-                loss.backward()
+                    loss.backward()
 
             accum_in_step += 1
             accum_loss_sum += raw_loss.item()
             if accum_in_step < grad_accum_steps:
                 continue
 
+            # --- Optimizer step ---
             if amp_device:
                 scaler.unscale_(opt)
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg["train"]["grad_clip"])
@@ -472,62 +385,107 @@ def main():
             opt_step_loss = accum_loss_sum / max(accum_in_step, 1)
             accum_in_step = 0
             accum_loss_sum = 0.0
+
             if global_step % log_every == 0:
-                elapsed = max(time.time() - start_time, 1e-6)
-                tok_per_sec = total_tokens_seen / elapsed
-                token_msg = f" tokens_seen={total_tokens_seen:,} tok/s={tok_per_sec:,.0f}"
-                if target_tokens:
-                    token_pct = 100.0 * total_tokens_seen / max(target_tokens, 1)
-                    token_msg += f" target_progress={token_pct:.2f}%"
-                log(
-                    f"[train] step={global_step} batch={batch_idx} loss={opt_step_loss:.4f} "
-                    f"lr={lr:.6f}{token_msg}"
-                )
+                avg_loss = reduce_scalar(opt_step_loss, world_size)
+                if is_main(rank):
+                    elapsed = max(time.time() - start_time, 1e-6)
+                    tok_per_sec = total_tokens_seen / elapsed
+                    token_msg = f" tokens_seen={total_tokens_seen:,} tok/s={tok_per_sec:,.0f}"
+                    if target_tokens:
+                        token_pct = 100.0 * total_tokens_seen / max(target_tokens, 1)
+                        token_msg += f" target_progress={token_pct:.2f}%"
+                    log(
+                        f"[train] step={global_step} batch={batch_idx} loss={avg_loss:.4f} "
+                        f"lr={lr:.6f}{token_msg}"
+                    )
             if args.debug:
                 log(
                     f"[debug] step={global_step} lr={lr:.6f} loss={opt_step_loss:.4f} "
                     f"accum={grad_accum_steps}"
                 )
 
-            # Step-based eval/checkpoint hooks so long epochs do not delay persistence.
+            # --- Eval ---
             if global_step % cfg["train"]["eval_every"] == 0:
                 model.eval()
                 total_loss = 0.0
                 count = 0
                 log(f"[eval] running eval at step {global_step} ...")
                 with torch.no_grad():
-                    for x, y in val_loader:
-                        x, y = x.to(device), y.to(device)
-                        out = model(x, return_loss=False)
-                        logits = out if not isinstance(out, dict) else out.get("logits", out)
-                        val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+                    for vx, vy in val_loader:
+                        vx, vy = vx.to(device, non_blocking=True), vy.to(device, non_blocking=True)
+                        if amp_device:
+                            with amp_autocast(device_type=amp_device, dtype=torch.float16):
+                                out = model(vx, return_loss=False)
+                                logits = out if not isinstance(out, dict) else out.get("logits", out)
+                                val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
+                        else:
+                            out = model(vx, return_loss=False)
+                            logits = out if not isinstance(out, dict) else out.get("logits", out)
+                            val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
                         total_loss += val_loss.item()
                         count += 1
-                ppl = math.exp(total_loss / max(count, 1))
-                log(f"[eval] step {global_step} loss {total_loss/max(count,1):.4f} ppl {ppl:.2f}")
+
+                avg_val_loss = reduce_scalar(total_loss / max(count, 1), world_size)
+                if is_main(rank):
+                    ppl = math.exp(avg_val_loss)
+                    log(f"[eval] step {global_step} loss {avg_val_loss:.4f} ppl {ppl:.2f}")
                 model.train()
 
-            if global_step % save_every == 0:
-                if not has_min_free_space(checkpoint_dir, args.min_free_gb, log):
-                    continue
-                ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
-                torch.save(
-                    {
-                        "model": model.state_dict(),
-                        "opt": opt.state_dict(),
-                        "step": global_step,
-                        "scaler": scaler.state_dict() if scaler else None,
-                    },
-                    ckpt_path,
-                )
-                log(f"Saved {ckpt_path}")
-                if args.s3_checkpoint_uri:
-                    sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
+            # --- Checkpoint (rank 0 only) ---
+            if global_step % save_every == 0 and is_main(rank):
+                if has_min_free_space(checkpoint_dir, args.min_free_gb, log):
+                    ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
+                    save_checkpoint(ckpt_path, raw_model.state_dict(), opt.state_dict(), global_step,
+                                    scaler.state_dict() if scaler else None)
+                    log(f"Saved {ckpt_path}")
+                    if args.s3_checkpoint_uri:
+                        sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
 
             if global_step >= max_steps:
                 break
 
+    # --- Final checkpoint + eval (if not already on a save boundary) ---
+    if global_step > 0 and global_step % save_every != 0:
+        log(f"[final] training ended at step {global_step} (not on save_every={save_every} boundary)")
+        model.eval()
+        total_loss = 0.0
+        count = 0
+        log(f"[final-eval] running final eval at step {global_step} ...")
+        with torch.no_grad():
+            for vx, vy in val_loader:
+                vx, vy = vx.to(device, non_blocking=True), vy.to(device, non_blocking=True)
+                if amp_device:
+                    with amp_autocast(device_type=amp_device, dtype=torch.float16):
+                        out = model(vx, return_loss=False)
+                        logits = out if not isinstance(out, dict) else out.get("logits", out)
+                        val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
+                else:
+                    out = model(vx, return_loss=False)
+                    logits = out if not isinstance(out, dict) else out.get("logits", out)
+                    val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
+                total_loss += val_loss.item()
+                count += 1
+
+        avg_val_loss = reduce_scalar(total_loss / max(count, 1), world_size)
+        if is_main(rank):
+            ppl = math.exp(avg_val_loss)
+            log(f"[final-eval] step {global_step} loss {avg_val_loss:.4f} ppl {ppl:.2f}")
+
+            if has_min_free_space(checkpoint_dir, args.min_free_gb, log):
+                ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
+                save_checkpoint(ckpt_path, raw_model.state_dict(), opt.state_dict(), global_step,
+                                scaler.state_dict() if scaler else None)
+                log(f"[final] Saved {ckpt_path}")
+                if args.s3_checkpoint_uri:
+                    sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
+        model.train()
+    elif global_step > 0:
+        log(f"[final] training ended at step {global_step} (on save boundary, already saved)")
+
+    log(f"[done] training complete at step {global_step}, tokens_seen={total_tokens_seen:,}")
+    cleanup_distributed()
+
 
 if __name__ == "__main__":
     main()
-

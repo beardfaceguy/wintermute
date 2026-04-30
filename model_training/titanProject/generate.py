@@ -15,7 +15,7 @@ import yaml
 
 from model import ModelConfig, build_model, load_model_source
 from prompt_formats import default_stop_strings, infer_prompt_family
-from train import get_tokenizer
+from train_utils import get_tokenizer
 
 
 def resolve_path(path_str: str) -> Path:

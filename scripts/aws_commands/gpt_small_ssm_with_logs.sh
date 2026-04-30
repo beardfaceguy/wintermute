@@ -109,6 +109,20 @@ for i in 1 2 3; do
 done
 ls -lh "${TRAIN_LOCAL}" "${VAL_LOCAL}"
 
+echo "=== token cache preload from S3 ==="
+date -Iseconds
+TOKEN_CACHE_S3="${TOKEN_CACHE_S3_URI:-s3://alix-ai-ml-staging-data/titan/token_cache/}"
+TOKEN_CACHE_LOCAL="${DATA_DIR}/.titan_token_cache"
+mkdir -p "${TOKEN_CACHE_LOCAL}"
+if aws s3 ls "${TOKEN_CACHE_S3}" --no-cli-pager >/dev/null 2>&1; then
+  aws s3 sync "${TOKEN_CACHE_S3}" "${TOKEN_CACHE_LOCAL}" --only-show-errors && \
+    echo "[cache] synced pre-built token cache from ${TOKEN_CACHE_S3}" || \
+    echo "[cache] token cache sync failed; will tokenize from scratch"
+else
+  echo "[cache] no pre-built token cache at ${TOKEN_CACHE_S3}; will tokenize from scratch"
+fi
+export TITAN_TOKEN_CACHE_TRUST_EXISTING=1
+
 python3 - <<'PY'
 import yaml
 from pathlib import Path

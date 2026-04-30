@@ -1,10 +1,18 @@
 # Implementation Plan: AWS Titans LLM Model Training
 
 > Execution tracking for this effort now lives in Linear.
-> Use `.cursor/docs/IMPLEMENTATION_DOC_TITAN_GPT_SMALL_PRETRAINING.md` as the repo-local technical companion and this file as the detailed historical archive.
+> GPT-small companion docs have been archived to `.cursor/docs/archive/`. Use this file as the detailed historical archive and `.cursor/docs/llm_training_project.md` for the project summary.
 
 ## Overview
-Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), using spot-first with on-demand fallback. All resources are dedicated to avoid impacting existing systems: new IAM role/profile, new S3 bucket/prefix, existing training-dedicated SG, new EBS volume.
+Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), using **on-demand instances**. All resources are dedicated to avoid impacting existing systems: new IAM role/profile, new S3 bucket/prefix, existing training-dedicated SG, new EBS volume.
+
+### Lessons Learned: Spot vs On-Demand
+
+**Policy: Always use on-demand instances for training runs.**
+
+During the GPT-Medium (407M) training (CLA-143), a spot instance (`i-0d08f0992a79333d7`) was reclaimed by AWS after several hours of training, before the first checkpoint could be saved. One-time spot requests result in instance *termination* (not stop) on reclamation, meaning all local state is lost. Even with frequent checkpointing, spot reclamation wastes hours of compute and requires manual relaunching.
+
+The on-demand premium (~$0.98/hr vs ~$0.42/hr for g6.2xlarge) is worth the reliability for multi-hour and multi-day training runs. A full 407M pretrain costs ~$213 on-demand vs a theoretical ~$91 on spot — but losing a run to reclamation easily exceeds that difference.
 
 ## Workload context (from prior plan)
 - Code: `model_training/titanProject/` (train.py, model.py, data.py, configs/*; scripts: generate.py, memory_test_eval.py, finetune_memory_qa.py, memory_test_gen.py).
@@ -25,7 +33,7 @@ Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), u
 - S3 bucket: `alix-ai-ml-staging-data` (new), prefix `titan/` with subprefixes `code/`, `data/`, `checkpoints/`, `logs/`
 - Permissions: SSM (`AmazonSSMManagedInstanceCore`) + inline S3 RW scoped to `s3://alix-ai-ml-staging-data/titan/*`; CloudWatch logging omitted for now
 - Tags: `Owner=patrick.clawson`, `Project=Titan-LLM`, `Env=staging`, `CostCenter=ai-ml-training`, `Purpose=titan-training`, `Name=titan-train-staging-g6-2xlarge`
-- EC2: `g6.2xlarge` default for main pretraining, spot-first (AZ order: 1d → 1c → 1b → 1f → 1a), on-demand fallback
+- EC2: `g6.2xlarge` default for main pretraining, **on-demand only** (spot is not suitable for multi-day training runs — see lessons learned below)
 - EC2 smoke / bring-up runner: `g6.xlarge`
 - AMI: `ami-0ad8dd83d01a01d3a` (DL OSS GPU PyTorch 2.7, Ubuntu 22.04, 20260118)
 - EBS: dedicated gp3 500 GB data volume, mount `/mnt/data`
@@ -35,6 +43,26 @@ Set up and run Titans small-model training on an EC2 GPU instance (us-east-1), u
 - Ports: SSH 22 only (tunnel for TB/Jupyter)
 - Data locality: keep S3/ECR in us-east-1 to avoid cross-region egress surprises.
 - Cost guardrail: $50/mo alert; per-run soft cap 2h
+
+### Multi-GPU DDP Validated (2026-04-22)
+
+Multi-GPU training via PyTorch DDP is now production-ready. Key results from live validation on g5.12xlarge (4x A10G):
+
+- **Script**: `train.py` (unified single/multi-GPU; `train_multi_gpu.py` was merged in and deleted on 2026-04-29). Launch with `torchrun --nproc_per_node=N train.py` for DDP or plain `python3 train.py` for single-GPU.
+- **SFT Script**: `finetune_sft.py` also supports DDP via `torchrun`, using shared `train_utils.py`
+- **Throughput**: ~32,000 tok/s (vs ~8,700 tok/s on single L4) — 3.7x speedup
+- **Weight sync**: Perfect (max_diff=0.00e+00) across 4 ranks via NCCL
+- **Test coverage**: 142 pytest tests, including 6 Gloo-based multi-process DDP tests and 29 SFT format tests
+- **Instance for test**: `i-0fbf856cf80d48969` (g5.12xlarge, us-east-1d, on-demand, $5.67/hr) — auto-stopped after test
+
+**Multi-GPU pricing (on-demand, us-east-1)**:
+| Instance | GPUs | GPU Type | $/hr | Notes |
+|----------|------|----------|------|-------|
+| g5.12xlarge | 4 | A10G 24GB | ~$5.67 | Validated for DDP; best value for 4-GPU |
+| p3.8xlarge | 4 | V100 16GB | ~$12.24 | Older; less VRAM |
+| p4d.24xlarge | 8 | A100 40GB | ~$32.77 | Overkill for 407M; appropriate for 1B+ |
+
+**Recommendation**: Use `g5.12xlarge` for multi-GPU runs up to ~1B params. For 1B+ models needing more VRAM per GPU, consider `p4d.24xlarge` or `p5.48xlarge` (H100).
 
 ## Instance choice & pricing notes (current recommendation)
 - Recommended main runner: `g6.2xlarge` (L4 24 GB, 32 GiB RAM). Recommended smoke runner: `g6.xlarge` (L4 24 GB, 16 GiB RAM).
@@ -249,7 +277,7 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
   - Reconfirm currently running/stopped instances, EBS volumes, and cost-bearing resources before new launch.
 
 ## Onboarding checklist (for new agent)
-- Plan doc: `.cursor/docs/PLAN_AWS_hosting.md`.
+- Plan doc: `.cursor/docs/archive/PLAN_AWS_hosting.md` (archived; superseded by this file and `llm_training_project.md`).
 - Titans code: `model_training/titanProject/` (`train.py`, `model.py`, `data.py`).
 - Configs: `model_training/titanProject/configs/` (esp. `config_baseline_nomem.yaml`).
 - Scripts: `generate.py`, `memory_test_eval.py`, `finetune_memory_qa.py`, `memory_test_gen.py`.
@@ -681,3 +709,43 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
 ### SSM execution timeout fix (2026-03-31)
 - Documented root cause and fix under **SSM Run Command: execution timeout** (above); details in `.cursor/docs/ssm_timeout_fixes.md`.
 - `gpt_small_*` SSM launch scripts now pass **`executionTimeout`** in `send-command` parameters; test harness `scripts/aws_commands/ssm_timeout_sleep_test.sh` with **`SSM_LONG_VERIFY=1`** (~70m) completed **`Success`**, confirming long shells no longer die at the default 3600 s cap when parameters are set correctly.
+
+## Final Status (2026-04-16) — Side-Quest Complete
+
+### 40k-step pretraining completed
+- Run ID: `gpt_small_pretrain_20260414162538`
+- Instance: `i-095a84b978335b4f9` (g5.xlarge, spot)
+- Duration: ~40k optimizer steps over ~24h wall clock
+- Final metrics: train loss **2.8660**, val loss **3.3644**, val perplexity **28.91**
+- Tokens seen: ~2.62B (exceeded 2.3B target)
+- Checkpoints: every 2k steps, all synced to `s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_small_pretrain_20260414162538/`
+- Perplexity gate (**<50**) passed — SFT was authorized
+
+### SFT pilot completed
+- Base checkpoint: `ckpt_step_40000.pt` from the 40k pretrain run
+- Instance: `i-038216b02ecd17662` (g6.2xlarge, spot) — terminated after completion
+- Duration: 3000 SFT steps
+- Config: lr=5e-5 cosine, warmup=200, seq_len=1024, batch=2, grad_accum=8
+- Data: ~27k train / ~1.6k val examples (OASST1 + OpenHermes + SlimOrca + GSM8K)
+- Final eval loss: ~3.19
+- Checkpoints: `s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_small_sft_20260419/ckpt_sft_step_{1000,2000,3000}.pt`
+
+### Qualitative evaluation
+- SFT improved format awareness and reply structure vs. raw pretrained base
+- Fundamental limits remain: repetition, factual errors, shallow reasoning, math failures
+- Root cause: 117M params is insufficient for instruction-following; SFT cannot teach knowledge the model lacks
+- Verdict: **pipeline validated, model size is the bottleneck**
+
+### AWS resource cleanup
+- SFT spot instance `i-038216b02ecd17662` terminated
+- Three stopped instances remain (`i-095a84b978335b4f9`, `i-041856a8d4276ce06`, `i-079d25bc4d7483504`) — tracked in CLA-133 for termination and EBS audit
+- S3 data lifecycle rule: `titan/data/` transitions to STANDARD_IA after 30 days
+
+### Linear disposition
+- CLA-33 (program tracker): Done
+- CLA-36 (Phase 3 long-run + gating): Done
+- CLA-38 (SFT perplexity gate): Done — gate met, SFT executed
+- CLA-135 (stage SFT recipe): Done — recipe executed
+- CLA-35 (AWS orchestration hardening): Done
+- CLA-133 (terminate stale instances): remains open for cleanup
+- CLA-134 (NoProp experiments): remains planned for future work

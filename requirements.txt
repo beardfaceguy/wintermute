@@ -17,6 +17,8 @@ sentence-transformers
 vllm
 openai
 
+fastmcp
+
 
 anyio
 click
