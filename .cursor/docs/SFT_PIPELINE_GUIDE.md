@@ -4,6 +4,96 @@ Reference for agents and contributors preparing domain-specific fine-tuning runs
 
 ---
 
+## Quick Start: Fine-Tune a Model for Your Project
+
+Follow these 6 steps to create a domain-specialized model. Each step links to the detailed section below.
+
+### Step 1 — Prepare your data
+
+Convert your domain Q&A pairs into HF Messages JSONL (one JSON object per line):
+
+```json
+{"messages": [{"role": "user", "content": "Your question"}, {"role": "assistant", "content": "Your answer"}]}
+```
+
+Split into 90% train / 10% val files. Mix in 10-20% general conversation data to prevent catastrophic forgetting. See [Data Format](#data-format) for all supported formats and quality guidelines.
+
+### Step 2 — Upload data to S3
+
+```bash
+aws s3 cp train.jsonl s3://alix-ai-ml-staging-data/titan/data/sft/your_project/train.jsonl
+aws s3 cp val.jsonl s3://alix-ai-ml-staging-data/titan/data/sft/your_project/val.jsonl
+```
+
+### Step 3 — Choose your base model and mode
+
+| Goal | Base Model | Mode | GPU Needed |
+|------|-----------|------|------------|
+| Fast experimentation | `mistralai/Mistral-7B-v0.3` | QLoRA | 1x L4 (g6.2xlarge) |
+| Higher quality | `meta-llama/Meta-Llama-3-8B` | LoRA | 1x L4 (24GB+ VRAM) |
+| Maximum quality | Any 7B HF model | Full fine-tune | 4x A10G (g5.12xlarge) |
+| Lightweight / cheap | Titan GPT-Medium 407M | Native SFT | 1x L4 (g6.2xlarge) |
+
+The QLoRA path on Mistral-7B is proven end-to-end and recommended for first runs.
+
+### Step 4 — Launch the training run
+
+**Option A: HF 7B model via QLoRA (recommended)**
+
+```bash
+INSTANCE_ID=i-xxxxx \
+HF_MODEL_ID=mistralai/Mistral-7B-v0.3 \
+FINETUNE_MODE=qlora \
+SFT_TRAIN_PATH=s3://alix-ai-ml-staging-data/titan/data/sft/your_project/train.jsonl \
+SFT_VAL_PATH=s3://alix-ai-ml-staging-data/titan/data/sft/your_project/val.jsonl \
+STEPS=3000 \
+bash scripts/aws_commands/hf_sft_cloudwatch.sh
+```
+
+**Option B: Titan 407M model**
+
+```bash
+INSTANCE_ID=i-xxxxx \
+BASE_CKPT_S3_URI=s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_medium_sft_20260430052503/ckpt_sft_step_5000.pt \
+STEPS=3000 \
+bash scripts/aws_commands/gpt_medium_sft_cloudwatch.sh
+```
+
+Both scripts handle: code deployment, dependency install, data download, training, checkpoint sync to S3, and instance self-stop.
+
+### Step 5 — Evaluate
+
+```bash
+# HF model with adapter
+python3 generate.py --hf-model mistralai/Mistral-7B-v0.3 \
+  --adapter checkpoints_sft/step_3000 --chat-template \
+  --prompt "Your domain question here" --max-new 200
+
+# Titan model
+python3 generate.py --config configs/config_sft_gpt_medium_instruction.yaml \
+  --ckpt /path/to/ckpt_sft_step_3000.pt \
+  --prompt "User: Your domain question here. Assistant:" \
+  --max-new 200 --prompt-family chat
+```
+
+See [Evaluating Results](#evaluating-results) for metrics to watch.
+
+### Step 6 — Serve
+
+For HF models, merge the adapter and launch the inference server:
+
+```bash
+bash scripts/aws_commands/merge_and_serve_v2.sh
+```
+
+Then deploy the talkingHead chat UI to the same instance:
+
+```bash
+bash scripts/aws_commands/deploy_talkinghead.sh
+```
+
+---
+
 ## Overview
 
 The SFT (Supervised Fine-Tuning) pipeline takes a pretrained base checkpoint and teaches it to follow instructions and hold conversations in a specific style or domain. It supports single-GPU, multi-GPU (DDP via `torchrun`), and CPU/MPS development modes.

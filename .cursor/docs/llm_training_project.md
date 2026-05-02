@@ -2,6 +2,8 @@
 
 **Status: COMPLETED (2026-04-16)**
 
+> **For other projects**: If you want to fine-tune a model using this pipeline, read **[SFT_PIPELINE_GUIDE.md](./SFT_PIPELINE_GUIDE.md)** — it has a step-by-step Quick Start and the full reference for data formats, configs, CLI arguments, and AWS launch scripts. This document below is the project history and lessons learned.
+
 ### Objectives
 - Understand the end-to-end workflow for training a compact, general-purpose LLM.
 - Stand up an experimental pipeline that can be iterated locally or on rented GPUs.
@@ -109,6 +111,7 @@ Scale-up to 407M params (d=1024, L=24, heads=16, ff_mult=4) completed successful
 
 **Next**: Domain-specific SFT forks from the general SFT checkpoint, 7B model scale-up
 - **Future training runs**: Use `torchrun train.py` on multi-GPU instance (g5.12xlarge 4x A10G) — 3x faster, lower total cost
+- **How to run SFT for your project**: See [SFT_PIPELINE_GUIDE.md](./SFT_PIPELINE_GUIDE.md) — Quick Start section has the 6-step workflow
 
 ### HuggingFace 7B QLoRA SFT — END-TO-END VALIDATED (2026-05-01)
 

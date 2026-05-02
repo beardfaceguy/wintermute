@@ -44,17 +44,18 @@ wintermute/
 │   ├── data.py              # Disk-backed dataset + TokenCache
 │   ├── prepare_sft_mix.py   # Multi-source SFT data preparation
 │   ├── export_to_hf.py      # Export checkpoint to HF format
-│   ├── tests/               # pytest suite (142 tests)
+│   ├── tests/               # pytest suite (210 tests)
 │   │   ├── conftest.py      # Shared fixtures (tiny configs, dummy tokenizer)
 │   │   ├── test_data.py     # Data pipeline + TokenCache tests
 │   │   ├── test_model.py    # Model construction + forward pass tests
-│   │   ├── test_train_utils.py  # LR schedule, checkpointing, utilities
+│   │   ├── test_train_utils.py  # LR schedule, checkpointing, S3 tokenizer, utilities
 │   │   ├── test_multi_gpu.py    # DDP tests (unit + Gloo multi-process)
 │   │   └── test_sft_formats.py  # SFT data format parsing tests
 │   └── configs/
 │       ├── config_gpt_medium.yaml              # 407M pretrain config
 │       ├── config_gpt_medium_sanity_overfit.yaml # 407M sanity gate
 │       ├── config_sft_gpt_medium_instruction.yaml # 407M SFT config
+│       ├── config_sft_hf_qlora.yaml            # QLoRA template for HF models (7B+)
 │       └── config_gpt_small.yaml               # 117M pretrain (completed)
 ├── .cursor/
 │   ├── mcp.json              # Cursor MCP server registrations
@@ -96,7 +97,7 @@ wintermute/
 - **Training Pipeline Fixes** (2026-04-28): Fixed missing final checkpoint save in `train.py`. Fixed silent self-stop failure (IAM tag mismatch) in runner scripts.
 - **SFT Format Support** (2026-04-30): `finetune_sft.py` auto-detects 4 formats per line (HF messages JSONL, ShareGPT JSONL, Alpaca JSONL, chat text). Compatible with most Hugging Face Hub datasets without conversion. 29 new tests added.
 - **Multi-GPU DDP Training** (2026-04-22): DDP support validated on g5.12xlarge (4x A10G). 32k tok/s throughput, perfect weight sync across ranks. Ready for 1B+ scale-up.
-- **Automated Test Suite**: pytest framework with 142 tests covering data pipeline, model construction, training utilities, checkpointing, DDP, and SFT format parsing.
+- **Automated Test Suite**: pytest framework with 477 tests (267 root/talkingHead + 210 titanProject) covering data pipeline, model construction, training utilities, checkpointing, DDP, SFT format parsing, MCP servers, agents, resource lifecycle, and memory operations.
 
 ### NEXT UP (in priority order)
 1. **Domain-Specific SFT Forks**: Fine-tune specialized models using HF 7B base + QLoRA (pentest, code review, tool fluency). See CLA-245, CLA-248, CLA-177.
