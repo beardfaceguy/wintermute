@@ -12,13 +12,16 @@ The SFT (Supervised Fine-Tuning) pipeline takes a pretrained base checkpoint and
 
 | File | Purpose |
 |------|---------|
-| `model_training/titanProject/finetune_sft.py` | SFT training loop |
+| `model_training/titanProject/finetune_sft.py` | SFT training loop (Titan + HF models) |
+| `model_training/titanProject/hf_utils.py` | HF model loading, LoRA/QLoRA wrapping, checkpoint I/O |
 | `model_training/titanProject/prepare_sft_mix.py` | Multi-source data preparation (built-in sources) |
 | `model_training/titanProject/train_utils.py` | Shared utilities (checkpointing, LR schedules, DDP helpers) |
-| `model_training/titanProject/generate.py` | Text generation / evaluation |
+| `model_training/titanProject/generate.py` | Text generation / evaluation (Titan + HF models) |
 | `model_training/titanProject/export_to_hf.py` | Export weights to HF-style directory |
 | `model_training/titanProject/configs/config_sft_gpt_medium_instruction.yaml` | Reference SFT config (407M) |
-| `scripts/aws_commands/gpt_medium_sft_cloudwatch.sh` | AWS launch script for remote SFT runs |
+| `model_training/titanProject/configs/config_sft_hf_qlora.yaml` | Template QLoRA config for HF models |
+| `scripts/aws_commands/gpt_medium_sft_cloudwatch.sh` | AWS launch script for Titan SFT runs |
+| `scripts/aws_commands/hf_sft_cloudwatch.sh` | AWS launch script for HF model SFT |
 
 ---
 
@@ -321,7 +324,20 @@ The launch script handles: code bundle deployment, dependency installation, toke
 finetune_sft.py arguments:
 
   --config PATH          YAML config file (model arch + training params + data paths)
-  --ckpt PATH            Base checkpoint to fine-tune (local path, S3 URI, or hf://model_name)
+  --ckpt PATH            Titan checkpoint (local path, S3 URI, or hf://gpt2). Mutually exclusive with --hf-model.
+
+  HuggingFace model arguments (optional):
+  --hf-model MODEL_ID   HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B)
+  --qlora               QLoRA: 4-bit quantized base + LoRA (default when --hf-model is used)
+  --lora                LoRA: fp16 base + LoRA adapters
+  --no-lora             Full fine-tuning (requires multi-GPU or large GPU)
+  --lora-rank INT       LoRA rank (default 16)
+  --lora-alpha INT      LoRA alpha (default 32)
+  --lora-dropout FLOAT  LoRA dropout (default 0.05)
+  --lora-targets MODS   Comma-separated target modules (auto-detected if omitted)
+  --chat-template       Use model's native chat template for tokenization
+
+  General arguments:
   --device DEVICE        Device override: auto, cpu, mps, cuda (ignored under torchrun)
   --steps N              Total training steps
   --log-every N          Print training loss every N steps
@@ -392,6 +408,142 @@ python3 export_to_hf.py \
 
 ---
 
+## HuggingFace Model Fine-Tuning (7B+ Models)
+
+The SFT pipeline supports fine-tuning any HuggingFace causal LM (Llama 3, Mistral, Qwen, etc.) with three modes: **QLoRA** (4-bit quantized base + LoRA), **LoRA** (fp16 base + LoRA), and **full fine-tuning** (all parameters, multi-GPU).
+
+### Key files
+
+| File | Purpose |
+|------|---------|
+| `model_training/titanProject/hf_utils.py` | HF model loading, LoRA wrapping, checkpoint save/load |
+| `model_training/titanProject/configs/config_sft_hf_qlora.yaml` | Template QLoRA config |
+| `scripts/aws_commands/hf_sft_cloudwatch.sh` | AWS launch script for HF SFT |
+
+### Quick start
+
+**QLoRA on a single L4 GPU (g6.2xlarge) — best for experimentation:**
+
+```bash
+python3 finetune_sft.py \
+  --config configs/config_sft_hf_qlora.yaml \
+  --hf-model meta-llama/Meta-Llama-3-8B \
+  --qlora \
+  --chat-template \
+  --steps 3000 \
+  --checkpoint-dir ./checkpoints_hf_sft
+```
+
+**LoRA on a single GPU (fp16, needs 20+ GB VRAM):**
+
+```bash
+python3 finetune_sft.py \
+  --config configs/config_sft_hf_qlora.yaml \
+  --hf-model meta-llama/Meta-Llama-3-8B \
+  --lora \
+  --chat-template \
+  --steps 3000
+```
+
+**Full fine-tuning with multi-GPU DDP (g5.12xlarge with 4x A10G):**
+
+```bash
+torchrun --nproc_per_node=4 finetune_sft.py \
+  --config configs/config_sft_hf_qlora.yaml \
+  --hf-model meta-llama/Meta-Llama-3-8B \
+  --no-lora \
+  --chat-template \
+  --steps 3000
+```
+
+### HF-specific CLI arguments
+
+| Argument | Default | Notes |
+|----------|---------|-------|
+| `--hf-model MODEL_ID` | — | HuggingFace model ID. Mutually exclusive with `--ckpt`. |
+| `--qlora` | (default when `--hf-model` used) | 4-bit quantized base + LoRA. Best for single GPU. |
+| `--lora` | — | fp16 base + LoRA adapters. |
+| `--no-lora` | — | Full fine-tuning. Requires multi-GPU or A100. |
+| `--lora-rank INT` | 16 | LoRA rank. Higher = more capacity, more memory. |
+| `--lora-alpha INT` | 32 | LoRA alpha (scaling). Typically 2x rank. |
+| `--lora-dropout FLOAT` | 0.05 | Dropout on LoRA layers. |
+| `--lora-targets MODULES` | auto | Comma-separated target module names. Auto-detects all linear layers if omitted. |
+| `--chat-template` | off | Use the model's native chat template (recommended for instruct/chat models). |
+
+### VRAM estimates
+
+| Mode | GPU | Base Model VRAM | Trainable Params | Total VRAM |
+|------|-----|----------------|------------------|------------|
+| QLoRA (4-bit) | 1x L4 24GB | ~4-5 GB | ~20M (0.3%) | ~8-10 GB |
+| LoRA (fp16) | 1x L4 24GB | ~14 GB | ~20M | ~18-20 GB |
+| Full fine-tune (fp16) | 4x A10G 24GB | ~14 GB/GPU (sharded) | 7B (100%) | ~20 GB/GPU |
+
+QLoRA on the g6.2xlarge is the sweet spot for experimentation. Full fine-tuning on g5.12xlarge for production-quality runs.
+
+### Chat template tokenization
+
+When `--chat-template` is enabled, the pipeline uses the model's native `tokenizer.apply_chat_template()` to format input. This ensures special tokens (`<|begin_of_text|>`, `[INST]`, `<|im_start|>`, etc.) are placed correctly per model architecture.
+
+The tokenizer handles prompt/response masking automatically: user turns are masked (`-100`) so the model only trains on assistant output.
+
+### Checkpoint format
+
+- **QLoRA/LoRA**: Saves only the adapter weights (~50-200 MB per checkpoint) plus `training_state.pt` with the step counter.
+- **Full fine-tuning**: Saves the complete model via `save_pretrained()`.
+- Checkpoints are saved as directories: `checkpoints_sft/step_500/`, `checkpoints_sft/step_1000/`, etc.
+
+### Inference with HF models
+
+```bash
+# Base HF model
+python3 generate.py --hf-model meta-llama/Meta-Llama-3-8B --prompt "Hello" --max-new 200
+
+# With LoRA adapter
+python3 generate.py --hf-model meta-llama/Meta-Llama-3-8B --adapter checkpoints_sft/step_3000 --prompt "Hello"
+
+# With chat template formatting
+python3 generate.py --hf-model meta-llama/Meta-Llama-3-8B --adapter checkpoints_sft/step_3000 --chat-template --prompt "What is machine learning?"
+
+# Merge adapter for deployment
+python3 generate.py --hf-model meta-llama/Meta-Llama-3-8B --adapter checkpoints_sft/step_3000 --merge-adapter --prompt "Hello"
+```
+
+### AWS remote execution (HF models)
+
+Use `scripts/aws_commands/hf_sft_cloudwatch.sh`:
+
+```bash
+INSTANCE_ID=i-xxxxx \
+HF_MODEL_ID=meta-llama/Meta-Llama-3-8B \
+FINETUNE_MODE=qlora \
+SFT_TRAIN_PATH=s3://alix-ai-ml-staging-data/titan/data/sft/train.jsonl \
+SFT_VAL_PATH=s3://alix-ai-ml-staging-data/titan/data/sft/val.jsonl \
+STEPS=3000 \
+bash scripts/aws_commands/hf_sft_cloudwatch.sh
+```
+
+Key environment variables:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `HF_MODEL_ID` | — | Required. e.g. `meta-llama/Meta-Llama-3-8B` |
+| `FINETUNE_MODE` | `qlora` | `qlora`, `lora`, or `full` |
+| `SFT_TRAIN_PATH` | — | S3 URI or local path to training data |
+| `SFT_VAL_PATH` | — | S3 URI or local path to validation data |
+| `NUM_GPUS` | `1` | Number of GPUs (>1 for full fine-tuning) |
+| `LORA_RANK` | `16` | LoRA rank |
+| `USE_CHAT_TEMPLATE` | `1` | Enable native chat template |
+
+### Recommended open-source 7B base models
+
+| Model | HF ID | Notes |
+|-------|-------|-------|
+| Llama 3 8B | `meta-llama/Meta-Llama-3-8B` | Strong general performance; requires HF access approval |
+| Mistral 7B v0.3 | `mistralai/Mistral-7B-v0.3` | Good balance of quality and speed |
+| Qwen 2.5 7B | `Qwen/Qwen2.5-7B` | Strong multilingual and coding ability |
+
+---
+
 ## Domain-Specific Fine-Tuning (Forking)
 
 The recommended approach for creating specialized models is to **fork from a general SFT checkpoint**:
@@ -421,6 +573,7 @@ Pretrained Base (general knowledge)
 | GPT-Medium pretrain (step 124K) | `s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_medium_pretrain_20260419232521/ckpt_step_124000.pt` | Base for full SFT (general + domain mixed) |
 | GPT-Medium general SFT (step 5K) | `s3://alix-ai-ml-staging-data/titan/checkpoints/gpt_medium_sft_20260430052503/ckpt_sft_step_5000.pt` | Base for domain-specific fork |
 | GPT-Medium general SFT weights-only | `model_training/titanProject/saved_models/gpt_medium_407m_sft_5000_weights.pt` | Local copy, weights only (1.6GB) |
+| Mistral 7B v0.3 QLoRA adapter | `s3://alix-ai-ml-staging-data/titan/checkpoints/hf_sft_mistral7b_qlora/` | Proven end-to-end (2026-05-01). Merge with base for serving. |
 
 ### Tokenizer
 

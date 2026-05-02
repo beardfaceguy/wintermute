@@ -8,6 +8,12 @@ import pytest
 from app.chat.llm import ChatProcessor
 
 
+async def _async_iter(items):
+    """Helper to turn a list into an async iterator for mocking aiter_lines()."""
+    for item in items:
+        yield item
+
+
 class TestChatProcessor:
     """Test cases for ChatProcessor."""
 
@@ -45,11 +51,11 @@ class TestChatProcessor:
 
         # Mock the streaming response
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = [
+        mock_response.aiter_lines.return_value = _async_iter([
             'data: {"choices": [{"text": "Hello"}]}',
             'data: {"choices": [{"text": " world"}]}',
             "data: [DONE]",
-        ]
+        ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -78,9 +84,9 @@ class TestChatProcessor:
         assert json_data["model"] == "test-model"
         assert json_data["prompt"] == "test prompt"
         assert json_data["stream"] is True
-        assert json_data["max_tokens"] == 512
-        assert json_data["temperature"] == 0.95
-        assert json_data["top_p"] == 0.95
+        assert json_data["max_tokens"] == 256
+        assert json_data["temperature"] == 0.7
+        assert json_data["top_p"] == 0.9
 
     @patch("app.chat.llm.httpx.AsyncClient")
     @pytest.mark.asyncio
@@ -94,7 +100,7 @@ class TestChatProcessor:
 
         # Mock empty response
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = ["data: [DONE]"]
+        mock_response.aiter_lines.return_value = _async_iter(["data: [DONE]"])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -117,11 +123,11 @@ class TestChatProcessor:
 
         # Mock response with invalid JSON
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = [
+        mock_response.aiter_lines.return_value = _async_iter([
             "data: invalid json",
             'data: {"choices": [{"text": "Valid"}]}',
             "data: [DONE]",
-        ]
+        ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -145,11 +151,11 @@ class TestChatProcessor:
 
         # Mock response with missing text
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = [
+        mock_response.aiter_lines.return_value = _async_iter([
             'data: {"choices": [{}]}',
             'data: {"choices": [{"text": "Valid"}]}',
             "data: [DONE]",
-        ]
+        ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -175,12 +181,12 @@ class TestChatProcessor:
 
         # Mock response with empty lines and control lines
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = [
+        mock_response.aiter_lines.return_value = _async_iter([
             "",
             ":",
             'data: {"choices": [{"text": "Hello"}]}',
             "data: [DONE]",
-        ]
+        ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 

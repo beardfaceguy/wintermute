@@ -1,10 +1,10 @@
 {
   "vllm": {
     "scheme": "http",
-    "host": "${VLLM_HOST}",
+    "host": "100.53.33.156",
     "port": 8010,
     "path": "/v1/completions",
-    "model": "/model",
+    "model": "wintermute-mistral-7b-sft",
     "aws": {
       "profile": "experimental-admin",
       "region": "us-east-1",

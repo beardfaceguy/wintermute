@@ -169,10 +169,17 @@ async def run_test_case_manual(
     t0 = time.monotonic()
     logger.info("Running test: %s — %s", case.id, case.question)
 
-    schema_result = await pg_client.call_tool("sql_describe_table", {
-        "table_name": "memory_entries",
-    })
-    schema_result.content[0].text
+    try:
+        schema_result = await pg_client.call_tool("sql_describe_table", {
+            "table_name": "memory_entries",
+        })
+        schema_result.content[0].text
+    except Exception as e:
+        return TestResult(
+            test_id=case.id, passed=False, sql_used="",
+            result_data=None, error=f"Schema fetch failed: {e}",
+            attempts=0, elapsed_s=time.monotonic() - t0,
+        )
     logger.info("Schema loaded for memory_entries")
 
     sql = _generate_sql_from_hints(case)
@@ -185,8 +192,15 @@ async def run_test_case_manual(
 
     logger.info("Generated SQL: %s", sql)
 
-    query_result = await pg_client.call_tool("sql_query", {"sql": sql})
-    result_data = json.loads(query_result.content[0].text)
+    try:
+        query_result = await pg_client.call_tool("sql_query", {"sql": sql})
+        result_data = json.loads(query_result.content[0].text)
+    except Exception as e:
+        return TestResult(
+            test_id=case.id, passed=False, sql_used=sql,
+            result_data=None, error=f"Query execution failed: {e}",
+            attempts=1, elapsed_s=time.monotonic() - t0,
+        )
 
     passed, reason = validate_result(result_data, case.expected)
     logger.info("Test %s: %s — %s", case.id, "PASS" if passed else "FAIL", reason)
@@ -195,14 +209,17 @@ async def run_test_case_manual(
         f"SQL strategy for '{case.question}': {sql}\n"
         f"Result: {'PASS' if passed else 'FAIL'} — {reason}"
     )
-    await mem_client.call_tool("memory_add", {
-        "text": strategy_text,
-        "tags": {
-            "type": "sql_strategy",
-            "test_id": case.id,
-            "passed": str(passed),
-        },
-    })
+    try:
+        await mem_client.call_tool("memory_add", {
+            "text": strategy_text,
+            "tags": {
+                "type": "sql_strategy",
+                "test_id": case.id,
+                "passed": str(passed),
+            },
+        })
+    except Exception as e:
+        logger.error("Failed to store strategy for %s: %s", case.id, e)
 
     return TestResult(
         test_id=case.id, passed=passed, sql_used=sql,

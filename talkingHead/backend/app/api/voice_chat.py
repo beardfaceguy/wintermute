@@ -9,20 +9,29 @@ from pathlib import Path
 from typing import cast
 
 from fastapi import APIRouter, File, UploadFile
-from pywhispercpp.model import Model
+import logging
+import os
 
-router = APIRouter()
+logger = logging.getLogger(__name__)
 
-# Resolve Whisper model path
-CURRENT_FILE = Path(__file__).resolve()
-REPO_ROOT = CURRENT_FILE.parents[4]  # .../wintermute/
-WHISPER_MODEL_PATH = REPO_ROOT / "thVoice" / "models" / "ggml-base.en.bin"
+_VOICE_ENABLED = False
+whisper_model = None
 
-if not WHISPER_MODEL_PATH.exists():
-    raise RuntimeError(f"❌ Whisper model not found at: {WHISPER_MODEL_PATH}")
+try:
+    from pywhispercpp.model import Model as _WhisperModel
 
-# Load whisper model once
-whisper_model = Model(str(WHISPER_MODEL_PATH))
+    CURRENT_FILE = Path(__file__).resolve()
+    REPO_ROOT = CURRENT_FILE.parents[4]
+    WHISPER_MODEL_PATH = REPO_ROOT / "thVoice" / "models" / "ggml-base.en.bin"
+
+    if WHISPER_MODEL_PATH.exists() and WHISPER_MODEL_PATH.stat().st_size > 0:
+        whisper_model = _WhisperModel(str(WHISPER_MODEL_PATH))
+        _VOICE_ENABLED = True
+        logger.info("Voice chat enabled (whisper model loaded)")
+    else:
+        logger.warning("Whisper model not found at %s — voice chat disabled", WHISPER_MODEL_PATH)
+except ImportError:
+    logger.warning("pywhispercpp not installed — voice chat disabled")
 
 
 def sha256sum(path: Path) -> str:
@@ -30,45 +39,33 @@ def sha256sum(path: Path) -> str:
         return hashlib.sha256(f.read()).hexdigest()
 
 
+router = APIRouter()
+
+
 @router.post("/chat/voice")
 async def voice_input(file: UploadFile = File(...)):
-    # Save uploaded audio file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-        contents = await file.read()
-        tmp.write(contents)
-        tmp.flush()
-        tmp_path = tmp.name
-        print("Checksum:", sha256sum(cast(Path, tmp_path)))
+    if not _VOICE_ENABLED or whisper_model is None:
+        return {"error": "Voice chat is not available — whisper model not loaded"}
 
-    wav_path = tmp_path.replace(".webm", ".wav")
+    tmp_path = None
+    wav_path = None
     try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+            tmp_path = tmp.name
+            contents = await file.read()
+            tmp.write(contents)
+            tmp.flush()
+            print("Checksum:", sha256sum(cast(Path, tmp_path)))
+
+        wav_path = tmp_path.replace(".webm", ".wav")
         subprocess.run(
             [
-                "ffmpeg",
-                "-y",
-                "-i",
-                tmp_path,
-                "-ac",
-                "1",
-                "-ar",
-                "16000",
-                "-f",
-                "wav",
-                wav_path,
+                "ffmpeg", "-y", "-i", tmp_path,
+                "-ac", "1", "-ar", "16000", "-f", "wav", wav_path,
             ],
             check=True,
         )
-        # audio: AudioSegment = AudioSegment.from_file(wav_path)
-        # min_duration_ms = 1000
-        # if len(audio) < min_duration_ms:
-        #     print(f"Audio too short ({len(audio)} ms), padding to {min_duration_ms} ms")
-        #     silence = AudioSegment.silent(duration=min_duration_ms - len(audio))
-        #     audio += silence
-        #     audio.export(
-        #         wav_path, format="wav", parameters=["-ac", "1", "-ar", "16000"]
-        #     )
 
-        # Transcribe using Whisper.cpp
         segments = whisper_model.transcribe(wav_path)
         result_text = " ".join([seg.text for seg in segments]).strip()
         print("Segments:", segments)
@@ -77,4 +74,13 @@ async def voice_input(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": f"STT failed: {str(e)}"}
     finally:
-        os.remove(tmp_path)
+        if tmp_path:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        if wav_path:
+            try:
+                os.remove(wav_path)
+            except OSError:
+                pass

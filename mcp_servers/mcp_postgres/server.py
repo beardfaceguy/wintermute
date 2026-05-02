@@ -52,8 +52,17 @@ _DANGEROUS_KEYWORDS = {
 
 def _is_read_only(sql: str) -> bool:
     """Reject obviously mutating statements before they hit the DB."""
-    first_token = sql.strip().split()[0].upper() if sql.strip() else ""
-    return first_token not in _DANGEROUS_KEYWORDS
+    stripped = sql.strip()
+    if not stripped:
+        return True
+    if ";" in stripped:
+        return False
+    tokens = {t.strip("(),").upper() for t in stripped.split()}
+    if tokens & _DANGEROUS_KEYWORDS:
+        return False
+    if "INTO" in tokens and "SELECT" in tokens:
+        return False
+    return True
 
 
 def _get_conn():

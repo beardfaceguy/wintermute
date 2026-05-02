@@ -1,8 +1,16 @@
 """
-Quick text generation script for Titans checkpoints.
+Quick text generation script for Titans checkpoints and HuggingFace models.
 
 Usage:
-  python generate.py --config configs/config_combo_all.yaml --ckpt ckpt_step_4000.pt --prompt "Once upon a time" --top-k 20 --temperature 0.8
+  # Titan checkpoint
+  python generate.py --config configs/config_combo_all.yaml --ckpt ckpt_step_4000.pt --prompt "Once upon a time"
+
+  # HuggingFace model (base)
+  python generate.py --hf-model meta-llama/Meta-Llama-3-8B --prompt "Once upon a time"
+
+  # HuggingFace model + LoRA adapter
+  python generate.py --hf-model meta-llama/Meta-Llama-3-8B --adapter checkpoints_sft/step_500 --prompt "Once upon a time"
+
   # greedy (no top-k) example: --top-k 0 --temperature 1.0
 """
 
@@ -24,16 +32,13 @@ def resolve_path(path_str: str) -> Path:
     p = Path(path_str)
     if p.is_absolute():
         return p
-    # cwd
     cwd_candidate = Path.cwd() / p
     if cwd_candidate.exists():
         return cwd_candidate
-    # relative to script
     script_dir = Path(__file__).resolve().parent
     script_candidate = script_dir / p
     if script_candidate.exists():
         return script_candidate
-    # repo root (wintermute) is two levels up from titanProject/
     repo_root = Path(__file__).resolve().parents[2]
     return repo_root / p
 
@@ -57,13 +62,15 @@ def generate(
     top_k: int = 20,
     temperature: float = 0.8,
     stop_strings: Optional[List[str]] = None,
+    hf_mode: bool = False,
 ):
     ids = tokenizer.encode(prompt)
     x = torch.tensor(ids, dtype=torch.long, device=device).unsqueeze(0)  # (1, seq)
     temp = max(temperature, 1e-5)
     eos_id = getattr(tokenizer, "eos_id", -1)
     for _ in range(max_new_tokens):
-        logits = model(x)  # (1, seq, vocab)
+        out = model(input_ids=x) if hf_mode else model(x)
+        logits = out.logits if hasattr(out, "logits") else out
         logits = logits[:, -1, :] / temp
         if top_k and top_k > 0:
             vals, idx = torch.topk(logits, top_k, dim=-1)
@@ -84,9 +91,15 @@ def generate(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate text from a Titans checkpoint.")
-    parser.add_argument("--config", type=str, default="configs/config_combo_all.yaml", help="YAML config path")
-    parser.add_argument("--ckpt", type=str, default="ckpt_step_4000.pt", help="Checkpoint path")
+    parser = argparse.ArgumentParser(description="Generate text from a Titans checkpoint or HuggingFace model.")
+    parser.add_argument("--config", type=str, default=None, help="YAML config path (required for Titan models)")
+    parser.add_argument("--ckpt", type=str, default=None, help="Titan checkpoint path")
+    parser.add_argument("--hf-model", type=str, default=None,
+                        help="HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B)")
+    parser.add_argument("--adapter", type=str, default=None,
+                        help="Path to LoRA adapter directory (used with --hf-model)")
+    parser.add_argument("--merge-adapter", action="store_true",
+                        help="Merge LoRA adapter into base weights before generation")
     parser.add_argument("--prompt", type=str, default="Once upon a time", help="Prompt text")
     parser.add_argument("--max-new", type=int, default=64, help="Max new tokens to generate")
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
@@ -99,10 +112,17 @@ def main():
         choices=["none", "auto", "chat", "instruction"],
         help="Optional prompt family for stop handling; 'auto' infers from config data paths",
     )
+    parser.add_argument("--chat-template", action="store_true",
+                        help="Format the prompt using the model's chat template (HF only)")
     args = parser.parse_args()
 
-    cfg = load_config(resolve_path(args.config))
-    mcfg = ModelConfig(**cfg["model"])
+    hf_mode = args.hf_model is not None
+    if not hf_mode and args.ckpt is None:
+        args.ckpt = "ckpt_step_4000.pt"
+    if not hf_mode and args.config is None:
+        args.config = "configs/config_combo_all.yaml"
+    if not hf_mode and args.adapter:
+        parser.error("--adapter requires --hf-model")
 
     # device
     if args.device == "cuda" and torch.cuda.is_available():
@@ -119,27 +139,66 @@ def main():
     else:
         device = torch.device("cpu")
 
-    tokenizer = load_tokenizer(resolve_path(cfg["data"]["tokenizer_path"]))
-    model = build_model(mcfg).to(device)
+    if hf_mode:
+        from hf_utils import load_hf_checkpoint, get_hf_tokenizer
 
-    ckpt_path = resolve_path(args.ckpt)
-    load_model_source(model, ckpt_path, map_location=device, strict=True)
-    model.eval()
+        model = load_hf_checkpoint(
+            args.hf_model,
+            adapter_path=args.adapter,
+            merge=args.merge_adapter,
+            device_map="auto" if device.type == "cuda" else str(device),
+        )
+        model.eval()
+        hf_tokenizer = get_hf_tokenizer(args.hf_model)
+
+        prompt = args.prompt
+        if args.chat_template:
+            prompt = hf_tokenizer.apply_chat_template(
+                [{"role": "user", "content": args.prompt}],
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+
+        from train_utils import TokenizerAdapter, _hf_tokenizer_fingerprint
+        tokenizer = TokenizerAdapter(
+            encode_fn=lambda text: hf_tokenizer.encode(text, add_special_tokens=False),
+            decode_fn=lambda ids: hf_tokenizer.decode(
+                ids, clean_up_tokenization_spaces=False, skip_special_tokens=True,
+            ),
+            tokenizer_fingerprint=_hf_tokenizer_fingerprint(hf_tokenizer),
+            tokenizer_source_path=hf_tokenizer.name_or_path,
+            eos_id=hf_tokenizer.eos_token_id if hf_tokenizer.eos_token_id is not None else -1,
+            pad_id=hf_tokenizer.pad_token_id if hf_tokenizer.pad_token_id is not None else -1,
+        )
+    else:
+        cfg = load_config(resolve_path(args.config))
+        mcfg = ModelConfig(**cfg["model"])
+        tokenizer = load_tokenizer(resolve_path(cfg["data"]["tokenizer_path"]))
+        model = build_model(mcfg).to(device)
+        ckpt_path = resolve_path(args.ckpt)
+        load_model_source(model, ckpt_path, map_location=device, strict=True)
+        model.eval()
+        prompt = args.prompt
+
     if args.prompt_family == "none":
         stop_strings = None
     else:
-        prompt_family = infer_prompt_family(cfg) if args.prompt_family == "auto" else args.prompt_family
-        stop_strings = default_stop_strings(prompt_family)
+        if hf_mode:
+            stop_strings = default_stop_strings(args.prompt_family)
+        else:
+            prompt_family = infer_prompt_family(cfg) if args.prompt_family == "auto" else args.prompt_family
+            stop_strings = default_stop_strings(prompt_family)
 
     out = generate(
         model,
         tokenizer,
         device=device,
-        prompt=args.prompt,
+        prompt=prompt,
         max_new_tokens=args.max_new,
         top_k=args.top_k,
         temperature=args.temperature,
         stop_strings=stop_strings,
+        hf_mode=hf_mode,
     )
     print(out)
 

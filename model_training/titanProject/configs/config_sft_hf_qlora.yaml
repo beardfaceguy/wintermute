@@ -1,0 +1,50 @@
+# QLoRA fine-tuning config for HuggingFace causal LMs (Llama 3, Mistral, Qwen, etc.)
+#
+# Usage:
+#   python finetune_sft.py --config configs/config_sft_hf_qlora.yaml --hf-model meta-llama/Meta-Llama-3-8B --qlora
+#
+# The model section is not used when --hf-model is specified; it exists only
+# so the config file is self-documenting and can fall back to Titan mode.
+
+model:
+  variant: gpt
+  vocab_size: 50000
+  dim: 1024
+  depth: 24
+  heads: 16
+  ff_mult: 4
+  max_seq_len: 2048
+
+lora:
+  enabled: true
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  # target_modules: null  # auto-detected ("all-linear") if omitted
+
+quantization:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_quant_type: "nf4"
+
+data:
+  train_path: /path/to/train.jsonl
+  val_path: /path/to/val.jsonl
+  tokenizer_path: "unused-when-hf-model-is-set"
+  use_chat_template: true
+
+train:
+  seq_len: 2048
+  batch_size: 2
+  grad_accum_steps: 4
+  lr: 0.0002
+  lr_min: 0.00002
+  weight_decay: 0.01
+  warmup_steps: 100
+  max_steps: 3000
+  grad_clip: 1.0
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  cosine_decay: true
+  save_every: 500
+  eval_every: 250

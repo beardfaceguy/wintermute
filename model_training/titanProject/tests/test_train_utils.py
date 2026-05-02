@@ -1,7 +1,9 @@
 """Tests for training utilities: LR schedules, path resolution, hashing, checkpoints."""
 
+import hashlib
 import math
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
@@ -9,7 +11,7 @@ import torch.testing
 from torch.optim import AdamW
 
 from model import ModelConfig, build_model
-from train_utils import cosine_lr, resolve_path, sha256_file, TokenizerAdapter
+from train_utils import cosine_lr, resolve_path, sha256_file, TokenizerAdapter, get_tokenizer
 
 
 class TestCosineLR:
@@ -226,3 +228,59 @@ class TestCheckpointRoundTrip:
             out_loaded = model2(x, return_loss=False)
 
         torch.testing.assert_close(out_original, out_loaded)
+
+
+class TestGetTokenizerS3PathCollision:
+    """S3 tokenizer downloads must not collide when only the basename matches."""
+
+    def test_different_s3_uris_same_basename_use_different_local_paths(self, tmp_path):
+        """Two S3 URIs with the same filename but different prefixes must
+        download to different local paths, otherwise the second call silently
+        loads the wrong tokenizer bytes."""
+        import train_utils
+
+        uri_a = "s3://bucket-a/prefix-a/tokenizer.model"
+        uri_b = "s3://bucket-b/prefix-b/tokenizer.model"
+
+        def _local_path_for(uri):
+            h = hashlib.sha256(uri.encode()).hexdigest()[:12]
+            return Path("/tmp") / f"{h}_tokenizer.model"
+
+        path_a = _local_path_for(uri_a)
+        path_b = _local_path_for(uri_b)
+        for p in (path_a, path_b):
+            p.unlink(missing_ok=True)
+
+        downloaded = {}
+
+        def fake_download(bucket, key, dest):
+            downloaded[dest] = (bucket, key)
+            Path(dest).write_bytes(b"fake-model-data")
+
+        mock_boto = MagicMock()
+        mock_client = MagicMock()
+        mock_client.download_file.side_effect = fake_download
+        mock_boto.client.return_value = mock_client
+
+        mock_sp = MagicMock()
+        mock_sp.load.return_value = True
+        mock_sp.eos_id.return_value = 0
+        mock_sp.pad_id.return_value = 1
+        mock_sp.encode.return_value = [1, 2, 3]
+        mock_sp.decode.return_value = "abc"
+
+        try:
+            with patch.object(train_utils, "boto3", mock_boto), \
+                 patch.object(train_utils, "spm") as mock_spm_mod:
+                mock_spm_mod.SentencePieceProcessor.return_value = mock_sp
+
+                get_tokenizer(uri_a)
+                get_tokenizer(uri_b)
+
+                assert mock_client.download_file.call_count == 2, (
+                    f"Expected 2 downloads but got {mock_client.download_file.call_count}; "
+                    "second URI likely hit the cached file from the first"
+                )
+        finally:
+            for p in (path_a, path_b):
+                p.unlink(missing_ok=True)

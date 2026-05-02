@@ -21,10 +21,18 @@ load_dotenv()
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Or ["*"] if you're lazy/testing
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 app.include_router(voice_chat.router, prefix="/api")
-app.include_router(chat_ws.router)  # This automatically registers /ws/chat
+app.include_router(chat_ws.router)
+
+
+@app.on_event("startup")
+async def _init_db():
+    from db.db_models import Base
+    from db.session_async import engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

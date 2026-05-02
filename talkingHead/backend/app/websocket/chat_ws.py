@@ -1,6 +1,9 @@
 import json
+import logging
 import os
 import uuid
+
+logger = logging.getLogger(__name__)
 
 from db.db_ops import get_recent_messages, store_message
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -101,6 +104,13 @@ async def chat_endpoint(websocket: WebSocket):
                     traceback.print_exc()
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
         if DEBUG:
             print(f"[DEBUG] WebSocket session disconnected: {session_id}")
+    except Exception as e:
+        logger.error("WebSocket session %s crashed: %s", session_id, e)
+        try:
+            await websocket.send_text(f"Error: {str(e)}")
+        except Exception:
+            pass
+    finally:
+        manager.disconnect(websocket)

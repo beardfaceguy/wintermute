@@ -1,0 +1,17 @@
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+    "talkingHead/backend/tests",
+    "model_training/titanProject/tests",
+    "thVoice/tests",
+]
+asyncio_mode = "auto"
+markers = [
+    "gpu: requires CUDA GPU",
+    "slow: long-running tests",
+    "integration: requires external services (DB, LLM, etc.)",
+    "lifecycle: resource lifecycle / memory leak regression tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

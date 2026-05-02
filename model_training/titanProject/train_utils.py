@@ -149,7 +149,9 @@ def get_tokenizer(tokenizer_path: str):
         if boto3 is None:
             raise RuntimeError("boto3 is required to load tokenizer from s3:// paths")
         parsed = urlparse(tokenizer_path)
-        local_path = Path("/tmp") / Path(parsed.path).name
+        uri_hash = hashlib.sha256(tokenizer_path.encode()).hexdigest()[:12]
+        local_name = f"{uri_hash}_{Path(parsed.path).name}"
+        local_path = Path("/tmp") / local_name
         if not local_path.exists():
             client = boto3.client("s3")
             client.download_file(parsed.netloc, parsed.path.lstrip("/"), str(local_path))

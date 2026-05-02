@@ -74,7 +74,7 @@ wintermute/
 └── requirements.txt          # Python dependencies
 ```
 
-## Current Status (2026-04-30)
+## Current Status (2026-05-01)
 
 ### COMPLETED
 - **mcp-memory** (CLA-137): FastMCP server with semantic search, trust scoring, zone management
@@ -87,6 +87,8 @@ wintermute/
 - **GPT-small Training**: 117M param LLM trained on FineWeb-Edu (see docs/llm_training_project.md)
 
 ### RECENTLY COMPLETED
+- **HF 7B QLoRA SFT — End-to-End Validated** (CLA-259, 2026-05-01): Mistral-7B-v0.3 fine-tuned using QLoRA on single L4 GPU (g6.2xlarge). Full pipeline proven: dataset prep → QLoRA fine-tune → LoRA merge → custom FastAPI inference server (`simple_serve.py`) → talkingHead chat UI. Model produces coherent conversational responses. Pipeline ready for specialized domain fine-tuning. LoRA adapter in S3. See `.cursor/docs/SFT_PIPELINE_GUIDE.md`.
+- **talkingHead Cloud Deployment** (2026-05-01): Backend hardened for headless AWS deployment — `pywhispercpp`/Whisper model optional (graceful degradation), `pgvector` optional (SQLite fallback), CORS opened, WebSocket URL auto-detects remote hostname. Deploy via `scripts/aws_commands/deploy_talkinghead.sh`.
 - **GPT-Medium General SFT** (2026-04-30): 407M model fine-tuned for 5,000 steps on OASST1+OpenHermes+SlimOrca+GSM8K mix. Final eval ppl 6.79. Model passes conversation tests (factual Q&A, coding, explanations). Checkpoint in S3 at `gpt_medium_sft_20260430052503/`. Weights-only local copy in `saved_models/`. SFT pipeline documented in `.cursor/docs/SFT_PIPELINE_GUIDE.md`.
 - **Training Pipeline Unification** (2026-04-29): Merged `train.py` and `train_multi_gpu.py` into a single unified `train.py` supporting single-GPU, multi-GPU DDP, and CPU/MPS. Extracted shared utilities into `train_utils.py`. Updated `finetune_sft.py` with DDP support using the same shared utilities.
 - **Training Pipeline Hardening** (2026-04-28): Comprehensive robustness overhaul of all launch scripts. Dynamic data root detection (LVM/EBS/root), `mkdir -p CODE_DIR` for fresh instances, portable token cache keys, self-stop with auto-tagging, quieter pip output. New `gpt_medium_pretrain_multigpu_cloudwatch.sh` script. Full documentation in `scripts/aws_commands/README.md`.
@@ -97,9 +99,8 @@ wintermute/
 - **Automated Test Suite**: pytest framework with 142 tests covering data pipeline, model construction, training utilities, checkpointing, DDP, and SFT format parsing.
 
 ### NEXT UP (in priority order)
-1. **Domain-Specific SFT Forks**: Fine-tune specialized models from the general SFT checkpoint (see `.cursor/docs/SFT_PIPELINE_GUIDE.md`)
-2. **Titan 7B Scale-Up**: Train a 7B parameter model using `torchrun train.py` on multi-GPU instance
-3. **Jung/Adler auditors**: Secondary analysis passes for pattern drift and motivational consistency
+1. **Domain-Specific SFT Forks**: Fine-tune specialized models using HF 7B base + QLoRA (pentest, code review, tool fluency). See CLA-245, CLA-248, CLA-177.
+2. **Jung/Adler auditors**: Secondary analysis passes for pattern drift and motivational consistency
 
 ### Linear Project
 - **Project**: "Wintermute Platform" on Linear (Clawcorp workspace)

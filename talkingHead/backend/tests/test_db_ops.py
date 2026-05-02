@@ -96,12 +96,12 @@ class TestDatabaseOperations:
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
 
-        # Create mock messages
+        # Create mock messages in DB order (newest first, matching ORDER BY timestamp DESC)
         mock_messages = [
-            Message(session_id="test-session", role="user", content="Hello", id=1),
             Message(
                 session_id="test-session", role="assistant", content="Hi there!", id=2
             ),
+            Message(session_id="test-session", role="user", content="Hello", id=1),
         ]
 
         # Mock the execute result

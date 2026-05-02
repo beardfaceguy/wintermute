@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 
 
 def add_memory_entry(
-    db: Session, text: str, embedding: list[float], tags: dict[str, str] = {}
+    db: Session, text: str, embedding: list[float], tags: dict[str, str] | None = None
 ):
+    if tags is None:
+        tags = {}
     entry = MemoryEntry(text=text, embedding=embedding, tags=tags, zone="live")
     db.add(entry)
     db.commit()

@@ -129,6 +129,9 @@ class AuditReport:
 
 
 def _cosine_sim(a: list[float], b: list[float]) -> float:
+    if len(a) != len(b):
+        logger.warning("Embedding length mismatch (%d vs %d), returning 0.0", len(a), len(b))
+        return 0.0
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(x * x for x in b) ** 0.5
@@ -348,7 +351,11 @@ class FreudAuditor:
         for f in report.findings:
             if f.severity in ("warning", "critical") and f.entry_id not in flagged_ids:
                 reason = f"{f.check}: {f.detail[:120]}"
-                result = memory_flag(entry_id=f.entry_id, reason=reason)
+                try:
+                    result = memory_flag(entry_id=f.entry_id, reason=reason)
+                except Exception as exc:
+                    logger.error("Failed to flag %s: %s", f.entry_id[:8], exc)
+                    continue
                 if "error" not in result:
                     flagged_ids.add(f.entry_id)
                     report.entries_flagged += 1
@@ -380,7 +387,11 @@ class FreudAuditor:
             if abs(new_trust - current_trust) < 0.001:
                 continue
 
-            result = memory_update_trust(entry_id=eid, trust_score=new_trust)
+            try:
+                result = memory_update_trust(entry_id=eid, trust_score=new_trust)
+            except Exception as exc:
+                logger.error("Failed to update trust for %s: %s", eid[:8], exc)
+                continue
             if "error" not in result:
                 report.entries_trust_updated += 1
                 report.actions_taken.append({
@@ -408,7 +419,11 @@ class FreudAuditor:
             if effective_trust < AUTO_PROMOTE_TRUST_THRESHOLD:
                 continue
 
-            result = memory_promote(entry_id=eid, trust_score=effective_trust)
+            try:
+                result = memory_promote(entry_id=eid, trust_score=effective_trust)
+            except Exception as exc:
+                logger.error("Failed to promote %s: %s", eid[:8], exc)
+                continue
             if "error" not in result:
                 report.entries_promoted += 1
                 report.actions_taken.append({

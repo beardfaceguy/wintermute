@@ -73,9 +73,15 @@ def _extract_instruction_parts(prompt: str) -> Dict[str, str]:
     body = prompt.split(marker, 1)[1]
     if "\n\n### Input:\n" in body:
         instruction, rest = body.split("\n\n### Input:\n", 1)
-        input_text, _ = rest.split("\n\n### Response:\n", 1)
+        if "\n\n### Response:\n" in rest:
+            input_text, _ = rest.split("\n\n### Response:\n", 1)
+        else:
+            input_text = rest
         return {"instruction": instruction.strip(), "input": input_text.strip()}
-    instruction, _ = body.split("\n\n### Response:\n", 1)
+    if "\n\n### Response:\n" in body:
+        instruction, _ = body.split("\n\n### Response:\n", 1)
+    else:
+        instruction = body
     return {"instruction": instruction.strip(), "input": ""}
 
 

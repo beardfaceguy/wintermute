@@ -36,7 +36,7 @@ class VLLM(CustomLLM):
         )
         try:
             text = response.json()["choices"][0]["message"]["content"]
-        except (KeyError, IndexError):
+        except (KeyError, IndexError, ValueError):
             raise ValueError(f"Unexpected response from vLLM: {response.text}")
         return CompletionResponse(text=text)
 

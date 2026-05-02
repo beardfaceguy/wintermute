@@ -1,5 +1,5 @@
 """
-SFT finetuning loop for Titans checkpoints.
+SFT finetuning loop for Titans checkpoints and HuggingFace causal LMs.
 
 Accepts four data formats (auto-detected per line, can be mixed):
   1. HF messages JSONL:  {"messages": [{"role": "user", "content": "..."},  ...]}
@@ -9,11 +9,17 @@ Accepts four data formats (auto-detected per line, can be mixed):
 
 Supports single-GPU, multi-GPU (DDP), and CPU/MPS development:
 
-    # Single GPU
+    # Titan checkpoint (existing workflow)
     python finetune_sft.py --config configs/config_sft.yaml --ckpt ckpt_step_124000.pt
 
-    # Multi-GPU via torchrun
-    torchrun --nproc_per_node=4 finetune_sft.py --config configs/config_sft.yaml --ckpt ckpt_step_124000.pt
+    # HuggingFace model with QLoRA (single GPU)
+    python finetune_sft.py --config configs/config_sft_hf_qlora.yaml --hf-model meta-llama/Meta-Llama-3-8B --qlora
+
+    # HuggingFace model with LoRA (single GPU, fp16)
+    python finetune_sft.py --config configs/config_sft_hf_qlora.yaml --hf-model meta-llama/Meta-Llama-3-8B --lora
+
+    # HuggingFace model full fine-tuning (multi-GPU)
+    torchrun --nproc_per_node=4 finetune_sft.py --config configs/config_sft_hf.yaml --hf-model meta-llama/Meta-Llama-3-8B --no-lora
 
     # CPU / Apple Silicon dev
     python finetune_sft.py --config configs/config_sft.yaml --ckpt ckpt.pt --device mps
@@ -201,6 +207,95 @@ def _get_boundary_tokens(tokenizer: Callable[[str], List[int]]) -> List[int]:
     return tokenizer("\n")
 
 
+def _forward_logits(model, x: torch.Tensor, hf_mode: bool) -> torch.Tensor:
+    """Get logits from either Titan or HF models.
+
+    HF CausalLM models return a CausalLMOutput object, not bare logits.
+    """
+    out = model(x) if not hf_mode else model(input_ids=x)
+    if hasattr(out, "logits"):
+        return out.logits
+    return out
+
+
+def _hf_tokenizer_to_adapter(hf_tokenizer):
+    """Wrap a raw HuggingFace tokenizer into a TokenizerAdapter for the SFT data pipeline."""
+    from train_utils import TokenizerAdapter, _hf_tokenizer_fingerprint
+
+    if hf_tokenizer.pad_token_id is None and hf_tokenizer.eos_token_id is not None:
+        hf_tokenizer.pad_token = hf_tokenizer.eos_token
+
+    return TokenizerAdapter(
+        encode_fn=lambda text: hf_tokenizer.encode(text, add_special_tokens=False),
+        decode_fn=lambda ids: hf_tokenizer.decode(
+            ids, clean_up_tokenization_spaces=False, skip_special_tokens=True,
+        ),
+        tokenizer_fingerprint=_hf_tokenizer_fingerprint(hf_tokenizer),
+        tokenizer_source_path=hf_tokenizer.name_or_path,
+        eos_id=hf_tokenizer.eos_token_id if hf_tokenizer.eos_token_id is not None else -1,
+        pad_id=hf_tokenizer.pad_token_id if hf_tokenizer.pad_token_id is not None else -1,
+    )
+
+
+def _tokenize_with_chat_template(
+    hf_tokenizer,
+    sample: str,
+    seq_len: int,
+) -> Optional[Tuple[List[int], List[int]]]:
+    """Tokenize a sample using the model's native chat template.
+
+    Returns (input_ids, labels) with proper masking: the user/system prompt
+    portion is masked to -100 so the model only trains on assistant output.
+    Returns None if the sample can't be processed.
+    """
+    sample = sample.strip()
+    if not sample:
+        return None
+
+    try:
+        prompt_text, answer_text = _split_sft_sample(sample)
+    except ValueError:
+        return None
+
+    user_content = prompt_text
+    if user_content.startswith("User:"):
+        user_content = user_content[len("User:"):].strip()
+    if user_content.endswith("Assistant:"):
+        user_content = user_content[: -len("Assistant:")].strip()
+
+    messages = [
+        {"role": "user", "content": user_content},
+        {"role": "assistant", "content": answer_text.strip()},
+    ]
+
+    full_ids = hf_tokenizer.apply_chat_template(
+        messages, tokenize=True, add_generation_prompt=False
+    )
+
+    prompt_only_ids = hf_tokenizer.apply_chat_template(
+        [{"role": "user", "content": prompt_text}],
+        tokenize=True,
+        add_generation_prompt=True,
+    )
+    prompt_len = len(prompt_only_ids)
+
+    max_total = seq_len + 1
+    if len(full_ids) > max_total:
+        full_ids = full_ids[:max_total]
+    if len(full_ids) < 2:
+        return None
+
+    x_tokens = full_ids[:-1]
+    y_tokens = full_ids[1:]
+    mask_len = max(prompt_len - 1, 0)
+    labels = [-100] * mask_len + y_tokens[mask_len:]
+
+    if all(l == -100 for l in labels):
+        return None
+
+    return x_tokens, labels
+
+
 class MaskedSFTDataset(Dataset):
     def __init__(
         self,
@@ -210,12 +305,14 @@ class MaskedSFTDataset(Dataset):
         *,
         log_fn: Callable[[str], None],
         progress_label: str,
+        chat_template_tokenizer=None,
     ):
         self.seq_len = seq_len
         self.input_ids: List[List[int]] = []
         self.labels: List[List[int]] = []
 
-        boundary_tokens = _get_boundary_tokens(tokenizer)
+        use_chat_tpl = chat_template_tokenizer is not None
+        boundary_tokens = _get_boundary_tokens(tokenizer) if not use_chat_tpl else []
         total = 0
         kept = 0
         skipped_empty = 0
@@ -228,6 +325,20 @@ class MaskedSFTDataset(Dataset):
                 sample = raw_line.strip()
                 if not sample:
                     continue
+
+                if use_chat_tpl:
+                    result = _tokenize_with_chat_template(
+                        chat_template_tokenizer, sample, seq_len,
+                    )
+                    if result is None:
+                        skipped_empty += 1
+                        continue
+                    x_tokens, masked_labels = result
+                    self.input_ids.append(x_tokens)
+                    self.labels.append(masked_labels)
+                    kept += 1
+                    continue
+
                 try:
                     prompt_text, answer_text = _split_sft_sample(sample)
                 except ValueError:
@@ -275,8 +386,9 @@ class MaskedSFTDataset(Dataset):
         if not self.input_ids:
             raise ValueError(f"No usable SFT samples found in {path}")
 
+        mode_str = "chat-template" if use_chat_tpl else "plain"
         log_fn(
-            f"[data] [{progress_label}] masked SFT dataset built samples={kept:,} "
+            f"[data] [{progress_label}] masked SFT dataset built samples={kept:,} mode={mode_str} "
             f"seq_len<={seq_len} skipped_empty={skipped_empty:,} "
             f"skipped_no_answer_room={skipped_no_answer_room:,} truncated={truncated:,} total={total:,}"
         )
@@ -299,6 +411,7 @@ def build_sft_dataloader(
     progress_label: str,
     rank: int = 0,
     world_size: int = 1,
+    chat_template_tokenizer=None,
 ) -> Tuple[DataLoader, Optional[DistributedSampler]]:
     dataset = MaskedSFTDataset(
         path,
@@ -306,6 +419,7 @@ def build_sft_dataloader(
         seq_len,
         log_fn=log_fn,
         progress_label=progress_label,
+        chat_template_tokenizer=chat_template_tokenizer,
     )
     pad_id = getattr(tokenizer, "pad_id", -1)
     if not isinstance(pad_id, int) or pad_id < 0:
@@ -341,9 +455,30 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="SFT finetune loop (single & multi-GPU)")
     parser.add_argument("--config", type=str, default="configs/config_sft_pilot_oasst1_dolly.yaml")
     parser.add_argument(
-        "--ckpt", type=str, default="ckpt_step_4000.pt",
-        help="Checkpoint path or Hugging Face ref like hf://gpt2",
+        "--ckpt", type=str, default=None,
+        help="Titan checkpoint path or hf://gpt2 ref (mutually exclusive with --hf-model)",
     )
+
+    # --- HuggingFace model arguments ---
+    parser.add_argument(
+        "--hf-model", type=str, default=None,
+        help="HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B). Mutually exclusive with --ckpt.",
+    )
+    lora_group = parser.add_mutually_exclusive_group()
+    lora_group.add_argument("--qlora", action="store_true",
+                            help="QLoRA: 4-bit quantized base + LoRA adapters (best for single GPU)")
+    lora_group.add_argument("--lora", action="store_true",
+                            help="LoRA: fp16 base + LoRA adapters")
+    lora_group.add_argument("--no-lora", action="store_true",
+                            help="Full fine-tuning of HF model (requires multi-GPU or large GPU)")
+    parser.add_argument("--lora-rank", type=int, default=16, help="LoRA rank (default 16)")
+    parser.add_argument("--lora-alpha", type=int, default=32, help="LoRA alpha (default 32)")
+    parser.add_argument("--lora-dropout", type=float, default=0.05, help="LoRA dropout (default 0.05)")
+    parser.add_argument("--lora-targets", type=str, default=None,
+                        help="Comma-separated LoRA target modules (auto-detected if omitted)")
+    parser.add_argument("--chat-template", action="store_true",
+                        help="Use the HF model's native chat template for tokenization")
+
     parser.add_argument("--device", type=str, default="auto",
                         choices=["auto", "cpu", "mps", "cuda"],
                         help="Device override (ignored under torchrun, which forces CUDA)")
@@ -374,6 +509,28 @@ def main() -> int:
     parser.set_defaults(amp=None)
     args = parser.parse_args()
 
+    hf_mode = args.hf_model is not None
+    if hf_mode and args.ckpt is not None:
+        parser.error("--hf-model and --ckpt are mutually exclusive")
+    if not hf_mode and args.ckpt is None:
+        args.ckpt = "ckpt_step_4000.pt"
+    if not hf_mode and (args.qlora or args.lora):
+        parser.error("--qlora and --lora require --hf-model")
+
+    use_lora = False
+    use_qlora = False
+    if hf_mode:
+        if args.no_lora:
+            use_lora = False
+        elif args.qlora:
+            use_qlora = True
+            use_lora = True
+        elif args.lora:
+            use_lora = True
+        else:
+            use_qlora = True
+            use_lora = True
+
     if args.steps <= 0:
         raise ValueError("--steps must be > 0")
 
@@ -400,7 +557,6 @@ def main() -> int:
     # Config, tokenizer, data
     # ------------------------------------------------------------------
     cfg = load_config(resolve_path(args.config))
-    mcfg = ModelConfig(**cfg["model"])
 
     if args.amp is not None:
         amp_enabled = args.amp
@@ -410,13 +566,27 @@ def main() -> int:
         amp_enabled = False
     amp_device = device.type if amp_enabled and device.type in ("cuda", "mps") else None
 
-    tokenizer_path = resolve_path(cfg["data"]["tokenizer_path"])
-    tokenizer = get_tokenizer(str(tokenizer_path))
+    hf_tokenizer_obj = None  # raw HF tokenizer for chat template path
+
+    if hf_mode:
+        from hf_utils import get_hf_tokenizer
+        hf_tokenizer_obj = get_hf_tokenizer(args.hf_model)
+        tokenizer = _hf_tokenizer_to_adapter(hf_tokenizer_obj)
+        log(f"[init] HF tokenizer loaded from {args.hf_model}")
+    else:
+        tokenizer_path = resolve_path(cfg["data"]["tokenizer_path"])
+        tokenizer = get_tokenizer(str(tokenizer_path))
+        log(f"[init] tokenizer={tokenizer_path}")
+
+    use_chat_tpl = args.chat_template or cfg.get("data", {}).get("use_chat_template", False)
+    if use_chat_tpl and hf_tokenizer_obj is None:
+        log("[warn] --chat-template requires an HF tokenizer; falling back to plain tokenization")
+        use_chat_tpl = False
+
     train_path = resolve_path(cfg["data"]["train_path"])
     val_path = resolve_path(cfg["data"]["val_path"])
 
     log(f"[init] world_size={world_size} rank={rank} local_rank={local_rank} device={device}")
-    log(f"[init] tokenizer={tokenizer_path}")
 
     train_loader, train_sampler = build_sft_dataloader(
         str(train_path), tokenizer,
@@ -425,6 +595,7 @@ def main() -> int:
         shuffle=True, log_fn=log if is_main(rank) else lambda m: None,
         progress_label="train_sft",
         rank=rank, world_size=world_size,
+        chat_template_tokenizer=hf_tokenizer_obj if use_chat_tpl else None,
     )
     val_loader, _ = build_sft_dataloader(
         str(val_path), tokenizer,
@@ -433,6 +604,7 @@ def main() -> int:
         shuffle=False, log_fn=log if is_main(rank) else lambda m: None,
         progress_label="val_sft",
         rank=rank, world_size=world_size,
+        chat_template_tokenizer=hf_tokenizer_obj if use_chat_tpl else None,
     )
     log(
         f"[init] train_samples={len(train_loader.dataset)} val_samples={len(val_loader.dataset)} "
@@ -442,21 +614,66 @@ def main() -> int:
     # ------------------------------------------------------------------
     # Model + checkpoint
     # ------------------------------------------------------------------
-    model = build_model(mcfg).to(device)
-    ckpt_path = resolve_path(args.ckpt)
-    load_model_source(model, ckpt_path, map_location=device, strict=True)
-    log(f"[init] loaded base checkpoint: {ckpt_path}")
+    if hf_mode:
+        from hf_utils import load_hf_model, apply_lora, save_hf_checkpoint
 
-    if world_size > 1:
-        model = DDP(model, device_ids=[local_rank], output_device=local_rank)
-    raw_model = model.module if world_size > 1 else model
+        hf_load_kwargs = {}
+        quant_cfg = cfg.get("quantization", {})
+        lora_cfg = cfg.get("lora", {})
+
+        if use_qlora:
+            hf_load_kwargs["load_in_4bit"] = True
+            hf_load_kwargs["bnb_4bit_compute_dtype"] = quant_cfg.get("bnb_4bit_compute_dtype", "float16")
+            hf_load_kwargs["bnb_4bit_quant_type"] = quant_cfg.get("bnb_4bit_quant_type", "nf4")
+            hf_load_kwargs["device_map"] = {"": local_rank} if use_ddp else "auto"
+        else:
+            hf_load_kwargs["device_map"] = None if use_ddp else "auto"
+            hf_load_kwargs["torch_dtype"] = torch.float16
+
+        model = load_hf_model(args.hf_model, **hf_load_kwargs)
+        log(f"[init] loaded HF model: {args.hf_model} qlora={use_qlora}")
+
+        if use_lora:
+            lora_targets = None
+            if args.lora_targets:
+                lora_targets = [t.strip() for t in args.lora_targets.split(",")]
+            elif lora_cfg.get("target_modules"):
+                lora_targets = lora_cfg["target_modules"]
+
+            model = apply_lora(
+                model,
+                rank=args.lora_rank if args.lora_rank != 16 else lora_cfg.get("rank", 16),
+                alpha=args.lora_alpha if args.lora_alpha != 32 else lora_cfg.get("alpha", 32),
+                dropout=args.lora_dropout if args.lora_dropout != 0.05 else lora_cfg.get("dropout", 0.05),
+                target_modules=lora_targets,
+                log_fn=log,
+            )
+
+        if use_ddp and not use_qlora:
+            model.to(device)
+            model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+        raw_model = model.module if (use_ddp and not use_qlora) else model
+        ckpt_path = args.hf_model
+    else:
+        mcfg = ModelConfig(**cfg["model"])
+        model = build_model(mcfg).to(device)
+        ckpt_path = resolve_path(args.ckpt)
+        load_model_source(model, ckpt_path, map_location=device, strict=True)
+        log(f"[init] loaded base checkpoint: {ckpt_path}")
+
+        if world_size > 1:
+            model = DDP(model, device_ids=[local_rank], output_device=local_rank)
+        raw_model = model.module if world_size > 1 else model
 
     # ------------------------------------------------------------------
     # Optimizer
     # ------------------------------------------------------------------
     lr = args.lr if args.lr is not None else float(cfg["train"]["lr"])
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    if use_lora:
+        log(f"[init] optimizing {len(trainable_params)} LoRA parameter groups")
     opt = AdamW(
-        model.parameters(),
+        trainable_params,
         lr=lr,
         weight_decay=cfg["train"]["weight_decay"],
         betas=tuple(cfg["train"]["betas"]),
@@ -508,19 +725,20 @@ def main() -> int:
                 pg["lr"] = current_lr
 
         is_last_accum = (accum_in_step + 1) == grad_accum_steps
-        sync_context = nullcontext() if (world_size <= 1 or is_last_accum) else model.no_sync()
+        ddp_wrapped = use_ddp and not (hf_mode and use_qlora)
+        sync_context = nullcontext() if (not ddp_wrapped or is_last_accum) else model.no_sync()
 
         with sync_context:
             if amp_device:
                 with autocast(device_type=amp_device, dtype=torch.float16):
-                    logits = model(x)
+                    logits = _forward_logits(model, x, hf_mode)
                     raw_loss = F.cross_entropy(
                         logits.view(-1, logits.size(-1)), y.view(-1), ignore_index=-100,
                     )
                     loss = raw_loss / grad_accum_steps
                 scaler.scale(loss).backward()
             else:
-                logits = model(x)
+                logits = _forward_logits(model, x, hf_mode)
                 raw_loss = F.cross_entropy(
                     logits.view(-1, logits.size(-1)), y.view(-1), ignore_index=-100,
                 )
@@ -535,7 +753,7 @@ def main() -> int:
         # --- Optimizer step ---
         if amp_device:
             scaler.unscale_(opt)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), cfg["train"]["grad_clip"])
+        torch.nn.utils.clip_grad_norm_(trainable_params, cfg["train"]["grad_clip"])
         if amp_device:
             scaler.step(opt)
             scaler.update()
@@ -561,12 +779,12 @@ def main() -> int:
                     bx, by = bx.to(device, non_blocking=True), by.to(device, non_blocking=True)
                     if amp_device:
                         with autocast(device_type=amp_device, dtype=torch.float16):
-                            vlogits = model(bx)
+                            vlogits = _forward_logits(model, bx, hf_mode)
                             vloss = F.cross_entropy(
                                 vlogits.view(-1, vlogits.size(-1)), by.view(-1), ignore_index=-100,
                             )
                     else:
-                        vlogits = model(bx)
+                        vlogits = _forward_logits(model, bx, hf_mode)
                         vloss = F.cross_entropy(
                             vlogits.view(-1, vlogits.size(-1)), by.view(-1), ignore_index=-100,
                         )
@@ -583,13 +801,23 @@ def main() -> int:
 
         if (global_step % args.save_every == 0 or global_step == args.steps) and is_main(rank):
             if has_min_free_space(checkpoint_dir, args.min_free_gb, log):
-                ckpt_out = checkpoint_dir / f"ckpt_sft_step_{global_step}.pt"
-                save_checkpoint(ckpt_out, raw_model.state_dict(), opt.state_dict(), global_step,
-                                extra={"source_ckpt": str(ckpt_path)})
-                log(f"[save] {ckpt_out}")
+                if hf_mode:
+                    ckpt_out = checkpoint_dir / f"step_{global_step}"
+                    save_hf_checkpoint(
+                        raw_model, ckpt_out,
+                        tokenizer=hf_tokenizer_obj,
+                        step=global_step,
+                        is_lora=use_lora,
+                        log_fn=log,
+                    )
+                else:
+                    ckpt_out = checkpoint_dir / f"ckpt_sft_step_{global_step}.pt"
+                    save_checkpoint(ckpt_out, raw_model.state_dict(), opt.state_dict(), global_step,
+                                    extra={"source_ckpt": str(ckpt_path)})
+                    log(f"[save] {ckpt_out}")
                 if args.s3_checkpoint_uri:
                     sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log,
-                                           glob_pattern="ckpt_sft_step_*.pt")
+                                           glob_pattern="step_*" if hf_mode else "ckpt_sft_step_*.pt")
 
     log("[done] SFT finished")
     cleanup_distributed()

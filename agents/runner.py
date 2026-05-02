@@ -84,20 +84,24 @@ class AgentRunner:
         if self._initialized:
             return
 
-        for name, server in self._mcp_servers.items():
-            client = Client(server)
-            await client.__aenter__()
-            self._clients[name] = client
+        try:
+            for name, server in self._mcp_servers.items():
+                client = Client(server)
+                await client.__aenter__()
+                self._clients[name] = client
 
-            tools = await client.list_tools()
-            for tool in tools:
-                openai_schema = _mcp_tool_to_openai(tool)
-                self._tools[tool.name] = ToolRef(
-                    server_name=name,
-                    client=client,
-                    schema=openai_schema,
-                )
-                logger.debug("Registered tool %s from server %s", tool.name, name)
+                tools = await client.list_tools()
+                for tool in tools:
+                    openai_schema = _mcp_tool_to_openai(tool)
+                    self._tools[tool.name] = ToolRef(
+                        server_name=name,
+                        client=client,
+                        schema=openai_schema,
+                    )
+                    logger.debug("Registered tool %s from server %s", tool.name, name)
+        except Exception:
+            await self.cleanup()
+            raise
 
         logger.info(
             "Initialized with %d tools from %d servers",
@@ -115,6 +119,14 @@ class AgentRunner:
         self._clients.clear()
         self._tools.clear()
         self._initialized = False
+
+    async def __aenter__(self):
+        await self._ensure_initialized()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.cleanup()
+        return False
 
     def get_openai_tools(self) -> list[dict[str, Any]]:
         """Return all registered tools in OpenAI function-calling format."""

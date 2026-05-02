@@ -110,6 +110,36 @@ Scale-up to 407M params (d=1024, L=24, heads=16, ff_mult=4) completed successful
 **Next**: Domain-specific SFT forks from the general SFT checkpoint, 7B model scale-up
 - **Future training runs**: Use `torchrun train.py` on multi-GPU instance (g5.12xlarge 4x A10G) — 3x faster, lower total cost
 
+### HuggingFace 7B QLoRA SFT — END-TO-END VALIDATED (2026-05-01)
+
+**Status: COMPLETE (CLA-259)**
+
+The SFT pipeline has been validated end-to-end for HuggingFace 7B models using QLoRA, proving the full loop from dataset prep through live conversation.
+
+**Training:**
+- **Base model**: `mistralai/Mistral-7B-v0.3`
+- **Mode**: QLoRA (4-bit NF4 quantization + LoRA rank 16, alpha 32)
+- **Data**: ~55K samples (OASST1 + OpenHermes + SlimOrca + GSM8K)
+- **Steps**: 3,000 on g6.2xlarge (1x L4 24GB), ~8-10 GB VRAM
+- **LoRA adapter**: `s3://alix-ai-ml-staging-data/titan/checkpoints/hf_sft_mistral7b_qlora/`
+
+**Serving:**
+- Adapter merged into base model using PEFT `merge_and_unload()`
+- Custom FastAPI inference server (`simple_serve.py`) with OpenAI-compatible `/v1/completions` endpoint and streaming
+- Deployed on the same g6.2xlarge instance alongside talkingHead
+
+**Conversation Test:**
+- talkingHead (React + FastAPI + WebSocket) deployed to AWS instance
+- Model produces coherent, instruction-following responses (tested: poem generation, factual Q&A)
+- Backend hardened for headless deployment: pywhispercpp/Whisper optional, pgvector optional (SQLite fallback), CORS opened, WebSocket URL auto-detection
+
+**Key scripts:**
+- `scripts/aws_commands/hf_sft_cloudwatch.sh` — QLoRA/LoRA/full SFT on any HF model
+- `scripts/aws_commands/merge_and_serve_v2.sh` — merge adapter + launch inference server
+- `scripts/aws_commands/deploy_talkinghead.sh` — deploy chat UI to serving instance
+
+**Impact:** The SFT pipeline is proven for specialized domain fine-tuning. Downstream projects (pentest SFT CLA-245, code review SFT CLA-248, daimonos tool fluency CLA-177) are unblocked.
+
 ### Pipeline Fixes (2026-04-28)
 
 Two bugs were fixed after the GPT-Medium run revealed them:

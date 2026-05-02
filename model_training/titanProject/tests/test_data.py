@@ -81,6 +81,48 @@ class TestTokenCache:
         assert cache._memmaps[1] is None
         assert cache._memmaps[2] is None
 
+    def test_slice_zero_size_shard_does_not_hang(self, tmp_path):
+        """A shard with num_tokens=0 must raise an error, not spin forever."""
+        import signal
+
+        cache_dir = tmp_path / "bad_cache"
+        cache_dir.mkdir()
+
+        good_data = np.arange(100, dtype=np.uint32)
+        good_name = "tokens-00000.uint32.bin"
+        (cache_dir / good_name).write_bytes(good_data.tobytes())
+
+        bad_name = "tokens-00001.uint32.bin"
+        (cache_dir / bad_name).write_bytes(b"")
+
+        manifest = {
+            "cache_version": 3,
+            "path": "<test>",
+            "tokenizer_fingerprint": "test",
+            "max_tokens": None,
+            "num_tokens": 100,
+            "dtype": "uint32",
+            "shard_size_tokens": 100,
+            "shards": [
+                {"filename": good_name, "num_tokens": 100, "start_token": 0},
+                {"filename": bad_name, "num_tokens": 0, "start_token": 100},
+            ],
+        }
+        (cache_dir / "manifest.json").write_text(json.dumps(manifest))
+        cache = TokenCache(cache_dir, cache_dir / "manifest.json", manifest)
+
+        def timeout_handler(signum, frame):
+            raise TimeoutError("TokenCache.slice hung on zero-size shard")
+
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(3)
+        try:
+            with pytest.raises((ValueError, IndexError, TimeoutError)):
+                cache.slice(90, 110)
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
+
 
 class TestTextWindowDataset:
     """Dataset indexing and window construction."""

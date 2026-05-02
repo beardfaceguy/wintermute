@@ -17,7 +17,7 @@ def list_directory():
 
     try:
         output = subprocess.check_output(["ls", path], stderr=subprocess.STDOUT, text=True)
-        files = output.strip().split("\n")
+        files = [f for f in output.strip().split("\n") if f]
         return jsonify({"path": path, "contents": files})
     except subprocess.CalledProcessError as e:
         return jsonify({"error": "ls failed", "details": e.output}), 500
