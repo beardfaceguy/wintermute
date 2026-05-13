@@ -12,12 +12,12 @@ Goal: stand up a tiny Titans-based language model (MAC variant) to verify test-t
 ## Quick start
 - Train (example):
   ```bash
-  source /Users/beardface/lab/wintermute/.venv_docs/bin/activate
+  source .venv/bin/activate
   python train.py --device mps --config configs/config_combo_all.yaml --max-steps 4000 --log-every 100 --no-amp
   ```
 - Generate (example):
   ```bash
-  source /Users/beardface/lab/wintermute/.venv_docs/bin/activate
+  source .venv/bin/activate
   python generate.py --device mps --config configs/config_combo_all.yaml --ckpt ckpt_step_4000.pt --prompt "Once upon a time" --max-new 50 --top-k 20 --temperature 0.8
   ```
 

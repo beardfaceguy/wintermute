@@ -82,7 +82,7 @@ titans-pytorch/
 *.pem
 
 # Local workstation-only Titan / AWS scratch state
-.venv_docs/
+.venv/
 .cursor/mcp.json
 .cursor/docs/online_docs/
 Untitled

@@ -9,7 +9,7 @@ The script:
 - appends summary rows to `sanity_experiments.csv`
 
 Expected usage:
-    source .venv_docs/bin/activate
+    source .venv/bin/activate
     export AWS_PROFILE=experimental-admin
     export AWS_SDK_LOAD_CONFIG=1
     python model_training/titanProject/scripts/run_sanity_sweep.py
