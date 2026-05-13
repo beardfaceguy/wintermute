@@ -10,6 +10,12 @@ from shared.config_loader import load_vllm_config, load_inference_config
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 logger = logging.getLogger("chat.llm")
 
+# Streaming HTTP timeouts (seconds). Read timeout is generous because
+# token streams can stall briefly between deltas; finite to avoid forever-hangs.
+_LLM_CONNECT_TIMEOUT = float(os.getenv("LLM_CONNECT_TIMEOUT", "10"))
+_LLM_READ_TIMEOUT = float(os.getenv("LLM_READ_TIMEOUT", "300"))
+_LLM_WRITE_TIMEOUT = float(os.getenv("LLM_WRITE_TIMEOUT", "10"))
+
 
 class ChatProcessor:
     def __init__(self, model_url: str | None = None, model_name: str | None = None):
@@ -109,7 +115,13 @@ class ChatProcessor:
         assistant_response = ""
         messages = self._build_messages(prompt)
 
-        async with httpx.AsyncClient(timeout=None) as client:
+        timeout = httpx.Timeout(
+            connect=_LLM_CONNECT_TIMEOUT,
+            read=_LLM_READ_TIMEOUT,
+            write=_LLM_WRITE_TIMEOUT,
+            pool=_LLM_CONNECT_TIMEOUT,
+        )
+        async with httpx.AsyncClient(timeout=timeout) as client:
             async with client.stream(
                 "POST",
                 self.model_url,

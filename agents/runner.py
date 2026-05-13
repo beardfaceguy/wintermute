@@ -32,6 +32,9 @@ from fastmcp import Client
 
 logger = logging.getLogger("agent-runner")
 
+# Configurable LLM HTTP timeout (seconds). Default 120s preserves prior behavior.
+_AGENT_LLM_TIMEOUT = float(os.getenv("AGENT_LLM_TIMEOUT", "120"))
+
 
 @dataclass
 class ToolRef:
@@ -186,7 +189,7 @@ class AgentRunner:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
 
-        async with httpx.AsyncClient(timeout=120) as http:
+        async with httpx.AsyncClient(timeout=_AGENT_LLM_TIMEOUT) as http:
             resp = await http.post(
                 f"{self.llm_base_url}/chat/completions",
                 json=payload,

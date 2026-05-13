@@ -1,9 +1,12 @@
+import os
 from typing import List, Optional
 
 from sqlalchemy.future import select
 
 from .db_models import Message
 from .session_async import AsyncSessionLocal
+
+_DEFAULT_HISTORY_LIMIT = int(os.getenv("CHAT_HISTORY_LIMIT", "20"))
 
 
 async def store_message(
@@ -29,7 +32,7 @@ async def store_message(
             raise e
 
 
-async def get_recent_messages(session_id: str, limit: int = 20) -> List[Message]:
+async def get_recent_messages(session_id: str, limit: int = _DEFAULT_HISTORY_LIMIT) -> List[Message]:
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Message)

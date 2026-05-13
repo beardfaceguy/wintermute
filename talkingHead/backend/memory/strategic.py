@@ -23,6 +23,8 @@ logger = logging.getLogger("memory.strategic")
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
+_DEFAULT_SEARCH_LIMIT = int(os.getenv("STRATEGIC_MEMORY_SEARCH_LIMIT", "3"))
+
 _mcp_memory_available = False
 _dag_retrieval_available = False
 try:
@@ -40,7 +42,7 @@ except ImportError:
 
 async def search_relevant_memories(
     query: str,
-    limit: int = 3,
+    limit: int = _DEFAULT_SEARCH_LIMIT,
     zone: str | None = None,
     min_trust: float | None = None,
     deep: bool = False,

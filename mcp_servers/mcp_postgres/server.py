@@ -44,6 +44,11 @@ def _default_postgres_url() -> str:
 
 DATABASE_URL = os.getenv("DATABASE_URL", _default_postgres_url())
 
+# Configurable result-set caps. Defaults preserve historical behavior.
+_DEFAULT_MAX_ROWS = int(os.getenv("MCP_PG_MAX_ROWS", "200"))
+_HARD_MAX_ROWS = int(os.getenv("MCP_PG_MAX_ROWS_HARD", "1000"))
+_SAMPLE_MAX = int(os.getenv("MCP_PG_SAMPLE_MAX", "20"))
+
 # ---------------------------------------------------------------------------
 # DB helpers — use psycopg2 directly for lightweight, read-only access
 # ---------------------------------------------------------------------------
@@ -78,7 +83,7 @@ def _get_conn():
     return conn
 
 
-def _run_query(sql: str, params: tuple | None = None, max_rows: int = 200):
+def _run_query(sql: str, params: tuple | None = None, max_rows: int = _DEFAULT_MAX_ROWS):
     """Execute a read-only query and return (columns, rows)."""
     conn = _get_conn()
     try:
@@ -201,7 +206,7 @@ def sql_describe_table(table_name: str, schema: str = "public") -> dict:
 @mcp.tool
 def sql_query(
     sql: str,
-    max_rows: int = 200,
+    max_rows: int = _DEFAULT_MAX_ROWS,
 ) -> dict:
     """Execute a read-only SQL query and return results.
 
@@ -221,7 +226,7 @@ def sql_query(
             "rejected_sql": sql,
         }
 
-    max_rows = min(max(max_rows, 1), 1000)
+    max_rows = min(max(max_rows, 1), _HARD_MAX_ROWS)
     try:
         columns, rows = _run_query(sql, max_rows=max_rows)
         return {
@@ -277,7 +282,7 @@ def sql_sample_rows(
     Returns:
         Sample rows from the table.
     """
-    limit = min(max(limit, 1), 20)
+    limit = min(max(limit, 1), _SAMPLE_MAX)
     sql = f"SELECT * FROM {schema}.{table_name} LIMIT {limit}"
     try:
         columns, rows = _run_query(sql, max_rows=limit)

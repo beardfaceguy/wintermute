@@ -56,13 +56,16 @@ logger = logging.getLogger("freud")
 # Configuration
 # ---------------------------------------------------------------------------
 
-DUPLICATE_SIMILARITY_THRESHOLD = 0.92
-CONTRADICTION_SIMILARITY_RANGE = (0.65, 0.90)
-MIN_TEXT_LENGTH = 20
-STALE_DAYS = 14
-TRUST_BOOST_CLEAN = 0.15
-TRUST_PENALTY_FLAGGED = 0.2
-AUTO_PROMOTE_TRUST_THRESHOLD = 0.8
+DUPLICATE_SIMILARITY_THRESHOLD = float(os.getenv("FREUD_DUPLICATE_THRESHOLD", "0.92"))
+CONTRADICTION_SIMILARITY_RANGE = (
+    float(os.getenv("FREUD_CONTRADICTION_MIN", "0.65")),
+    float(os.getenv("FREUD_CONTRADICTION_MAX", "0.90")),
+)
+MIN_TEXT_LENGTH = int(os.getenv("FREUD_MIN_TEXT_LENGTH", "20"))
+STALE_DAYS = int(os.getenv("FREUD_STALE_DAYS", "14"))
+TRUST_BOOST_CLEAN = float(os.getenv("FREUD_TRUST_BOOST_CLEAN", "0.15"))
+TRUST_PENALTY_FLAGGED = float(os.getenv("FREUD_TRUST_PENALTY_FLAGGED", "0.2"))
+AUTO_PROMOTE_TRUST_THRESHOLD = float(os.getenv("FREUD_AUTO_PROMOTE_THRESHOLD", "0.8"))
 
 
 # ---------------------------------------------------------------------------

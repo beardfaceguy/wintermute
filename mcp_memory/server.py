@@ -37,6 +37,10 @@ except ImportError:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp-memory")
 
+# Configurable result-set caps. Defaults preserve historical behavior.
+_SEARCH_MAX = int(os.getenv("MCP_MEMORY_SEARCH_MAX", "50"))
+_RECALL_MAX = int(os.getenv("MCP_MEMORY_RECALL_MAX", "100"))
+
 # ---------------------------------------------------------------------------
 # Embedding helper
 # ---------------------------------------------------------------------------
@@ -151,7 +155,7 @@ def memory_search(
         List of matching entries ordered by relevance, with similarity scores.
     """
     _ensure_tables()
-    limit = min(max(limit, 1), 50)
+    limit = min(max(limit, 1), _SEARCH_MAX)
     query_vec = _embed(query)
     db = SessionLocal()
     try:
@@ -194,7 +198,7 @@ def memory_recall_recent(
         List of recent entries.
     """
     _ensure_tables()
-    limit = min(max(limit, 1), 100)
+    limit = min(max(limit, 1), _RECALL_MAX)
     db = SessionLocal()
     try:
         q = db.query(MemoryEntry)
