@@ -72,11 +72,40 @@ def _embed(text: str) -> list[float]:
 
 _tables_created = False
 
+# HNSW index on memory_entries.embedding accelerates cosine_distance queries
+# (memory_search and the Freud auditor) from sequential scans to log(n) graph
+# walks. Created idempotently outside any transaction so CONCURRENTLY is legal.
+_HNSW_INDEX_NAME = "memory_entries_embedding_hnsw"
+# CONCURRENTLY avoids taking ACCESS EXCLUSIVE on memory_entries during the
+# initial build against a populated prod DB. Requires running outside any
+# transaction (AUTOCOMMIT below) and pgvector >= 0.5.0 + Postgres >= 9.5.
+_HNSW_INDEX_DDL = (
+    f"CREATE INDEX CONCURRENTLY IF NOT EXISTS {_HNSW_INDEX_NAME} "
+    "ON memory_entries USING hnsw (embedding vector_cosine_ops)"
+)
+
+
+def _ensure_hnsw_index() -> None:
+    """Best-effort HNSW index creation. Postgres + pgvector >= 0.5 only.
+
+    Errors are logged but never raised: the index is a performance optimization,
+    not a correctness requirement. Cosine queries still work without it.
+    """
+    if engine.dialect.name != "postgresql":
+        return
+    try:
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+            conn.exec_driver_sql(_HNSW_INDEX_DDL)
+        logger.info("HNSW index '%s' ensured", _HNSW_INDEX_NAME)
+    except Exception as exc:
+        logger.warning("Could not create HNSW index (continuing without it): %s", exc)
+
 
 def _ensure_tables():
     global _tables_created
     if not _tables_created:
         Base.metadata.create_all(bind=engine)
+        _ensure_hnsw_index()
         _tables_created = True
         logger.info("Database tables ensured")
 
