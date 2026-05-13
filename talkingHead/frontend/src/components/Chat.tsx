@@ -3,15 +3,55 @@ import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { type RootState } from "../store";
 import useChatSocket from "../hooks/useChatSocket";
+import useTextToSpeech from "../hooks/useTextToSpeech";
 import VoiceToggleButton from "./VoiceToggleButton";
+import SpeakerToggleButton from "./SpeakerToggleButton";
 import "./Chat.css";
 import { debugLog } from "../utils/debug";
 import { useCallback } from "react";
 
+const TTS_ENABLED_KEY = "tts_enabled";
+
+function readStoredTtsEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const v = window.localStorage.getItem(TTS_ENABLED_KEY);
+    return v === null ? true : v !== "false";
+  } catch {
+    return true;
+  }
+}
+
 export default function Chat() {
   const messages = useSelector((state: RootState) => state.chat.messages);
   const [inputText, setInputText] = useState("");
-  const { sendMessage } = useChatSocket();
+  const [ttsEnabled, setTtsEnabled] = useState<boolean>(readStoredTtsEnabled);
+  const { available: ttsAvailable, speak, stop: stopTts } = useTextToSpeech({
+    enabled: ttsEnabled,
+  });
+  const handleAssistantComplete = useCallback(
+    (text: string) => {
+      if (!text.trim()) return;
+      void speak(text);
+    },
+    [speak],
+  );
+  const { sendMessage } = useChatSocket({
+    onAssistantComplete: handleAssistantComplete,
+  });
+
+  const handleToggleSpeaker = useCallback(() => {
+    setTtsEnabled((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(TTS_ENABLED_KEY, String(next));
+      } catch {
+        // localStorage unavailable; in-memory state is enough for this session
+      }
+      if (!next) stopTts();
+      return next;
+    });
+  }, [stopTts]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(true);
@@ -76,6 +116,11 @@ export default function Chat() {
               Send
             </button>
             <VoiceToggleButton onVoiceSubmit={handleSend} />
+            <SpeakerToggleButton
+              enabled={ttsEnabled}
+              available={ttsAvailable}
+              onToggle={handleToggleSpeaker}
+            />
           </div>
         </div>
       </div>

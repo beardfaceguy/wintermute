@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { buildChatWSUrl, connectToChatWS } from './websocket'
+import { buildChatWSUrl, connectToChatWS, END_OF_STREAM_SENTINEL } from './websocket'
 
 describe('buildChatWSUrl', () => {
   it('builds ws:// URL from http config', () => {
@@ -64,5 +64,32 @@ describe('connectToChatWS', () => {
 
     // Should not throw
     expect(() => mockSocket.onclose?.()).not.toThrow()
+  })
+
+  it('routes the end-of-stream sentinel to onAssistantComplete instead of onToken', () => {
+    const onToken = vi.fn()
+    const onAssistantComplete = vi.fn()
+    connectToChatWS('ws://localhost:8000/ws/chat', {
+      onToken,
+      onAssistantComplete,
+    })
+
+    mockSocket.onmessage?.({ data: 'partial ' })
+    mockSocket.onmessage?.({ data: 'response' })
+    mockSocket.onmessage?.({ data: END_OF_STREAM_SENTINEL })
+
+    expect(onToken).toHaveBeenCalledTimes(2)
+    expect(onToken).toHaveBeenNthCalledWith(1, 'partial ')
+    expect(onToken).toHaveBeenNthCalledWith(2, 'response')
+    expect(onAssistantComplete).toHaveBeenCalledOnce()
+  })
+
+  it('still works when onAssistantComplete is omitted but a sentinel arrives', () => {
+    const onToken = vi.fn()
+    connectToChatWS('ws://localhost:8000/ws/chat', { onToken })
+    expect(() =>
+      mockSocket.onmessage?.({ data: END_OF_STREAM_SENTINEL })
+    ).not.toThrow()
+    expect(onToken).not.toHaveBeenCalled()
   })
 })

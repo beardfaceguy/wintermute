@@ -3,6 +3,11 @@
 import { debugLog } from "./debug";
 export type OnToken = (token: string) => void;
 export type OnClose = () => void;
+export type OnAssistantComplete = () => void;
+
+// Sentinel string the backend sends when an assistant turn finishes.
+// Must stay in sync with chat_ws.END_OF_STREAM_SENTINEL.
+export const END_OF_STREAM_SENTINEL = "[[DONE]]";
 
 interface APIConfig {
   vllm: {
@@ -26,6 +31,7 @@ const config = rawconfig as APIConfig;
 interface WebSocketCallbacks {
   onToken: (msg: string) => void;
   onClose?: () => void;
+  onAssistantComplete?: () => void;
 }
 
 export function buildChatWSUrl(protocol: string = config.web_interface.scheme, hostname: string = config.web_interface.host, port: string = String(config.web_interface.port), path: string = config.web_interface.path): string {
@@ -40,12 +46,18 @@ export function buildChatWSUrl(protocol: string = config.web_interface.scheme, h
 
 export function connectToChatWS(
   socketUrl: string,
-  { onToken, onClose }: WebSocketCallbacks
+  { onToken, onClose, onAssistantComplete }: WebSocketCallbacks
 ): WebSocket {
   debugLog("websocket.connectToChatWS: Connecting to WebSocket at:", socketUrl);
   const socket = new WebSocket(socketUrl);
 
-  socket.onmessage = (event) => onToken(event.data);
+  socket.onmessage = (event) => {
+    if (event.data === END_OF_STREAM_SENTINEL) {
+      if (onAssistantComplete) onAssistantComplete();
+      return;
+    }
+    onToken(event.data);
+  };
   socket.onclose = () => {
     if (onClose) onClose();
   };
@@ -54,7 +66,9 @@ export function connectToChatWS(
 }
 
 
-export function buildURLAndConnectToChatWS({onToken, onClose}: WebSocketCallbacks): WebSocket {
+export function buildURLAndConnectToChatWS(
+  { onToken, onClose, onAssistantComplete }: WebSocketCallbacks
+): WebSocket {
     const url: string = buildChatWSUrl();
-    return connectToChatWS(url, {onToken, onClose});
+    return connectToChatWS(url, { onToken, onClose, onAssistantComplete });
 }

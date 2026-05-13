@@ -8,10 +8,24 @@ import { addMessage, updateLastAssistantMessage } from "../store/chatSlice";
 import { connectToChatWS, buildChatWSUrl } from "../utils/websocket";
 import {debugLog} from "../utils/debug";
 
-export default function useChatSocket() {
+type UseChatSocketOptions = {
+  onAssistantComplete?: (text: string) => void;
+};
+
+export default function useChatSocket(options: UseChatSocketOptions = {}) {
   const dispatch = useDispatch();
   const socketRef = useRef<WebSocket | null>(null);
   const isConnected = useRef(false);
+  // Buffer the latest assistant tokens so onAssistantComplete sees the
+  // full text without a Redux round-trip race.
+  const assistantBufferRef = useRef<string>("");
+  // Keep the latest callback reference without re-establishing the socket.
+  const onCompleteRef = useRef<UseChatSocketOptions["onAssistantComplete"]>(
+    options.onAssistantComplete,
+  );
+  useEffect(() => {
+    onCompleteRef.current = options.onAssistantComplete;
+  }, [options.onAssistantComplete]);
 
   useEffect(() => {
     // Clean up on unmount
@@ -23,11 +37,10 @@ export default function useChatSocket() {
   const sendMessage = useCallback((inputText: string) => {
     if (!inputText.trim()) return;
     debugLog("inside sendMessage: Sending message:", inputText);
-    // Add user's message to chat
     dispatch(addMessage({ role: "user", text: inputText }));
 
-    // Add assistant placeholder message
     dispatch(addMessage({ role: "assistant", text: "" }));
+    assistantBufferRef.current = "";
     const payload = JSON.stringify({ message: inputText });
     if (!isConnected.current) {
       debugLog("🔗 Connecting to WebSocket...");
@@ -35,7 +48,13 @@ export default function useChatSocket() {
 
       const socket = connectToChatWS(socketUrl, {
         onToken: (token) => {
+          assistantBufferRef.current += token;
           dispatch(updateLastAssistantMessage(token));
+        },
+        onAssistantComplete: () => {
+          const finalText = assistantBufferRef.current;
+          assistantBufferRef.current = "";
+          if (onCompleteRef.current) onCompleteRef.current(finalText);
         },
         onClose: () => {
           console.log("WebSocket closed");
@@ -50,7 +69,6 @@ export default function useChatSocket() {
 
       socketRef.current = socket;
     } else {
-      // Reuse existing socket
       debugLog("🔗 Reusing existing WebSocket connection.  Payload:", payload);
       socketRef.current?.send(payload);
     }

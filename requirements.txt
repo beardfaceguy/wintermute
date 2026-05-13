@@ -38,3 +38,9 @@ vosk
 alembic
 pywhispercpp[examples]
 pydub
+
+# TTS — Piper neural TTS, runs in-process via the piper-tts PyPI package.
+# Voice models (.onnx + .onnx.json) live under thVoice/piper/models/ and are
+# fetched out-of-band via thVoice/scripts/fetch_voice.sh; they are NOT bundled.
+# On Linux, piper-tts ships its own espeak-ng so no system install is needed.
+piper-tts>=1.4.2

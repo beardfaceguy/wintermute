@@ -136,6 +136,51 @@ class TestMessageSizeLimit:
         assert "Error: Message too large" not in send_calls
 
 
+class TestEndOfStreamSentinel:
+    """Verify the assistant-message-complete sentinel is sent after each turn.
+
+    The frontend's TTS hook listens for this exact string to know when to
+    synthesize, so it must be emitted on every assistant response.
+    """
+
+    @pytest.mark.asyncio
+    async def test_sentinel_sent_after_response(self):
+        from app.websocket.chat_ws import END_OF_STREAM_SENTINEL, chat_endpoint
+
+        ws = _make_mock_ws()
+        ws.receive_text = AsyncMock(
+            side_effect=[json.dumps({"message": "hi"}), WebSocketDisconnect()]
+        )
+
+        with (
+            patch("app.websocket.chat_ws.manager") as mock_mgr,
+            patch("app.websocket.chat_ws.store_message", new_callable=AsyncMock),
+            patch(
+                "app.websocket.chat_ws.search_relevant_memories",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "app.websocket.chat_ws.get_recent_messages",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch("app.websocket.chat_ws.chat_processor") as mock_proc,
+            patch(
+                "app.websocket.chat_ws.store_conversation", new_callable=AsyncMock
+            ),
+        ):
+            mock_mgr.connect = AsyncMock(return_value=True)
+            mock_mgr.disconnect = MagicMock()
+            mock_proc.stream_response = AsyncMock(return_value="response text")
+            await chat_endpoint(ws)
+
+        send_calls = [c.args[0] for c in ws.send_text.call_args_list]
+        assert END_OF_STREAM_SENTINEL in send_calls
+        # Sentinel should be the last thing sent for this turn.
+        assert send_calls[-1] == END_OF_STREAM_SENTINEL
+
+
 class TestConnectionCapacity:
 
     @pytest.mark.asyncio

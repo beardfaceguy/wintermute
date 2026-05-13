@@ -64,6 +64,11 @@ ehthumbs.db
 
 memory/chroma_store/
 
+# TTS / STT voice model binaries — fetched out-of-band, never committed
+thVoice/piper/models/*.onnx
+thVoice/piper/build/
+thVoice/models/*.bin
+
 build/model_training/LLM/data/
 model_training/hf.env
 # Training artifacts / checkpoints

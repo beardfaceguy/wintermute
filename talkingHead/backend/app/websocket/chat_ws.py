@@ -23,6 +23,11 @@ chat_processor = ChatProcessor()
 
 MAX_MESSAGE_SIZE = int(os.getenv("WS_MAX_MESSAGE_SIZE", str(16 * 1024)))
 
+# Sentinel string the frontend recognises as "assistant message complete".
+# Kept simple (not JSON) to preserve the existing tokens-as-strings protocol.
+# Bumping this is a coordinated frontend+backend change.
+END_OF_STREAM_SENTINEL = "[[DONE]]"
+
 
 @router.websocket("/ws/chat")
 async def chat_endpoint(websocket: WebSocket):
@@ -84,6 +89,14 @@ async def chat_endpoint(websocket: WebSocket):
                 assistant_message = await chat_processor.stream_response(
                     formatted_prompt, websocket.send_text
                 )
+
+                # Tell the frontend the turn is done so it can fire TTS / unlock
+                # the input box. Sent even on empty responses so the client
+                # never has to guess.
+                try:
+                    await websocket.send_text(END_OF_STREAM_SENTINEL)
+                except Exception:
+                    logger.debug("Failed to send end-of-stream sentinel", exc_info=True)
 
                 if DEBUG:
                     logger.debug("Assistant full response: %s", assistant_message)

@@ -2,7 +2,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from app.api import voice_chat
+from app.api import tts, voice_chat
 from dotenv import load_dotenv
 
 # Automatically add the root directory (which contains 'shared') to sys.path
@@ -42,4 +42,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(voice_chat.router, prefix="/api")
+app.include_router(tts.router, prefix="/api")
 app.include_router(chat_ws.router)
