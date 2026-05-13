@@ -70,6 +70,7 @@ async def test_lifespan_creates_tables():
 
     mock_engine = MagicMock()
     mock_engine.begin.return_value = mock_ctx
+    mock_engine.dispose = AsyncMock()
 
     with patch("db.session_async.engine", mock_engine):
         from app.main import lifespan
@@ -79,3 +80,4 @@ async def test_lifespan_creates_tables():
 
     mock_engine.begin.assert_called_once()
     mock_conn.run_sync.assert_called_once()
+    mock_engine.dispose.assert_awaited_once()
