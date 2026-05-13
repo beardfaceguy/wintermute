@@ -22,14 +22,14 @@ def _import_fresh():
 def test_default_database_url_is_sqlite():
     with patch.dict("os.environ", {}, clear=True):
         mod = _import_fresh()
-        assert "sqlite" in mod.DATABASE_URL
+        assert "sqlite" in mod.CHAT_DB_URL
 
 
 def test_database_url_env_override():
     custom = "postgresql+asyncpg://user:pass@host/db"
-    with patch.dict("os.environ", {"DATABASE_URL": custom}):
+    with patch.dict("os.environ", {"CHAT_DB_URL": custom}):
         mod = _import_fresh()
-        assert mod.DATABASE_URL == custom
+        assert mod.CHAT_DB_URL == custom
 
 
 def test_engine_is_created():
