@@ -1,6 +1,16 @@
 // src/hooks/useVoiceRecorder.ts
 import { useCallback, useRef, useState } from "react";
 import { debugLog } from "../utils/debug";
+import rawconfig from '../../../../config/shared_api_config.json';
+
+const voiceUrl = (() => {
+  const cfg = rawconfig as { web_interface: { scheme: string; host: string; port: number } };
+  const host = cfg.web_interface.host === "localhost" && typeof window !== "undefined" && window.location.hostname !== "localhost"
+    ? window.location.hostname
+    : cfg.web_interface.host;
+  return `${cfg.web_interface.scheme}://${host}:${cfg.web_interface.port}/api/chat/voice`;
+})();
+
 type UseVoiceRecorderProps = {
   onTranscriptionResult: (text: string) => void;
 };
@@ -17,7 +27,7 @@ const useVoiceRecorder = ({ onTranscriptionResult }: UseVoiceRecorderProps) => {
     formData.append("file", audioBlob, "audio.wav");
 
     try {
-      const response = await fetch("http://localhost:8000/api/chat/voice", {
+      const response = await fetch(voiceUrl, {
         method: "POST",
         body: formData,
       });

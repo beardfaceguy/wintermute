@@ -24,11 +24,18 @@ logger = logging.getLogger("memory.strategic")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 _mcp_memory_available = False
+_dag_retrieval_available = False
 try:
     from mcp_memory.server import memory_add, memory_search
     _mcp_memory_available = True
 except ImportError as exc:
     logger.warning("mcp-memory not importable (%s) — strategic memory disabled", exc)
+
+try:
+    from mcp_memory.dag_retrieval import dag_search
+    _dag_retrieval_available = True
+except ImportError:
+    pass
 
 
 async def search_relevant_memories(
@@ -36,13 +43,46 @@ async def search_relevant_memories(
     limit: int = 3,
     zone: str | None = None,
     min_trust: float | None = None,
+    deep: bool = False,
 ) -> list[dict[str, Any]]:
     """Semantic search over mcp-memory for context relevant to the query.
+
+    Args:
+        deep: If True (and DAG retrieval is available), uses DAG-structured
+              multi-hop retrieval for complex queries. The router may still
+              short-circuit to direct search for simple queries.
 
     Returns an empty list on any failure so the chat flow is never interrupted.
     """
     if not _mcp_memory_available:
         return []
+
+    if deep and _dag_retrieval_available:
+        try:
+            result = await dag_search(
+                query=query,
+                limit_per_hop=limit,
+                zone=zone,
+                min_trust=min_trust,
+            )
+            # Flatten all unique results across hops
+            seen_ids: set[str] = set()
+            flat_results: list[dict[str, Any]] = []
+            for sq_result in result.subquery_results:
+                for entry in sq_result.results:
+                    entry_id = entry.get("id", "")
+                    if entry_id not in seen_ids:
+                        seen_ids.add(entry_id)
+                        flat_results.append(entry)
+            if DEBUG:
+                logger.info(
+                    "DAG search for %r: %d results across %d hops (routed=%s)",
+                    query[:60], len(flat_results), result.rounds, result.routed_as,
+                )
+            return flat_results
+        except Exception:
+            logger.exception("dag_search failed — falling back to direct search")
+
     try:
         results = await asyncio.to_thread(
             memory_search,

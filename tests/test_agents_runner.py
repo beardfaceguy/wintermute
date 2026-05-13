@@ -97,8 +97,16 @@ def test_mcp_tool_to_openai_partial_schema():
 # ── AgentRunner.__init__ ─────────────────────────────────────────────────────
 
 
-def test_runner_init_defaults():
-    """AgentRunner should have sensible defaults."""
+def test_runner_init_defaults(monkeypatch):
+    """AgentRunner should have sensible defaults from config."""
+    monkeypatch.setattr(
+        AgentRunner, "_load_defaults", staticmethod(lambda: {
+            "llm_base_url": "http://localhost:8001/v1",
+            "model": "wizard-vicuna-7b-awq",
+            "max_iterations": 10,
+            "temperature": 0.1,
+        })
+    )
     runner = AgentRunner()
     assert runner.llm_base_url == "http://localhost:8001/v1"
     assert runner.model == "wizard-vicuna-7b-awq"

@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 model_name = os.getenv("MODEL_NAME")
 
-vllm_url = "http://localhost:8000/v1/completions"
-mcp_map = {"map_list": "http://localhost:6010/list"}
+vllm_url = os.getenv("VLLM_URL", "http://localhost:8000/v1/completions")
+map_list_url = os.getenv("MAP_LIST_URL", "http://localhost:6010/list")
+mcp_map = {"map_list": map_list_url}
 
 chat = [
     {"role": "system", "content": "You are a helpful assistant with access to tools."},

@@ -38,6 +38,12 @@ class TitansConfig(PretrainedConfig):
         segment_len: int = 512,
         num_persist_mem_tokens: int = 0,
         num_longterm_mem_tokens: int = 0,
+        store_with_lookahead_value: bool = False,
+        neural_memory_add_value_residual: bool = False,
+        neural_mem_gate_attn_output: bool = False,
+        neural_mem_weight_residual: bool = False,
+        sliding_window_attn: bool = False,
+        num_residual_streams: int = 4,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -50,6 +56,12 @@ class TitansConfig(PretrainedConfig):
         self.segment_len = segment_len
         self.num_persist_mem_tokens = num_persist_mem_tokens
         self.num_longterm_mem_tokens = num_longterm_mem_tokens
+        self.store_with_lookahead_value = store_with_lookahead_value
+        self.neural_memory_add_value_residual = neural_memory_add_value_residual
+        self.neural_mem_gate_attn_output = neural_mem_gate_attn_output
+        self.neural_mem_weight_residual = neural_mem_weight_residual
+        self.sliding_window_attn = sliding_window_attn
+        self.num_residual_streams = num_residual_streams
 
 
 class TitansForCausalLM(PreTrainedModel):
@@ -68,6 +80,12 @@ class TitansForCausalLM(PreTrainedModel):
             segment_len=config.segment_len,
             num_persist_mem_tokens=config.num_persist_mem_tokens,
             num_longterm_mem_tokens=config.num_longterm_mem_tokens,
+            store_with_lookahead_value=getattr(config, "store_with_lookahead_value", False),
+            neural_memory_add_value_residual=getattr(config, "neural_memory_add_value_residual", False),
+            neural_mem_gate_attn_output=getattr(config, "neural_mem_gate_attn_output", False),
+            neural_mem_weight_residual=getattr(config, "neural_mem_weight_residual", False),
+            sliding_window_attn=getattr(config, "sliding_window_attn", False),
+            num_residual_streams=getattr(config, "num_residual_streams", 4),
         )
         self.transformer = build_model(mcfg)
 

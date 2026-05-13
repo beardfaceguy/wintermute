@@ -19,23 +19,23 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 
-DEFAULT_BUCKET = "alix-ai-ml-staging-data"
+DEFAULT_BUCKET = os.getenv("TITAN_S3_BUCKET", "alix-ai-ml-staging-data")
 DEFAULT_PREFIX = "titan/"
-DEFAULT_ROLE = "alix-llm-training-role"
+DEFAULT_ROLE = os.getenv("TITAN_IAM_ROLE", "alix-llm-training-role")
 DEFAULT_INLINE_POLICY = "alix-llm-training-s3"
-DEFAULT_INSTANCE_PROFILE = "alix-llm-training-profile"
-DEFAULT_SG_NAME = "alix-pc-llm-model-training"
-DOC_SG_ID = "sg-0bec109715d614af7"
-DEFAULT_KEY_NAME = "alix-pc-llm-training-key"
-DEFAULT_INSTANCE_TYPE = "g6.2xlarge"
-DEFAULT_AMI = "ami-0ad8dd83d01a01d3a"
-DEFAULT_SSH_CIDR = "23.93.208.154/32"
-DEFAULT_AZ = "us-east-1d"
+DEFAULT_INSTANCE_PROFILE = os.getenv("TITAN_INSTANCE_PROFILE", "alix-llm-training-profile")
+DEFAULT_SG_NAME = os.getenv("TITAN_SG_NAME", "alix-pc-llm-model-training")
+DOC_SG_ID = os.getenv("TITAN_SG_ID", "sg-0bec109715d614af7")
+DEFAULT_KEY_NAME = os.getenv("TITAN_KEY_NAME", "alix-pc-llm-training-key")
+DEFAULT_INSTANCE_TYPE = os.getenv("TITAN_INSTANCE_TYPE", "g6.2xlarge")
+DEFAULT_AMI = os.getenv("TITAN_AMI", "ami-0ad8dd83d01a01d3a")
+DEFAULT_SSH_CIDR = os.getenv("TITAN_SSH_CIDR", "23.93.208.154/32")
+DEFAULT_AZ = os.getenv("TITAN_AZ", "us-east-1d")
 DEFAULT_AZ_FALLBACKS = ["us-east-1d", "us-east-1c", "us-east-1b", "us-east-1f", "us-east-1a"]
-DEFAULT_VOLUME_SIZE = 500
+DEFAULT_VOLUME_SIZE = int(os.getenv("TITAN_VOLUME_SIZE", "500"))
 
 DEFAULT_TAGS: List[Dict[str, str]] = [
-    {"Key": "Owner", "Value": "patrick.clawson"},
+    {"Key": "Owner", "Value": os.getenv("TITAN_OWNER", "patrick.clawson")},
     {"Key": "Project", "Value": "Titan-LLM"},
     {"Key": "Env", "Value": "staging"},
     {"Key": "CostCenter", "Value": "ai-ml-training"},

@@ -5,7 +5,7 @@ except ImportError:
     _HAS_PGVECTOR = False
 
 from sqlalchemy import Column, DateTime, Integer, String, Text
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 

@@ -32,10 +32,17 @@ from fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("mcp-postgres")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://wintermute:wintermute@localhost:5432/wintermute",
-)
+def _default_postgres_url() -> str:
+    try:
+        from shared.config_loader import load_mcp_servers_config
+        return load_mcp_servers_config().get(
+            "postgres_default_url",
+            "postgresql://wintermute:wintermute@localhost:5432/wintermute",
+        )
+    except Exception:
+        return "postgresql://wintermute:wintermute@localhost:5432/wintermute"
+
+DATABASE_URL = os.getenv("DATABASE_URL", _default_postgres_url())
 
 # ---------------------------------------------------------------------------
 # DB helpers — use psycopg2 directly for lightweight, read-only access

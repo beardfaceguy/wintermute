@@ -1,10 +1,16 @@
 {
   "vllm": {
     "scheme": "http",
-    "host": "100.53.33.156",
+    "host": "${VLLM_HOST}",
     "port": 8010,
-    "path": "/v1/completions",
+    "path": "/v1/chat/completions",
     "model": "wintermute-mistral-7b-sft",
+    "inference": {
+      "max_tokens": 512,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "frequency_penalty": 0.5
+    },
     "aws": {
       "profile": "experimental-admin",
       "region": "us-east-1",
@@ -19,6 +25,17 @@
       "serve_port": 8010,
       "gpu_memory_utilization": 0.85
     }
+  },
+  "dag_retrieval": {
+    "llm_timeout": 30,
+    "max_tokens": 512,
+    "temperature": 0.1
+  },
+  "agents": {
+    "default_llm_port": 8001,
+    "default_model": "wizard-vicuna-7b-awq",
+    "max_iterations": 10,
+    "temperature": 0.1
   },
   "codereview": {
     "scheme": "http",
@@ -49,6 +66,11 @@
     "port": 8000,
     "path": "/ws/chat"
   },
+  "mcp_servers": {
+    "map_echo_port": 6010,
+    "map_list_port": 6011,
+    "postgres_default_url": "postgresql://wintermute:wintermute@localhost:5432/wintermute"
+  },
   "rag": {
     "storage_dir": "memory/chroma_store",
     "live_data_dir": "memory/live",
@@ -59,6 +81,8 @@
     "port": 8000
   },
   "mcp_memory": {
-    "port": 8002
+    "port": 8002,
+    "default_db_url": "postgresql://postgres:postgres@localhost:5432/wintermute",
+    "embed_model": "BAAI/bge-small-en-v1.5"
   }
 }

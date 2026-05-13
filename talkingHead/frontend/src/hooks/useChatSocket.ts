@@ -54,7 +54,7 @@ export default function useChatSocket() {
       debugLog("🔗 Reusing existing WebSocket connection.  Payload:", payload);
       socketRef.current?.send(payload);
     }
-  }, [dispatch]); ;
+  }, [dispatch]);
 
   return { sendMessage };
 }

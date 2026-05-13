@@ -13,5 +13,5 @@ async def remember_message(
     await db_ops.store_message(session_id, role, content, embedding, token_count)
 
 
-def recall_recent_messages(session_id: str, limit: int = 20):
-    return db_ops.get_recent_messages(session_id, limit)
+async def recall_recent_messages(session_id: str, limit: int = 20):
+    return await db_ops.get_recent_messages(session_id, limit)

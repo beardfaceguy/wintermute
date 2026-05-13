@@ -42,12 +42,25 @@ class ModelConfig:
     max_seq_len: int = 2048  # used for GPT variant positional embeddings
     hf_model_name: Optional[str] = None
 
+    # --- MAC neural memory options (passed via neural_memory_kwargs) ---
+    store_with_lookahead_value: bool = False
+    neural_memory_add_value_residual: bool = False
+    neural_mem_gate_attn_output: bool = False
+    neural_mem_weight_residual: bool = False
+    sliding_window_attn: bool = False
+    num_residual_streams: int = 4
+
 
 class TitansLM(nn.Module):
     def __init__(self, cfg: ModelConfig):
         super().__init__()
         if cfg.variant.lower() != "mac":
             raise ValueError(f"Unsupported variant {cfg.variant}; only 'mac' is implemented here.")
+
+        neural_memory_kwargs = {}
+        if cfg.store_with_lookahead_value:
+            neural_memory_kwargs["store_with_lookahead_value"] = True
+
         self.model = MemoryAsContextTransformer(
             num_tokens=cfg.vocab_size,
             dim=cfg.dim,
@@ -57,12 +70,15 @@ class TitansLM(nn.Module):
             segment_len=cfg.segment_len,
             num_persist_mem_tokens=cfg.num_persist_mem_tokens,
             num_longterm_mem_tokens=cfg.num_longterm_mem_tokens,
+            neural_memory_add_value_residual=cfg.neural_memory_add_value_residual,
+            neural_mem_gate_attn_output=cfg.neural_mem_gate_attn_output,
+            neural_mem_weight_residual=cfg.neural_mem_weight_residual,
+            sliding_window_attn=cfg.sliding_window_attn,
+            num_residual_streams=cfg.num_residual_streams,
+            neural_memory_kwargs=neural_memory_kwargs,
         )
-        # LM head is built into MemoryAsContextTransformer; if not, uncomment below:
-        # self.lm_head = nn.Linear(cfg.dim, cfg.vocab_size, bias=False)
 
     def forward(self, x, return_loss: bool = False):
-        # titans-pytorch uses return_loss flag to compute CE internally
         return self.model(x, return_loss=return_loss)
 
 

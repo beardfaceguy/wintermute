@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -52,18 +53,43 @@ class AgentResult:
 class AgentRunner:
     """Connects MCP tool servers to an OpenAI-compatible LLM."""
 
+    @staticmethod
+    def _load_defaults() -> dict[str, Any]:
+        try:
+            from shared.config_loader import load_agents_config, load_vllm_config
+            agents_cfg = load_agents_config()
+            try:
+                _, model = load_vllm_config()
+            except Exception:
+                model = agents_cfg.get("default_model", "wizard-vicuna-7b-awq")
+            port = agents_cfg.get("default_llm_port", 8001)
+            return {
+                "llm_base_url": os.getenv("AGENT_LLM_URL", f"http://localhost:{port}/v1"),
+                "model": model,
+                "max_iterations": agents_cfg.get("max_iterations", 10),
+                "temperature": agents_cfg.get("temperature", 0.1),
+            }
+        except Exception:
+            return {
+                "llm_base_url": "http://localhost:8001/v1",
+                "model": "wizard-vicuna-7b-awq",
+                "max_iterations": 10,
+                "temperature": 0.1,
+            }
+
     def __init__(
         self,
-        llm_base_url: str = "http://localhost:8001/v1",
-        model: str = "wizard-vicuna-7b-awq",
-        max_iterations: int = 10,
-        temperature: float = 0.1,
+        llm_base_url: str | None = None,
+        model: str | None = None,
+        max_iterations: int | None = None,
+        temperature: float | None = None,
         system_prompt: str | None = None,
     ):
-        self.llm_base_url = llm_base_url.rstrip("/")
-        self.model = model
-        self.max_iterations = max_iterations
-        self.temperature = temperature
+        defaults = self._load_defaults()
+        self.llm_base_url = (llm_base_url or defaults["llm_base_url"]).rstrip("/")
+        self.model = model or defaults["model"]
+        self.max_iterations = max_iterations if max_iterations is not None else defaults["max_iterations"]
+        self.temperature = temperature if temperature is not None else defaults["temperature"]
         self.system_prompt = system_prompt or (
             "You are Wintermute, an AI agent with access to tools. "
             "Use the available tools to accomplish the user's request. "

@@ -43,27 +43,26 @@ async def test_remember_message_passes_none_optionals():
     mock_store.assert_awaited_once_with("sess-2", "assistant", "world", None, None)
 
 
-def test_recall_recent_messages_delegates_to_get_recent():
+@pytest.mark.asyncio
+async def test_recall_recent_messages_delegates_to_get_recent():
     sentinel = [{"role": "user", "content": "hi"}]
-    from unittest.mock import MagicMock
 
-    mock_get = MagicMock(return_value=sentinel)
+    mock_get = AsyncMock(return_value=sentinel)
     with patch("memory.short_term.db_ops.get_recent_messages", mock_get):
         from memory.short_term import recall_recent_messages
 
-        result = recall_recent_messages("sess-1", limit=10)
+        result = await recall_recent_messages("sess-1", limit=10)
 
-    mock_get.assert_called_once_with("sess-1", 10)
+    mock_get.assert_awaited_once_with("sess-1", 10)
     assert result is sentinel
 
 
-def test_recall_recent_messages_uses_default_limit():
-    from unittest.mock import MagicMock
-
-    mock_get = MagicMock(return_value=[])
+@pytest.mark.asyncio
+async def test_recall_recent_messages_uses_default_limit():
+    mock_get = AsyncMock(return_value=[])
     with patch("memory.short_term.db_ops.get_recent_messages", mock_get):
         from memory.short_term import recall_recent_messages
 
-        recall_recent_messages("sess-3")
+        await recall_recent_messages("sess-3")
 
-    mock_get.assert_called_once_with("sess-3", 20)
+    mock_get.assert_awaited_once_with("sess-3", 20)

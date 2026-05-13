@@ -2,15 +2,13 @@
 # Replaces legacy chat.py with voice-only routing
 
 import hashlib
+import logging
 import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import cast
 
 from fastapi import APIRouter, File, UploadFile
-import logging
-import os
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +53,7 @@ async def voice_input(file: UploadFile = File(...)):
             contents = await file.read()
             tmp.write(contents)
             tmp.flush()
-            print("Checksum:", sha256sum(cast(Path, tmp_path)))
+            logger.debug("Checksum: %s", sha256sum(Path(tmp_path)))
 
         wav_path = tmp_path.replace(".webm", ".wav")
         subprocess.run(
@@ -68,8 +66,8 @@ async def voice_input(file: UploadFile = File(...)):
 
         segments = whisper_model.transcribe(wav_path)
         result_text = " ".join([seg.text for seg in segments]).strip()
-        print("Segments:", segments)
-        print("Transcript:", result_text)
+        logger.debug("Segments: %s", segments)
+        logger.debug("Transcript: %s", result_text)
         return {"transcript": result_text}
     except Exception as e:
         return {"error": f"STT failed: {str(e)}"}

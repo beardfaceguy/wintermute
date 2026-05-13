@@ -1,4 +1,5 @@
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from app.api import voice_chat
@@ -18,7 +19,18 @@ from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 load_dotenv()
-app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from db.db_models import Base
+    from db.session_async import engine
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,11 +40,3 @@ app.add_middleware(
 )
 app.include_router(voice_chat.router, prefix="/api")
 app.include_router(chat_ws.router)
-
-
-@app.on_event("startup")
-async def _init_db():
-    from db.db_models import Base
-    from db.session_async import engine
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)

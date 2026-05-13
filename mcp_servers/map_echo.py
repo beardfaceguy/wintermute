@@ -1,8 +1,13 @@
 # mcp_echo.py
+import os
+
 from fastapi import FastAPI, Request
 import uvicorn
 
 app = FastAPI()
+
+MAP_ECHO_HOST = os.getenv("MAP_ECHO_HOST", "0.0.0.0")
+MAP_ECHO_PORT = int(os.getenv("MAP_ECHO_PORT", "6010"))
 
 @app.post("/echo")
 async def echo(request: Request):
@@ -10,5 +15,5 @@ async def echo(request: Request):
     return {"echo": body}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=6010)
+    uvicorn.run(app, host=MAP_ECHO_HOST, port=MAP_ECHO_PORT)
 

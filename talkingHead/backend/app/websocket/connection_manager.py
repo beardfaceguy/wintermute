@@ -13,12 +13,14 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: list[WebSocket] = []
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> bool:
+        """Accept a WebSocket connection. Returns False if at capacity."""
         if len(self.active_connections) >= MAX_CONNECTIONS:
             await websocket.close(code=1013, reason="Server at capacity")
-            return
+            return False
         await websocket.accept()
         self.active_connections.append(websocket)
+        return True
 
     def disconnect(self, websocket: WebSocket):
         try:

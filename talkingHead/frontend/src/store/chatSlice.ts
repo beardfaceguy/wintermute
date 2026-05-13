@@ -27,9 +27,11 @@ const chatSlice = createSlice({
     },
     updateLastAssistantMessage: (state, action: PayloadAction<string>) => {
       debugLog("chatSlice.updateLastAssistantMessage: Updating last assistant message with:", action.payload);
-      const lastMsg = [...state.messages].reverse().find((msg) => msg.role === "assistant");
-      if (lastMsg) {
-        lastMsg.text += action.payload;
+      for (let i = state.messages.length - 1; i >= 0; i--) {
+        if (state.messages[i].role === "assistant") {
+          state.messages[i].text += action.payload;
+          break;
+        }
       }
     },
     resetChat: (state) => {

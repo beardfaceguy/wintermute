@@ -5,7 +5,7 @@ from typing import Awaitable, Callable
 
 import httpx
 
-from shared.config_loader import load_vllm_config
+from shared.config_loader import load_vllm_config, load_inference_config
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 logger = logging.getLogger("chat.llm")
@@ -26,6 +26,74 @@ class ChatProcessor:
                 self.model_url = ""
                 self.model_name = ""
 
+        try:
+            self._inference = load_inference_config()
+        except Exception:
+            self._inference = {
+                "max_tokens": 512, "temperature": 0.7,
+                "top_p": 0.9, "frequency_penalty": 0.5,
+            }
+
+    def _build_messages(self, prompt: str) -> list[dict[str, str]]:
+        """Convert a formatted prompt string into chat messages.
+
+        The prompt follows the convention:
+            [Relevant Memory] ... [End Memory]
+            user: ...
+            assistant: ...
+            user: <latest>
+            assistant:
+
+        We parse this into proper role/content message dicts so
+        instruction-tuned models (Mistral, etc.) get the right format.
+        """
+        messages: list[dict[str, str]] = []
+        system_parts: list[str] = []
+        lines = prompt.split("\n")
+
+        i = 0
+        # Collect memory block as system context
+        if lines and lines[0].startswith("[Relevant Memory]"):
+            while i < len(lines):
+                system_parts.append(lines[i])
+                if lines[i].strip() == "[End Memory]":
+                    i += 1
+                    break
+                i += 1
+
+        if system_parts:
+            messages.append({"role": "system", "content": "\n".join(system_parts)})
+
+        # Parse role-prefixed lines
+        current_role = None
+        current_content: list[str] = []
+
+        for line in lines[i:]:
+            if line.startswith("user: "):
+                if current_role and current_content:
+                    messages.append({"role": current_role, "content": "\n".join(current_content)})
+                current_role = "user"
+                current_content = [line[6:]]
+            elif line.startswith("assistant:"):
+                if current_role and current_content:
+                    messages.append({"role": current_role, "content": "\n".join(current_content)})
+                current_role = "assistant"
+                rest = line[10:].strip()
+                current_content = [rest] if rest else []
+            elif current_role:
+                current_content.append(line)
+
+        if current_role and current_content:
+            text = "\n".join(current_content).strip()
+            if text:
+                messages.append({"role": current_role, "content": text})
+
+        # Ensure we have at least one user message
+        if not any(m["role"] == "user" for m in messages):
+            messages.append({"role": "user", "content": prompt})
+
+        return messages
+
     async def stream_response(
         self, prompt: str, send_token_callback: Callable[[str], Awaitable[None]]
     ) -> str:
@@ -39,6 +107,7 @@ class ChatProcessor:
             return msg
 
         assistant_response = ""
+        messages = self._build_messages(prompt)
 
         async with httpx.AsyncClient(timeout=None) as client:
             async with client.stream(
@@ -46,13 +115,12 @@ class ChatProcessor:
                 self.model_url,
                 json={
                     "model": self.model_name,
-                    "prompt": prompt,
+                    "messages": messages,
                     "stream": True,
-                    "max_tokens": 256,
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "repetition_penalty": 1.3,
-                    "frequency_penalty": 0.5,
+                    "max_tokens": self._inference.get("max_tokens", 512),
+                    "temperature": self._inference.get("temperature", 0.7),
+                    "top_p": self._inference.get("top_p", 0.9),
+                    "frequency_penalty": self._inference.get("frequency_penalty", 0.5),
                 },
             ) as response:
                 async for line in response.aiter_lines():
@@ -62,7 +130,8 @@ class ChatProcessor:
                         break
                     try:
                         payload = json.loads(line.removeprefix("data: "))
-                        content = payload["choices"][0].get("text", "")
+                        delta = payload["choices"][0].get("delta", {})
+                        content = delta.get("content", "")
                         if content:
                             assistant_response += content
                             await send_token_callback(content)

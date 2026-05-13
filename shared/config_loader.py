@@ -52,6 +52,31 @@ def load_vllm_aws_config() -> dict[str, Any]:
     return _load_config()["vllm"].get("aws", {})
 
 
+def load_inference_config() -> dict[str, Any]:
+    """Load LLM inference parameters (max_tokens, temperature, etc.)."""
+    return _load_config().get("vllm", {}).get("inference", {
+        "max_tokens": 512,
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "frequency_penalty": 0.5,
+    })
+
+
+def load_agents_config() -> dict[str, Any]:
+    """Load agent runner defaults."""
+    return _load_config().get("agents", {})
+
+
+def load_mcp_servers_config() -> dict[str, Any]:
+    """Load MCP server port/URL config."""
+    return _load_config().get("mcp_servers", {})
+
+
+def load_mcp_memory_config() -> dict[str, Any]:
+    """Load mcp-memory config."""
+    return _load_config().get("mcp_memory", {})
+
+
 def get_rag_config() -> RagConfig:
     raw = _load_config()["rag"]
     base_path = Path(__file__).resolve().parent.parent  # wintermute root

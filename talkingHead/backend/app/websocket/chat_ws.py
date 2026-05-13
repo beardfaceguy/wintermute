@@ -21,20 +21,28 @@ router = APIRouter()
 chat_processor = ChatProcessor()
 
 
+MAX_MESSAGE_SIZE = int(os.getenv("WS_MAX_MESSAGE_SIZE", str(16 * 1024)))
+
+
 @router.websocket("/ws/chat")
 async def chat_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
+    accepted = await manager.connect(websocket)
+    if not accepted:
+        return
     session_id = str(uuid.uuid4())
 
     if DEBUG:
-        print(f"[DEBUG] New WebSocket session started: {session_id}")
+        logger.debug("New WebSocket session started: %s", session_id)
 
     try:
         while True:
             data = await websocket.receive_text()
             try:
+                if len(data) > MAX_MESSAGE_SIZE:
+                    await websocket.send_text("Error: Message too large")
+                    continue
                 if DEBUG:
-                    print(f"[DEBUG] Raw WebSocket message: {data}")
+                    logger.debug("Raw WebSocket message: %s", data)
                 payload = json.loads(data)
                 user_message = payload.get("message", "").strip()
 
@@ -43,7 +51,7 @@ async def chat_endpoint(websocket: WebSocket):
                     continue
 
                 if DEBUG:
-                    print(f"[DEBUG] Received user message: {user_message}")
+                    logger.debug("Received user message: %s", user_message)
 
                 # Store the user message
                 await store_message(
@@ -53,7 +61,7 @@ async def chat_endpoint(websocket: WebSocket):
                 )
 
                 # Search strategic memory for relevant context
-                memories = await search_relevant_memories(user_message, limit=3)
+                memories = await search_relevant_memories(user_message, limit=3, deep=True)
                 memory_block = format_memory_context(memories)
 
                 # Fetch recent conversation history
@@ -70,7 +78,7 @@ async def chat_endpoint(websocket: WebSocket):
                 formatted_prompt += f"user: {user_message}\nassistant:"
 
                 if DEBUG and memory_block:
-                    print(f"[DEBUG] Injected memory context:\n{memory_block}")
+                    logger.debug("Injected memory context:\n%s", memory_block)
 
                 # Generate and stream response
                 assistant_message = await chat_processor.stream_response(
@@ -78,7 +86,7 @@ async def chat_endpoint(websocket: WebSocket):
                 )
 
                 if DEBUG:
-                    print(f"[DEBUG] Assistant full response: {assistant_message}")
+                    logger.debug("Assistant full response: %s", assistant_message)
 
                 # Store assistant's message in conversation history
                 await store_message(
@@ -105,7 +113,7 @@ async def chat_endpoint(websocket: WebSocket):
 
     except WebSocketDisconnect:
         if DEBUG:
-            print(f"[DEBUG] WebSocket session disconnected: {session_id}")
+            logger.debug("WebSocket session disconnected: %s", session_id)
     except Exception as e:
         logger.error("WebSocket session %s crashed: %s", session_id, e)
         try:

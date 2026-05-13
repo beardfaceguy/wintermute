@@ -10,7 +10,9 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# Export DEBUG flag for the app to use
+BACKEND_HOST="${BACKEND_HOST:-0.0.0.0}"
+BACKEND_PORT="${BACKEND_PORT:-8000}"
+
 export DEBUG=$DEBUG
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 
+uvicorn app.main:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"
 

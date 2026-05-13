@@ -60,7 +60,7 @@ def test_openapi_json_accessible(client):
 
 
 @pytest.mark.asyncio
-async def test_startup_event_creates_tables():
+async def test_lifespan_creates_tables():
     mock_conn = AsyncMock()
     mock_conn.run_sync = AsyncMock()
 
@@ -72,9 +72,10 @@ async def test_startup_event_creates_tables():
     mock_engine.begin.return_value = mock_ctx
 
     with patch("db.session_async.engine", mock_engine):
-        from app.main import _init_db
+        from app.main import lifespan
 
-        await _init_db()
+        async with lifespan(app):
+            pass
 
     mock_engine.begin.assert_called_once()
     mock_conn.run_sync.assert_called_once()

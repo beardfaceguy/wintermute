@@ -36,6 +36,15 @@ backend/.pytest_cache/
 # Uvicorn or gunicorn logs (if used)
 *.log
 
+# Root env files
+.env
+.env.local
+
+# Local SQLite databases (chat history, etc.)
+wintermute_chat.db
+*.sqlite
+*.sqlite3
+
 # --- General ---
 # Node modules (global)
 node_modules/

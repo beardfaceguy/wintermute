@@ -28,11 +28,8 @@ class TestChatProcessor:
 
     def test_chat_processor_default_config(self) -> None:
         """Test ChatProcessor with default configuration."""
-        # Since the module-level variables are set at import time,
-        # we'll test that the processor uses the current values
         processor = ChatProcessor()
 
-        # These should match the actual loaded config
         assert processor.model_url is not None
         assert processor.model_name is not None
         assert isinstance(processor.model_url, str)
@@ -41,50 +38,42 @@ class TestChatProcessor:
     @patch("app.chat.llm.httpx.AsyncClient")
     @pytest.mark.asyncio
     async def test_stream_response_success(self, mock_client: MagicMock) -> None:
-        """Test successful streaming response."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+        """Test successful streaming response (chat completions format)."""
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
-        # Mock the async context manager
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock the streaming response
         mock_response = MagicMock()
         mock_response.aiter_lines.return_value = _async_iter([
-            'data: {"choices": [{"text": "Hello"}]}',
-            'data: {"choices": [{"text": " world"}]}',
+            'data: {"choices": [{"delta": {"content": "Hello"}}]}',
+            'data: {"choices": [{"delta": {"content": " world"}}]}',
             "data: [DONE]",
         ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
-        # Mock the callback
         mock_callback = AsyncMock()
 
-        # Call the method
-        result = await processor.stream_response("test prompt", mock_callback)
+        result = await processor.stream_response("user: test prompt\nassistant:", mock_callback)
 
-        # Verify result
         assert result == "Hello world"
 
-        # Verify callback was called with each token
         assert mock_callback.call_count == 2
         mock_callback.assert_any_call("Hello")
         mock_callback.assert_any_call(" world")
 
-        # Verify the request was made correctly
         mock_client_instance.stream.assert_called_once()
         call_args = mock_client_instance.stream.call_args
         assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "http://test:8000"
+        assert call_args[0][1] == "http://test:8000/v1/chat/completions"
 
-        # Verify the JSON payload
         json_data = call_args[1]["json"]
         assert json_data["model"] == "test-model"
-        assert json_data["prompt"] == "test prompt"
+        assert "messages" in json_data
         assert json_data["stream"] is True
-        assert json_data["max_tokens"] == 256
+        assert json_data["max_tokens"] == 512
         assert json_data["temperature"] == 0.7
         assert json_data["top_p"] == 0.9
 
@@ -92,13 +81,12 @@ class TestChatProcessor:
     @pytest.mark.asyncio
     async def test_stream_response_empty_response(self, mock_client: MagicMock) -> None:
         """Test streaming response with empty response."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock empty response
         mock_response = MagicMock()
         mock_response.aiter_lines.return_value = _async_iter(["data: [DONE]"])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
@@ -106,7 +94,7 @@ class TestChatProcessor:
 
         mock_callback = AsyncMock()
 
-        result = await processor.stream_response("test prompt", mock_callback)
+        result = await processor.stream_response("user: test\nassistant:", mock_callback)
 
         assert result == ""
         mock_callback.assert_not_called()
@@ -115,17 +103,16 @@ class TestChatProcessor:
     @pytest.mark.asyncio
     async def test_stream_response_parse_error(self, mock_client: MagicMock) -> None:
         """Test streaming response with JSON parse error."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock response with invalid JSON
         mock_response = MagicMock()
         mock_response.aiter_lines.return_value = _async_iter([
             "data: invalid json",
-            'data: {"choices": [{"text": "Valid"}]}',
+            'data: {"choices": [{"delta": {"content": "Valid"}}]}',
             "data: [DONE]",
         ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
@@ -133,27 +120,25 @@ class TestChatProcessor:
 
         mock_callback = AsyncMock()
 
-        result = await processor.stream_response("test prompt", mock_callback)
+        result = await processor.stream_response("user: test\nassistant:", mock_callback)
 
-        # Should still process valid JSON
         assert result == "Valid"
         mock_callback.assert_called_once_with("Valid")
 
     @patch("app.chat.llm.httpx.AsyncClient")
     @pytest.mark.asyncio
-    async def test_stream_response_missing_text(self, mock_client: MagicMock) -> None:
-        """Test streaming response with missing text field."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+    async def test_stream_response_missing_delta(self, mock_client: MagicMock) -> None:
+        """Test streaming response with missing delta/content field."""
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock response with missing text
         mock_response = MagicMock()
         mock_response.aiter_lines.return_value = _async_iter([
-            'data: {"choices": [{}]}',
-            'data: {"choices": [{"text": "Valid"}]}',
+            'data: {"choices": [{"delta": {}}]}',
+            'data: {"choices": [{"delta": {"content": "Valid"}}]}',
             "data: [DONE]",
         ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
@@ -161,9 +146,8 @@ class TestChatProcessor:
 
         mock_callback = AsyncMock()
 
-        result = await processor.stream_response("test prompt", mock_callback)
+        result = await processor.stream_response("user: test\nassistant:", mock_callback)
 
-        # Should only process valid responses
         assert result == "Valid"
         mock_callback.assert_called_once_with("Valid")
 
@@ -173,18 +157,17 @@ class TestChatProcessor:
         self, mock_client: MagicMock
     ) -> None:
         """Test that empty lines and control lines are skipped."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock response with empty lines and control lines
         mock_response = MagicMock()
         mock_response.aiter_lines.return_value = _async_iter([
             "",
             ":",
-            'data: {"choices": [{"text": "Hello"}]}',
+            'data: {"choices": [{"delta": {"content": "Hello"}}]}',
             "data: [DONE]",
         ])
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
@@ -192,7 +175,7 @@ class TestChatProcessor:
 
         mock_callback = AsyncMock()
 
-        result = await processor.stream_response("test prompt", mock_callback)
+        result = await processor.stream_response("user: test\nassistant:", mock_callback)
 
         assert result == "Hello"
         mock_callback.assert_called_once_with("Hello")
@@ -203,13 +186,12 @@ class TestChatProcessor:
         self, mock_client: MagicMock
     ) -> None:
         """Test exception handling during streaming."""
-        processor = ChatProcessor("http://test:8000", "test-model")
+        processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
         mock_client_instance = MagicMock()
         mock_client.return_value.__aenter__.return_value = mock_client_instance
         mock_client.return_value.__aexit__.return_value = None
 
-        # Mock response that raises an exception
         mock_response = MagicMock()
         mock_response.aiter_lines.side_effect = Exception("Network error")
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
@@ -218,4 +200,55 @@ class TestChatProcessor:
         mock_callback = AsyncMock()
 
         with pytest.raises(Exception, match="Network error"):
-            await processor.stream_response("test prompt", mock_callback)
+            await processor.stream_response("user: test\nassistant:", mock_callback)
+
+    @pytest.mark.asyncio
+    async def test_no_model_url_returns_error(self) -> None:
+        """Test that a missing model URL returns an error message."""
+        processor = ChatProcessor.__new__(ChatProcessor)
+        processor.model_url = ""
+        processor.model_name = ""
+
+        mock_callback = AsyncMock()
+        result = await processor.stream_response("test", mock_callback)
+        assert "not configured" in result
+        mock_callback.assert_called_once()
+
+
+class TestBuildMessages:
+    """Test cases for _build_messages prompt parsing."""
+
+    def test_simple_user_prompt(self) -> None:
+        processor = ChatProcessor("http://test:8000", "test-model")
+        messages = processor._build_messages("user: hello\nassistant:")
+        assert messages == [{"role": "user", "content": "hello"}]
+
+    def test_conversation_history(self) -> None:
+        processor = ChatProcessor("http://test:8000", "test-model")
+        prompt = "user: hi\nassistant: hey there\nuser: how are you?\nassistant:"
+        messages = processor._build_messages(prompt)
+        assert len(messages) == 3
+        assert messages[0] == {"role": "user", "content": "hi"}
+        assert messages[1] == {"role": "assistant", "content": "hey there"}
+        assert messages[2] == {"role": "user", "content": "how are you?"}
+
+    def test_memory_block_becomes_system_message(self) -> None:
+        processor = ChatProcessor("http://test:8000", "test-model")
+        prompt = (
+            "[Relevant Memory]\n"
+            "  1. [live, sim=0.92] some memory\n"
+            "[End Memory]\n"
+            "\n"
+            "user: what happened?\nassistant:"
+        )
+        messages = processor._build_messages(prompt)
+        assert messages[0]["role"] == "system"
+        assert "[Relevant Memory]" in messages[0]["content"]
+        assert any(m["role"] == "user" and "what happened?" in m["content"] for m in messages)
+
+    def test_fallback_for_unparseable_prompt(self) -> None:
+        processor = ChatProcessor("http://test:8000", "test-model")
+        messages = processor._build_messages("just a raw string with no prefixes")
+        assert len(messages) == 1
+        assert messages[0]["role"] == "user"
+        assert messages[0]["content"] == "just a raw string with no prefixes"

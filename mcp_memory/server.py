@@ -321,6 +321,50 @@ def memory_update_trust(
 
 
 # ---------------------------------------------------------------------------
+# DAG-structured retrieval tool
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool
+def memory_search_deep(
+    query: str,
+    limit_per_hop: int = 5,
+    max_hops: int = 4,
+    zone: str | None = None,
+    min_trust: float | None = None,
+) -> dict[str, Any]:
+    """Multi-hop semantic search using DAG-structured query decomposition.
+
+    For complex queries requiring information across multiple memory entries,
+    this decomposes the query into subproblems, determines dependencies, and
+    retrieves in logical order. Simple queries are automatically routed to
+    direct vector search.
+
+    Args:
+        query: Natural-language search query.
+        limit_per_hop: Max results per subquery hop (default 5).
+        max_hops: Maximum subquery nodes to execute (default 4).
+        zone: Filter by zone ('live' or 'cold'). None returns both.
+        min_trust: Minimum trust_score filter.
+
+    Returns:
+        Dict with answer_summary, per-hop results, DAG edges, and routing info.
+    """
+    try:
+        from mcp_memory.dag_retrieval import dag_search_sync
+    except ImportError:
+        from dag_retrieval import dag_search_sync
+
+    return dag_search_sync(
+        query=query,
+        limit_per_hop=limit_per_hop,
+        max_hops=max_hops,
+        zone=zone,
+        min_trust=min_trust,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
 
