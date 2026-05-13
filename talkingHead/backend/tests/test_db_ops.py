@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from db.db_models import Message
-from db.db_ops import get_recent_messages, store_message
+from db.db_ops import get_recent_messages, prune_session_messages, store_message
 
 
 class TestDatabaseOperations:
@@ -194,3 +194,122 @@ class TestDatabaseOperations:
         assert getattr(result[0], "content") == "Oldest message"
         assert getattr(result[1], "content") == "Earlier message"
         assert getattr(result[2], "content") == "Latest message"
+
+
+class TestRetention:
+    """Tests for the per-session retention cap (CLA-166)."""
+
+    @pytest.mark.asyncio
+    async def test_store_message_does_not_prune_when_disabled(self) -> None:
+        """With CHAT_MAX_MESSAGES_PER_SESSION=0, prune_session_messages is not called."""
+        with (
+            patch("db.db_ops._MAX_MESSAGES_PER_SESSION", 0),
+            patch("db.db_ops.AsyncSessionLocal") as mock_session_local,
+            patch("db.db_ops.prune_session_messages", new_callable=AsyncMock) as mock_prune,
+        ):
+            mock_session = AsyncMock()
+            mock_session_local.return_value.__aenter__.return_value = mock_session
+
+            await store_message(session_id="s", role="user", content="hi")
+
+            mock_prune.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_store_message_invokes_prune_when_enabled(self) -> None:
+        """When the cap is positive, store_message awaits prune_session_messages."""
+        with (
+            patch("db.db_ops._MAX_MESSAGES_PER_SESSION", 5),
+            patch("db.db_ops.AsyncSessionLocal") as mock_session_local,
+            patch("db.db_ops.prune_session_messages", new_callable=AsyncMock) as mock_prune,
+        ):
+            mock_session = AsyncMock()
+            mock_session_local.return_value.__aenter__.return_value = mock_session
+
+            await store_message(session_id="abc", role="user", content="hi")
+
+            mock_prune.assert_awaited_once_with("abc", 5)
+
+    @pytest.mark.asyncio
+    async def test_store_message_swallows_prune_failures(self) -> None:
+        """Retention failures must never propagate out of store_message."""
+        with (
+            patch("db.db_ops._MAX_MESSAGES_PER_SESSION", 5),
+            patch("db.db_ops.AsyncSessionLocal") as mock_session_local,
+            patch(
+                "db.db_ops.prune_session_messages",
+                new_callable=AsyncMock,
+                side_effect=RuntimeError("boom"),
+            ),
+        ):
+            mock_session = AsyncMock()
+            mock_session_local.return_value.__aenter__.return_value = mock_session
+
+            # Should not raise.
+            await store_message(session_id="abc", role="user", content="hi")
+
+    @pytest.mark.asyncio
+    async def test_prune_returns_zero_when_max_non_positive(self) -> None:
+        deleted = await prune_session_messages("any", 0)
+        assert deleted == 0
+        deleted = await prune_session_messages("any", -1)
+        assert deleted == 0
+
+    @patch("db.db_ops.AsyncSessionLocal")
+    @pytest.mark.asyncio
+    async def test_prune_no_op_when_under_cap(
+        self, mock_session_local: MagicMock
+    ) -> None:
+        """If session has <= max_messages, no delete is issued."""
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+
+        count_result = MagicMock()
+        count_result.scalar.return_value = 3
+        mock_session.execute.return_value = count_result
+
+        deleted = await prune_session_messages("s", max_messages=10)
+
+        assert deleted == 0
+        # Only the COUNT query ran; no id-fetch, no DELETE.
+        assert mock_session.execute.await_count == 1
+        mock_session.commit.assert_not_awaited()
+
+    @patch("db.db_ops.AsyncSessionLocal")
+    @pytest.mark.asyncio
+    async def test_prune_deletes_excess_when_over_cap(
+        self, mock_session_local: MagicMock
+    ) -> None:
+        """If session has > max_messages, the oldest rows are deleted."""
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+
+        count_result = MagicMock()
+        count_result.scalar.return_value = 12
+
+        ids_result = MagicMock()
+        ids_result.scalars.return_value.all.return_value = [1, 2]
+
+        delete_result = MagicMock()
+
+        mock_session.execute.side_effect = [count_result, ids_result, delete_result]
+
+        deleted = await prune_session_messages("s", max_messages=10)
+
+        assert deleted == 2
+        assert mock_session.execute.await_count == 3
+        mock_session.commit.assert_awaited_once()
+
+    @patch("db.db_ops.AsyncSessionLocal")
+    @pytest.mark.asyncio
+    async def test_prune_rolls_back_on_error(
+        self, mock_session_local: MagicMock
+    ) -> None:
+        """Errors during pruning trigger rollback and propagate."""
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+        mock_session.execute.side_effect = RuntimeError("db down")
+
+        with pytest.raises(RuntimeError, match="db down"):
+            await prune_session_messages("s", max_messages=10)
+
+        mock_session.rollback.assert_awaited_once()
