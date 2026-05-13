@@ -7,6 +7,12 @@ frontend/dist
 frontend/.vite
 frontend/node_modules/
 
+# Playwright e2e artifacts
+talkingHead/frontend/test-results/
+talkingHead/frontend/playwright-report/
+talkingHead/frontend/blob-report/
+talkingHead/frontend/playwright/.cache/
+
 # Local env vars or secrets (if any)
 frontend/.env
 frontend/.env.*
