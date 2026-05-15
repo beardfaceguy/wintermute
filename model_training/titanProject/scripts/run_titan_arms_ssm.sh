@@ -77,64 +77,34 @@ done
 # Self-terminate trap (installed FIRST so any setup failure still tears the
 # instance down — keeps spot costs bounded).
 #
-# Lesson from the 20260513 A/B: the previous version of this script lost
-# IMDSv2 lookups on a single curl failure and silently no-op'd, leaving
-# the instance idle for ~2hr after rc=0. Now we:
-#   1. retry IMDSv2 token + field lookups,
-#   2. fall back to /var/lib/cloud/data/instance-id (cloud-init writes it),
-#   3. if even that fails, fall back to `shutdown -h now` (spot terminates
-#      on shutdown — InstanceInitiatedShutdownBehavior=terminate by default).
+# Lifecycle helpers (instance-id resolution, terminate_self, EXIT trap) live
+# in scripts/lib/aws_lifecycle.sh so they can be unit-tested in isolation.
+# Order-of-operations safety property: every pre-terminate hook completes
+# (success OR failure) before terminate_self is called. This is what keeps
+# us from torching runner.log + checkpoints by terminating too early.
 # ---------------------------------------------------------------------------
-get_imds_field() {
-  local field="$1" token result
-  for attempt in 1 2 3; do
-    token="$(curl -fsS --max-time 3 \
-      -X PUT 'http://169.254.169.254/latest/api/token' \
-      -H 'X-aws-ec2-metadata-token-ttl-seconds: 600' 2>/dev/null || true)"
-    if [[ -n "${token}" ]]; then
-      result="$(curl -fsS --max-time 3 \
-        -H "X-aws-ec2-metadata-token: ${token}" \
-        "http://169.254.169.254/latest/meta-data/${field}" 2>/dev/null || true)"
-      if [[ -n "${result}" ]]; then
-        echo "${result}"
-        return 0
-      fi
-    fi
-    sleep 1
-  done
-  return 1
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=model_training/titanProject/scripts/lib/aws_lifecycle.sh
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/lib/aws_lifecycle.sh"
 
-INSTANCE_ID="$(get_imds_field instance-id || true)"
-if [[ -z "${INSTANCE_ID}" && -r /var/lib/cloud/data/instance-id ]]; then
-  INSTANCE_ID="$(cat /var/lib/cloud/data/instance-id)"
-  echo "[runner] IMDSv2 failed; using cloud-init instance-id=${INSTANCE_ID}"
-fi
-REGION="$(get_imds_field placement/region || true)"
-REGION="${REGION:-us-east-1}"
-echo "[runner] resolved instance_id='${INSTANCE_ID}' region='${REGION}'"
-
-cleanup() {
-  rc=$?
-  echo "[runner] exiting with rc=${rc} at $(date -Iseconds)"
+# Hook: upload the global runner.log into each arm's S3 prefix BEFORE we
+# terminate the instance. Returning rc!=0 is logged but does not block
+# termination (we'd rather lose a log than strand a billing instance).
+_runner_upload_runner_log() {
+  local arm rc=0
   for arm in "${ARM_NAMES[@]}"; do
-    aws s3 cp "${GLOBAL_LOG}" "${S3_CKPT_PREFIX}/${arm}/runner.log" --quiet || true
-  done
-  if [[ -n "${INSTANCE_ID}" ]]; then
-    echo "[runner] terminating ${INSTANCE_ID} in ${REGION}"
-    if ! aws ec2 terminate-instances --instance-ids "${INSTANCE_ID}" --region "${REGION}"; then
-      echo "[runner] terminate-instances API call failed; falling back to shutdown -h"
-      sync; sleep 2
-      shutdown -h now || /sbin/shutdown -h now || true
+    if ! aws s3 cp "${GLOBAL_LOG}" "${S3_CKPT_PREFIX}/${arm}/runner.log" --quiet; then
+      echo "[runner] WARN: failed to upload runner.log for arm=${arm}" >&2
+      rc=1
     fi
-  else
-    echo "[runner] WARNING: instance-id still unresolved; falling back to shutdown -h"
-    sync; sleep 2
-    shutdown -h now || /sbin/shutdown -h now || true
-  fi
-  exit "${rc}"
+  done
+  return "${rc}"
 }
-trap cleanup EXIT
+CLEANUP_PRE_TERMINATE_HOOKS+=(_runner_upload_runner_log)
+
+resolve_instance_metadata
+install_cleanup_trap
 
 # ---------------------------------------------------------------------------
 # Pull code from S3.
