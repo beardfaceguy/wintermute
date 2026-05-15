@@ -1,0 +1,44 @@
+# Full fine-tuning config for Dixie Flatline: Mistral 7B Instruct v0.3
+#
+# Usage (8x A100 on p4d.24xlarge):
+#   torchrun --nproc_per_node=8 finetune_sft.py \
+#     --config configs/config_dixie_mistral_full.yaml \
+#     --hf-model mistralai/Mistral-7B-Instruct-v0.3 \
+#     --no-lora --chat-template \
+#     --device cuda --steps 3000 --log-every 20 --eval-every 250 \
+#     --eval-batches 20 --save-every 500 \
+#     --checkpoint-dir /opt/dlami/nvme/ckpts \
+#     --s3-checkpoint-uri s3://alix-ai-ml-staging-data/titan/checkpoints/dixie_mistral_full_RUN/ \
+#     --min-free-gb 5 --aws-bin aws
+
+# Model section ignored when --hf-model is set; kept for documentation.
+model:
+  variant: gpt
+  vocab_size: 32768
+  dim: 4096
+  depth: 32
+  heads: 32
+  ff_mult: 4
+  max_seq_len: 2048
+
+data:
+  train_path: /opt/dlami/nvme/data/train.jsonl
+  val_path: /opt/dlami/nvme/data/val.jsonl
+  tokenizer_path: "unused-when-hf-model-is-set"
+  use_chat_template: true
+
+train:
+  seq_len: 2048
+  batch_size: 1
+  grad_accum_steps: 4
+  lr: 0.00002
+  lr_min: 0.000002
+  weight_decay: 0.01
+  warmup_steps: 150
+  max_steps: 3000
+  grad_clip: 1.0
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  cosine_decay: true
+  save_every: 500
+  eval_every: 250
