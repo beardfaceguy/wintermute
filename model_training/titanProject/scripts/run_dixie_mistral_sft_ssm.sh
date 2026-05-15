@@ -23,13 +23,20 @@
 #   8. torchrun --nproc_per_node=8 finetune_sft.py with live S3 checkpoint sync.
 #   9. Self-terminate.
 #
-# Required env:
+# Required env (on the instance, set by the SSM RunCommand env block):
 #   TIMESTAMP        Run identity, e.g. 20260515140000. (Default: now, UTC.)
 #   S3_CODE_URI      Where titanProject/ was synced before launch.
 #                    Example: s3://alix-ai-ml-staging-data/titan/code/dixie_20260515140000
 #   S3_TRAIN_URI     Where train.jsonl lives.
 #                    Example: s3://alix-ai-ml-staging-data/titan/data/dixie_pentest/train.jsonl
 #   S3_VAL_URI       Where val.jsonl lives.
+#   HF_TOKEN         HuggingFace API token for gated repos. REQUIRED for the
+#                    default HF_MODEL_REPO (mistralai/Mistral-7B-Instruct-v0.3
+#                    is gated). Source on the controller:
+#                      grep ^accessToken= ~/work/wintermute/model_training/hf.env \
+#                        | cut -d= -f2-
+#                    The cascade below also accepts HUGGINGFACE_TOKEN or
+#                    HUGGINGFACE_HUB_TOKEN if one of those is already set.
 #
 # Optional env:
 #   RUN_ID           Defaults to dixie_mistral_full_${TIMESTAMP}.
@@ -42,8 +49,53 @@
 #                    smoke check to be representative.
 #   SMOKE_MIN_KEEP   Default 0.90. Smoke-test failure threshold.
 #
-# Tail progress while running:
-#   aws s3 cp s3://${S3_BUCKET}/titan/checkpoints/${RUN_ID}/train.log -
+# Controller-side kickoff (run from ~/work/wintermute on the dev box):
+#
+#   export AWS_PROFILE=experimental-admin
+#   export AWS_DEFAULT_REGION=us-east-1
+#   TIMESTAMP="$(date -u +%Y%m%d%H%M%S)"
+#   RUN_ID="dixie_mistral_full_${TIMESTAMP}"
+#   S3_CODE_URI="s3://alix-ai-ml-staging-data/titan/code/dixie_${TIMESTAMP}"
+#   S3_TRAIN_URI="s3://alix-ai-ml-staging-data/titan/data/dixie_pentest/train.jsonl"
+#   S3_VAL_URI="s3://alix-ai-ml-staging-data/titan/data/dixie_pentest/val.jsonl"
+#   HF_TOKEN="$(grep ^accessToken= model_training/hf.env | cut -d= -f2-)"
+#   INSTANCE_ID="i-XXXXXXXX"  # already-running p4d.24xlarge with SSM agent
+#
+#   # 1) Pre-flight smoke on the controller (cheap; avoids burning GPU time).
+#   python model_training/titanProject/scripts/smoke_sft_data.py \
+#       --data "${S3_TRAIN_URI}" \
+#       --hf-model mistralai/Mistral-7B-Instruct-v0.3 \
+#       --seq-len 2048 --max-lines 5000 --min-keep-rate 0.90
+#
+#   # 2) Sync code (whole dir, not a tarball — that's how 2026-05-15 broke).
+#   aws s3 sync model_training/titanProject/ "${S3_CODE_URI}/" \
+#       --delete --exclude '__pycache__/*' --exclude 'results/*' \
+#       --exclude 'logs/*' --exclude 'saved_models/*'
+#
+#   # 3) Submit SSM RunCommand. HF_TOKEN goes in via Parameters (NOT echoed
+#   #    to the runner log — SSM redacts the inline env block in CloudTrail).
+#   aws ssm send-command --instance-ids "${INSTANCE_ID}" \
+#       --document-name AWS-RunShellScript \
+#       --timeout-seconds 43200 \
+#       --parameters "executionTimeout=43200,commands=[
+#         \"export TIMESTAMP=${TIMESTAMP}\",
+#         \"export S3_CODE_URI=${S3_CODE_URI}\",
+#         \"export S3_TRAIN_URI=${S3_TRAIN_URI}\",
+#         \"export S3_VAL_URI=${S3_VAL_URI}\",
+#         \"export HF_TOKEN=${HF_TOKEN}\",
+#         \"aws s3 sync ${S3_CODE_URI}/ /tmp/dixie_runner/ --no-progress\",
+#         \"bash /tmp/dixie_runner/scripts/run_dixie_mistral_sft_ssm.sh\"
+#       ]"
+#
+#   # 4) Arm the watcher (detached) so we get a ntfy push when the box stops.
+#   #    Cheap insurance in case the cleanup trap fails silently — p4d.24xlarge
+#   #    is $32/hr, the watcher costs nothing.
+#   nohup ~/.local/bin/aws-instance-watcher \
+#       "${INSTANCE_ID}" "dixie ${RUN_ID}" wintermute \
+#       > /tmp/watcher-${RUN_ID}.log 2>&1 & disown
+#
+#   # 5) Tail progress (from S3 — train.log syncs every save_every steps).
+#   aws s3 cp s3://alix-ai-ml-staging-data/titan/checkpoints/${RUN_ID}/train.log -
 #
 # All paths are deliberate; this script is the source of truth for the run.
 
@@ -164,7 +216,25 @@ aws s3 cp "${S3_TRAIN_URI}" "${DATADIR}/train.jsonl" --no-progress
 aws s3 cp "${S3_VAL_URI}"   "${DATADIR}/val.jsonl"   --no-progress
 
 # ---------------------------------------------------------------------------
+# HF token cascade. mistralai/Mistral-7B-Instruct-v0.3 (default HF_MODEL_REPO)
+# is gated — snapshot_download will 401 without auth. Token must be supplied
+# by the SSM submit env (see the kickoff snippet in this script's header).
+# The cascade mirrors hf_sft_cloudwatch.sh so any of the three common var
+# names work.
+# ---------------------------------------------------------------------------
+export HUGGINGFACE_HUB_TOKEN="${HUGGINGFACE_HUB_TOKEN:-${HF_TOKEN:-${HUGGINGFACE_TOKEN:-}}}"
+export HF_TOKEN="${HF_TOKEN:-${HUGGINGFACE_TOKEN:-${HUGGINGFACE_HUB_TOKEN:-}}}"
+if [[ -z "${HF_TOKEN}" ]]; then
+  echo "[runner] WARN: no HF_TOKEN / HUGGINGFACE_TOKEN / HUGGINGFACE_HUB_TOKEN in env." >&2
+  echo "[runner] WARN: gated HF repos (incl. ${HF_MODEL_REPO}) will 401 on download." >&2
+  echo "[runner] WARN: pass the token via the SSM RunCommand env. See script header." >&2
+else
+  echo "[runner] HF auth: token present (len=${#HF_TOKEN})"
+fi
+
+# ---------------------------------------------------------------------------
 # Download HF model weights to NVMe so we don't compete with HF cache eviction.
+# huggingface_hub picks up HF_TOKEN / HUGGINGFACE_HUB_TOKEN automatically.
 # ---------------------------------------------------------------------------
 echo "[runner] downloading HF model weights: ${HF_MODEL_REPO}"
 mkdir -p "${MODELDIR}"
