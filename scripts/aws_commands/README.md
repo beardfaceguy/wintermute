@@ -75,11 +75,64 @@ INSTANCE_ID=i-xxx \
 # Monitor via CloudWatch
 AWS_PROFILE=experimental-admin aws logs tail /aws/ssm/titan-llm-training --follow --region us-east-1
 
-# Check detached run status
+# Check detached training status (SSM probe + S3 listing)
+# Prefer check_detached_training_status.sh — alias of check_detached_titan_status.sh.
 RUN_ID=gpt_medium_pretrain_20260419... \
   INSTANCE_ID=i-xxx \
-  bash scripts/aws_commands/check_detached_titan_status.sh
+  bash scripts/aws_commands/check_detached_training_status.sh
+
+# Dixie SFT (NVMe paths from run_dixie_mistral_sft_ssm.sh)
+REMOTE_LAYOUT=dixie_sft \
+  RUN_ID=dixie_mistral_full_20260515120000 \
+  INSTANCE_ID=i-xxx \
+  bash scripts/aws_commands/check_detached_training_status.sh
+
+# Custom project layout on the instance
+REMOTE_LAYOUT=custom \
+  RUN_ID=my_domain_20260520 \
+  INSTANCE_ID=i-xxx \
+  REMOTE_RUN_WORK_DIR=/opt/dlami/nvme/myproject \
+  TRAIN_LOG=/opt/dlami/nvme/myproject/logs/train.log \
+  RUNNER_LOG=/opt/dlami/nvme/myproject/logs/runner.log \
+  bash scripts/aws_commands/check_detached_training_status.sh
 ```
+
+See **Detached training status probe** below for all `REMOTE_LAYOUT` options.
+
+## Detached training status probe
+
+`check_detached_training_status.sh` (and `check_detached_titan_status.sh`) send a one-shot SSM command to tail logs on the instance and list checkpoints under `S3_PREFIX`.
+
+**Configuration:** defaults (AWS region/profile, S3 checkpoint URI template, `LOG_TAIL_LINES`, SSM document and timeouts, EC2 `describe-instances` query, and all `REMOTE_LAYOUT` paths) live in **`config/detached_training_probe.json`**. Set **`DETACHED_TRAINING_PROBE_CONFIG`** to use another file. **`jq`** is required.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RUN_ID` | (required) | Run id; substituted into config `s3.checkpoint_uri_template` for default `S3_PREFIX` |
+| `INSTANCE_ID` | (required) | EC2 instance |
+| `DETACHED_TRAINING_PROBE_CONFIG` | `<repo>/config/detached_training_probe.json` | JSON config path |
+| `REMOTE_LAYOUT` | from config `default_layout` | Must be listed in config `known_layouts` |
+| `REMOTE_RUN_ROOT` | from config (`titan_detached`) | Titan: parent of per-run dirs |
+| `REMOTE_RUN_WORK_DIR` | (layout-specific) | Override the single run directory on the instance |
+| `TRAIN_LOG` | (layout-derived) | Absolute path to `train.log` |
+| `RUNNER_LOG` | (layout-derived) | Optional second log (e.g. Dixie `runner.log`) |
+| `RUN_STATUS_JSON` | (layout-derived) | Optional `run_status.json` path |
+| `RUNNER_PID_FILE` | (layout-derived) | Optional `runner.pid` for detached wrapper |
+| `PROBE_CHECK_PID` | per layout in config | `1` = check pid file; `0` = skip (Dixie default) |
+| `S3_PREFIX` | from config template + `RUN_ID` | `aws s3 ls` target |
+| `LOG_TAIL_LINES` | from config | Lines per log tail |
+| `REGION`, `AWS_PROFILE` | from config | May be overridden by env |
+| `CMD_ID` | (unset) | If set, also prints bootstrap SSM invocation status |
+
+**Layouts:**
+
+- **titan_detached** — `${REMOTE_RUN_ROOT}/${RUN_ID}/` with log basenames from config, pid check on.
+- **dixie_sft** — work dir and `logs/*.log` paths from config; optional `REMOTE_RUN_WORK_DIR` override.
+- **custom** — set `REMOTE_RUN_WORK_DIR`, `TRAIN_LOG`, and optionally `RUNNER_LOG` / `RUN_STATUS_JSON` / `RUNNER_PID_FILE` / `PROBE_CHECK_PID`.
+
+Path resolution is implemented in `scripts/aws_commands/lib/remote_training_probe_paths.sh`.
+There is also a **pytest** mirror in `tests/test_remote_training_probe.py` (same assertions via
+`bash` subprocess) so `pytest tests` at the repo root exercises this surface alongside
+`tests/aws_tooling/test_remote_training_probe_paths.sh`.
 
 ## Environment Variables
 

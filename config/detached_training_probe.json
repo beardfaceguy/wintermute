@@ -1,0 +1,36 @@
+{
+  "aws": {
+    "region": "us-east-1",
+    "profile": "experimental-admin",
+    "ec2_describe_instance_query": "Reservations[0].Instances[0].{State:State.Name,InstanceType:InstanceType,LaunchTime:LaunchTime,PublicIp:PublicIpAddress}"
+  },
+  "probe": {
+    "log_tail_lines": 40,
+    "ssm_execution_timeout_seconds": 600,
+    "ssm_document_name": "AWS-RunShellScript",
+    "ssm_poll_interval_seconds": 2
+  },
+  "s3": {
+    "checkpoint_uri_template": "s3://alix-ai-ml-staging-data/titan/checkpoints/{run_id}/"
+  },
+  "default_layout": "titan_detached",
+  "known_layouts": ["titan_detached", "dixie_sft", "custom"],
+  "layouts": {
+    "titan_detached": {
+      "remote_run_root_default": "/mnt/data/ssm_runs",
+      "train_log_basename": "train.log",
+      "run_status_json_basename": "run_status.json",
+      "runner_pid_basename": "runner.pid",
+      "default_probe_check_pid": 1
+    },
+    "dixie_sft": {
+      "default_work_dir": "/opt/dlami/nvme/dixie",
+      "train_log_relative": "logs/train.log",
+      "runner_log_relative": "logs/runner.log",
+      "default_probe_check_pid": 0
+    },
+    "custom": {
+      "default_probe_check_pid": 0
+    }
+  }
+}

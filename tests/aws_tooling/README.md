@@ -11,6 +11,7 @@ These tests guard two pieces of safety-critical infrastructure:
 |---|---|---|
 | `~/.local/bin/aws-instance-watcher` | state-machine fires the right ntfy / exits the right rc for every observable transition (running, terminated, post-prune `None`, auth-fail, transient flake, threshold tunable) | Two production runs failed silently when this script took the wrong silent-loop branch. We never want to "wonder if it's still running". |
 | `model_training/titanProject/scripts/lib/aws_lifecycle.sh` | pre-terminate hooks complete BEFORE `terminate-instances` is called, AND `terminate-instances` always either succeeds or falls back to `shutdown -h now`. Even when hooks fail, even when IMDSv2 is unreachable, even when the AWS API rejects the call. | This is the property that prevents (a) torching checkpoints/logs by terminating too early, and (b) stranding a billing instance idle, both of which we've actually hit. |
+| `scripts/aws_commands/lib/remote_training_probe_paths.sh` | `REMOTE_LAYOUT` presets (`titan_detached`, `dixie_sft`, `custom`) resolve on-instance log paths consistently for `check_detached_training_status.sh`. | New specialized training jobs should add a preset or use `custom` instead of forking the status script. Same logic is covered by Bash tests here and by `tests/test_remote_training_probe.py` (pytest). |
 
 ## What's NOT covered (deliberately)
 
@@ -33,6 +34,7 @@ bash tests/aws_tooling/run_all.sh
 # A single suite:
 bash tests/aws_tooling/test_aws_instance_watcher.sh
 bash tests/aws_tooling/test_aws_lifecycle.sh
+bash tests/aws_tooling/test_remote_training_probe_paths.sh
 ```
 
 Total wall time on the dev box: <1 second. No network calls, no AWS

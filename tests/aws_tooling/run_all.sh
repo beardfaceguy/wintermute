@@ -9,6 +9,7 @@ THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TESTS=(
   "${THIS_DIR}/test_aws_instance_watcher.sh"
   "${THIS_DIR}/test_aws_lifecycle.sh"
+  "${THIS_DIR}/test_remote_training_probe_paths.sh"
 )
 
 declare -i total_files=0 ok_files=0 fail_files=0

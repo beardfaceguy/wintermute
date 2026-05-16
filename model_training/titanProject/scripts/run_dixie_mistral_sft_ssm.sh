@@ -97,6 +97,10 @@
 #   # 5) Tail progress (from S3 — train.log syncs every save_every steps).
 #   aws s3 cp s3://alix-ai-ml-staging-data/titan/checkpoints/${RUN_ID}/train.log -
 #
+#   # 6) Optional: SSM probe of on-instance logs (same paths the runner uses).
+#   From repo root: REMOTE_LAYOUT=dixie_sft RUN_ID="${RUN_ID}" INSTANCE_ID="${INSTANCE_ID}" \\
+#     bash scripts/aws_commands/check_detached_training_status.sh
+#
 # All paths are deliberate; this script is the source of truth for the run.
 
 set -euo pipefail
