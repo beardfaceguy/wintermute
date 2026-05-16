@@ -10,12 +10,17 @@
 # data.py in the bundle, stale finetune_sft.py). All three are guarded by the
 # pre-flight checks below — the box never gets within 10 minutes of torchrun
 # unless the env is sane.
+# 2026-05-16: fourth bug — torchvision wheel out of sync with DLAMI torch
+# (transformers pulls torchvision for Mistral imports); fixed by reinstalling
+# torchvision from the same PyTorch +cu* wheel index as `torch.__version__`.
 #
 # Sequence:
 #   1. Install cleanup trap (uploads logs to S3, terminates instance).
 #   2. aws s3 sync the entire titanProject directory to NVMe.
 #   3. pip install pinned deps INCLUDING titans-pytorch into /opt/pytorch.
-#   4. Import smoke: torch/cuda, transformers, titans_pytorch.
+#   3b. pip install torchvision aligned with DLAMI torch (+cu* channel).
+#   4. Import smoke: torch/cuda, torchvision, transformers, Mistral import path,
+#      titans_pytorch, finetune_sft.
 #   5. Download training data from S3 to NVMe.
 #   6. Download HF model weights (or rely on huggingface_hub cache).
 #   7. Dataset smoke test: cap-5k sample build of MaskedSFTDataset on
@@ -69,8 +74,8 @@
 #
 #   # 2) Sync code (whole dir, not a tarball — that's how 2026-05-15 broke).
 #   aws s3 sync model_training/titanProject/ "${S3_CODE_URI}/" \
-#       --delete --exclude '__pycache__/*' --exclude 'results/*' \
-#       --exclude 'logs/*' --exclude 'saved_models/*'
+#       --delete --exclude '__pycache__/*' --exclude '.pytest_cache/*' \
+#       --exclude 'results/*' --exclude 'logs/*' --exclude 'saved_models/*'
 #
 #   # 3) Submit SSM RunCommand. HF_TOKEN goes in via Parameters (NOT echoed
 #   #    to the runner log — SSM redacts the inline env block in CloudTrail).
@@ -201,13 +206,43 @@ fi
   "sentencepiece" "boto3" "pyyaml" "tqdm" "numpy<2"
 
 # ---------------------------------------------------------------------------
+# Torchvision must match the DLAMI torch wheel (same +cu* channel).
+# `transformers` ≥4.45 imports `torchvision` while resolving Mistral/Llama
+# modules (image_utils → torchvision.transforms). A mismatched torchvision
+# wheel produces:
+#   RuntimeError: operator torchvision::nms does not exist
+# and surfaces as a bogus MistralForCausalLM import error (2026-05-16).
+# Install/upgrade torchvision *after* titans-pytorch so deps cannot pin an
+# incompatible stub.
+# ---------------------------------------------------------------------------
+TORCH_CUDA_TAG="$("${PY}" -c "import torch
+v = torch.__version__
+if '+' in v:
+    print(v.split('+', 1)[1])
+elif torch.version.cuda:
+    p = torch.version.cuda.split('.')
+    print('cu' + p[0] + p[1])
+else:
+    print('cpu')")"
+if [[ "${TORCH_CUDA_TAG}" == "cpu" ]]; then
+  echo "[runner] FATAL: torch has no CUDA build; Dixie SFT requires CUDA" >&2
+  exit 64
+fi
+PYTORCH_WHL_INDEX="https://download.pytorch.org/whl/${TORCH_CUDA_TAG}"
+echo "[runner] torchvision: upgrading to match torch (${TORCH_CUDA_TAG}) via ${PYTORCH_WHL_INDEX}"
+"${PIP}" install --no-input --quiet --upgrade \
+  torchvision --extra-index-url "${PYTORCH_WHL_INDEX}"
+
+# ---------------------------------------------------------------------------
 # Import smoke — every dep we use must import cleanly before we proceed.
 # This catches "missing titans-pytorch in pip line" type bugs in <2 seconds.
 # ---------------------------------------------------------------------------
 echo "[runner] import smoke:"
 "${PY}" -c "import torch; print('  torch=', torch.__version__, 'cuda=', torch.cuda.is_available(), 'gpus=', torch.cuda.device_count())"
+"${PY}" -c "import torchvision; print('  torchvision=', torchvision.__version__)"
 "${PY}" -c "import titans_pytorch; print('  titans_pytorch=ok')"
 "${PY}" -c "import transformers; print('  transformers=', transformers.__version__)"
+"${PY}" -c "from transformers.models.mistral.modeling_mistral import MistralForCausalLM; print('  MistralForCausalLM=ok')"
 # finetune_sft.py imports model.py imports titans_pytorch, plus train_utils
 # imports data — both of which were missing in the failed run.
 ( cd "${CODEDIR}" && "${PY}" -c "import finetune_sft; print('  finetune_sft=ok')" )

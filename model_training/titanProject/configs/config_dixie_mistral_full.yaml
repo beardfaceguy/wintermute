@@ -7,7 +7,7 @@
 #     --no-lora --chat-template \
 #     --device cuda --steps 3000 --log-every 20 --eval-every 250 \
 #     --eval-batches 20 --save-every 500 \
-#     --checkpoint-dir /opt/dlami/nvme/ckpts \
+#     --checkpoint-dir /opt/dlami/nvme/dixie/ckpts \
 #     --s3-checkpoint-uri s3://alix-ai-ml-staging-data/titan/checkpoints/dixie_mistral_full_RUN/ \
 #     --min-free-gb 5 --aws-bin aws
 
@@ -22,8 +22,9 @@ model:
   max_seq_len: 2048
 
 data:
-  train_path: /opt/dlami/nvme/data/train.jsonl
-  val_path: /opt/dlami/nvme/data/val.jsonl
+  # Must match run_dixie_mistral_sft_ssm.sh DATADIR (/opt/dlami/nvme/dixie/data).
+  train_path: /opt/dlami/nvme/dixie/data/train.jsonl
+  val_path: /opt/dlami/nvme/dixie/data/val.jsonl
   tokenizer_path: "unused-when-hf-model-is-set"
   use_chat_template: true
 
