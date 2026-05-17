@@ -152,7 +152,6 @@ async def test_voice_temp_files_cleaned_on_success():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", mock_model),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("subprocess.run"),
@@ -185,7 +184,6 @@ async def test_voice_webm_cleaned_when_write_fails():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", MagicMock()),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("app.api.voice_chat.os.remove") as mock_remove,
@@ -217,7 +215,6 @@ async def test_voice_webm_cleaned_when_read_fails():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", MagicMock()),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("app.api.voice_chat.os.remove") as mock_remove,
@@ -255,7 +252,6 @@ async def test_voice_wav_file_cleaned_on_success():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", mock_model),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("subprocess.run"),
@@ -294,7 +290,6 @@ async def test_voice_wav_file_cleaned_on_error():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", mock_model),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("subprocess.run"),
@@ -332,7 +327,6 @@ async def test_voice_temp_files_cleaned_on_error():
     mock_ntf.__exit__ = MagicMock(return_value=False)
 
     with (
-        patch("app.api.voice_chat._VOICE_ENABLED", True),
         patch("app.api.voice_chat.whisper_model", mock_model),
         patch("app.api.voice_chat.tempfile.NamedTemporaryFile", return_value=mock_ntf),
         patch("subprocess.run"),

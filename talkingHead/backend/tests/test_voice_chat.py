@@ -56,9 +56,10 @@ class TestVoiceChatAPI:
         assert response.status_code == 422  # Validation error
 
     def test_voice_input_ffmpeg_failure(
-        self, 
-        client: TestClient, 
-        sample_audio_file: bytes
+        self,
+        client: TestClient,
+        mock_whisper_model: MagicMock,
+        sample_audio_file: bytes,
     ) -> None:
         """Test voice input when ffmpeg conversion fails."""
         with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as tmp:

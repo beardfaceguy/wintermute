@@ -1,0 +1,34 @@
+# 1-GPU AWS smoke: same on-instance data paths as run_dixie_mistral_sft_ssm.sh
+# (train/val under /opt/dlami/nvme/dixie/data). Use with HF gpt2 + TORCH_NPROC=1.
+
+model:
+  variant: gpt
+  vocab_size: 50257
+  dim: 768
+  depth: 12
+  heads: 12
+  ff_mult: 4
+  max_seq_len: 256
+
+data:
+  train_path: /opt/dlami/nvme/dixie/data/train.jsonl
+  val_path: /opt/dlami/nvme/dixie/data/val.jsonl
+  tokenizer_path: unused-when-hf-model-is-set
+  use_chat_template: false
+
+train:
+  gradient_checkpointing: true
+  seq_len: 256
+  batch_size: 1
+  grad_accum_steps: 1
+  lr: 0.00005
+  lr_min: 0.00001
+  weight_decay: 0.01
+  warmup_steps: 5
+  max_steps: 20
+  grad_clip: 1.0
+  betas: [0.9, 0.98]
+  eps: 1.0e-8
+  cosine_decay: false
+  save_every: 10
+  eval_every: 5

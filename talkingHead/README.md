@@ -1,54 +1,63 @@
-# React + TypeScript + Vite
+# talkingHead
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Browser chat UI (React + Vite) and FastAPI backend with WebSocket streaming, optional **Piper TTS** and **Whisper STT** via **thVoice** (models live under `../thVoice/`, not in git).
 
-Currently, two official plugins are available:
+## Voice / thVoice setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Binary weights are **gitignored**—fetch once per clone (or after deleting `thVoice/` model files):
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+# From repo root
+bash thVoice/scripts/fetch_voice.sh    # Piper ONNX (~63MB)
+bash thVoice/scripts/fetch_whisper.sh # Whisper ggml-base.en (~148MB)
+# or both:
+bash thVoice/scripts/fetch_all.sh
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**Python:** Install repo root dependencies (includes `piper-tts`, `pywhispercpp`):
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+cd /path/to/wintermute
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 ```
+
+**STT:** `POST /api/chat/voice` runs `ffmpeg` to decode WebM → 16 kHz WAV before Whisper. Install **`ffmpeg`** on the host (`apt install ffmpeg`, etc.).
+
+**Sanity check:** With the venv active and models present:
+
+```bash
+curl -s http://127.0.0.1:8010/api/chat/speak/health | jq .
+# "enabled": true when Piper (TTS) loads
+
+curl -s http://127.0.0.1:8010/api/chat/voice/health | jq .
+# "enabled": true when Whisper (STT) loads
+```
+
+(Default API port comes from `config/shared_api_config.json` → `web_interface.port`; adjust host/port if yours differs.)
+
+## Run locally
+
+**Backend** (from `talkingHead/backend`, with venv activated and `PYTHONPATH` including repo root—the `shared` package lives at repo root):
+
+```bash
+cd talkingHead/backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
+```
+
+**Frontend:**
+
+```bash
+cd talkingHead/frontend
+npm install
+npm run dev
+```
+
+## Tests
+
+```bash
+cd talkingHead/backend && pytest tests/ -q
+cd talkingHead/frontend && npm test
+```
+
+E2E (Playwright) may use a mocked backend; see `frontend/e2e/README.md`.

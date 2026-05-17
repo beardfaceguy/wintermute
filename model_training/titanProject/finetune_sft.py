@@ -400,6 +400,19 @@ class MaskedSFTDataset(Dataset):
         return self.input_ids[idx], self.labels[idx]
 
 
+def _maybe_enable_hf_gradient_checkpointing(model, *, log_fn: Callable[[str], None]) -> None:
+    """Enable HF gradient checkpointing to cut activation VRAM (needed for 7B full FT on 40GB)."""
+    fn = getattr(model, "gradient_checkpointing_enable", None)
+    if fn is None:
+        log_fn("[warn] gradient checkpointing requested but model has no gradient_checkpointing_enable()")
+        return
+    try:
+        fn(gradient_checkpointing_kwargs={"use_reentrant": False})
+    except TypeError:
+        fn()
+    log_fn("[init] gradient checkpointing enabled (HF)")
+
+
 def build_sft_dataloader(
     path: str,
     tokenizer: Callable[[str], List[int]],
@@ -507,6 +520,12 @@ def main() -> int:
     amp_group.add_argument("--no-amp", dest="amp", action="store_false",
                            help="Force disable AMP")
     parser.set_defaults(amp=None)
+    parser.add_argument(
+        "--gradient-checkpointing",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="HF activation checkpointing (config train.gradient_checkpointing if omitted)",
+    )
     args = parser.parse_args()
 
     hf_mode = args.hf_model is not None
@@ -565,6 +584,15 @@ def main() -> int:
     else:
         amp_enabled = False
     amp_device = device.type if amp_enabled and device.type in ("cuda", "mps") else None
+    # FP16 weights + GradScaler + gradient checkpointing can fail at scaler.unscale_ on CUDA.
+    # Non-QLoRA HF on bf16-capable GPUs: load weights in bf16, autocast bf16, no GradScaler.
+    use_bf16_hf_non_qlora = (
+        hf_mode
+        and not use_qlora
+        and amp_enabled
+        and device.type == "cuda"
+        and torch.cuda.is_bf16_supported()
+    )
 
     hf_tokenizer_obj = None  # raw HF tokenizer for chat template path
 
@@ -611,6 +639,12 @@ def main() -> int:
         f"seq_len={cfg['train']['seq_len']} batch={cfg['train']['batch_size']}"
     )
 
+    grad_ckpt: bool
+    if args.gradient_checkpointing is not None:
+        grad_ckpt = bool(args.gradient_checkpointing)
+    else:
+        grad_ckpt = bool(cfg["train"].get("gradient_checkpointing", False))
+
     # ------------------------------------------------------------------
     # Model + checkpoint
     # ------------------------------------------------------------------
@@ -628,7 +662,9 @@ def main() -> int:
             hf_load_kwargs["device_map"] = {"": local_rank} if use_ddp else "auto"
         else:
             hf_load_kwargs["device_map"] = None if use_ddp else "auto"
-            hf_load_kwargs["torch_dtype"] = torch.float16
+            hf_load_kwargs["torch_dtype"] = (
+                torch.bfloat16 if use_bf16_hf_non_qlora else torch.float16
+            )
 
         model = load_hf_model(args.hf_model, **hf_load_kwargs)
         log(f"[init] loaded HF model: {args.hf_model} qlora={use_qlora}")
@@ -648,6 +684,9 @@ def main() -> int:
                 target_modules=lora_targets,
                 log_fn=log,
             )
+
+        if grad_ckpt:
+            _maybe_enable_hf_gradient_checkpointing(model, log_fn=log)
 
         if use_ddp and not use_qlora:
             model.to(device)
@@ -679,7 +718,21 @@ def main() -> int:
         betas=tuple(cfg["train"]["betas"]),
         eps=cfg["train"]["eps"],
     )
-    scaler = GradScaler(enabled=amp_device in ("cuda", "mps"))
+    if amp_device is None:
+        autocast_dtype: torch.dtype | None = None
+        use_amp_scaler = False
+    elif use_bf16_hf_non_qlora:
+        autocast_dtype = torch.bfloat16
+        use_amp_scaler = False
+    else:
+        autocast_dtype = torch.float16
+        use_amp_scaler = amp_device in ("cuda", "mps")
+    scaler = GradScaler(enabled=use_amp_scaler)
+    if is_main(rank) and hf_mode and not use_qlora and amp_enabled:
+        if use_bf16_hf_non_qlora:
+            log("[init] CUDA AMP: bfloat16 weights + autocast (GradScaler off)")
+        else:
+            log("[init] CUDA/MPS AMP: float16 autocast + GradScaler")
 
     # ------------------------------------------------------------------
     # Training params
@@ -699,7 +752,10 @@ def main() -> int:
 
     checkpoint_dir = resolve_checkpoint_dir(args.checkpoint_dir, Path(__file__).parent / "checkpoints_sft")
 
-    log(f"[init] device={device} amp={amp_enabled} ckpt={ckpt_path}")
+    log(
+        f"[init] device={device} amp={amp_enabled} "
+        f"amp_dtype={autocast_dtype} grad_scaler={use_amp_scaler} ckpt={ckpt_path}"
+    )
     log(f"[init] steps={args.steps} grad_accum={grad_accum_steps} world_size={world_size} lr={lr}")
     log(f"[init] checkpoint_dir={checkpoint_dir}")
     if args.s3_checkpoint_uri:
@@ -730,13 +786,16 @@ def main() -> int:
 
         with sync_context:
             if amp_device:
-                with autocast(device_type=amp_device, dtype=torch.float16):
+                with autocast(device_type=amp_device, dtype=autocast_dtype):
                     logits = _forward_logits(model, x, hf_mode)
                     raw_loss = F.cross_entropy(
                         logits.view(-1, logits.size(-1)), y.view(-1), ignore_index=-100,
                     )
                     loss = raw_loss / grad_accum_steps
-                scaler.scale(loss).backward()
+                if use_amp_scaler:
+                    scaler.scale(loss).backward()
+                else:
+                    loss.backward()
             else:
                 logits = _forward_logits(model, x, hf_mode)
                 raw_loss = F.cross_entropy(
@@ -751,10 +810,10 @@ def main() -> int:
             continue
 
         # --- Optimizer step ---
-        if amp_device:
+        if use_amp_scaler:
             scaler.unscale_(opt)
         torch.nn.utils.clip_grad_norm_(trainable_params, cfg["train"]["grad_clip"])
-        if amp_device:
+        if use_amp_scaler:
             scaler.step(opt)
             scaler.update()
         else:
@@ -778,7 +837,7 @@ def main() -> int:
                 for bx, by in val_loader:
                     bx, by = bx.to(device, non_blocking=True), by.to(device, non_blocking=True)
                     if amp_device:
-                        with autocast(device_type=amp_device, dtype=torch.float16):
+                        with autocast(device_type=amp_device, dtype=autocast_dtype):
                             vlogits = _forward_logits(model, bx, hf_mode)
                             vloss = F.cross_entropy(
                                 vlogits.view(-1, vlogits.size(-1)), by.view(-1), ignore_index=-100,

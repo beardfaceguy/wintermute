@@ -29,6 +29,9 @@ data:
   use_chat_template: true
 
 train:
+  # Required for Mistral-7B full FT on 40GB A100 + DDP: ~38 GiB peak without it OOMs on
+  # first backward (see 2026-05-16 dixie_mistral_full_20260516082115 runner.log).
+  gradient_checkpointing: true
   seq_len: 2048
   batch_size: 1
   grad_accum_steps: 4

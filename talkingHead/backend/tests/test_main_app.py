@@ -39,6 +39,7 @@ def test_cors_middleware_configured():
 def test_voice_chat_router_included():
     paths = [r.path for r in app.routes]
     assert any("/api/chat/voice" in p for p in paths), f"voice route not in {paths}"
+    assert any("voice/health" in p for p in paths), f"voice STT health route not in {paths}"
 
 
 def test_chat_ws_router_included():

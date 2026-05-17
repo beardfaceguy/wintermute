@@ -101,6 +101,51 @@ exit 99
 "
 }
 
+# IMDSv2 mock: placement/region fails (empty); region comes from instance-identity document JSON.
+write_imds_curl_mock_doc_region_fallback() {
+  local id_val="${1:-i-doc-region}"
+  local doc_region="${2:-eu-mock-from-doc}"
+  local body
+  # Must not nest "${doc_region}" inside write_mock's double-quoted body — it
+  # terminates the outer string and corrupts the generated script / JSON.
+  body=$(
+    cat <<ENDMOCK
+is_token_put=0
+is_field_get=0
+is_doc_get=0
+field_path=""
+for arg in "\$@"; do
+  if [[ "\${arg}" == *'/latest/api/token' ]]; then
+    is_token_put=1
+  elif [[ "\${arg}" == *'/latest/meta-data/'* ]]; then
+    is_field_get=1
+    field_path="\${arg#*/latest/meta-data/}"
+  elif [[ "\${arg}" == *'/latest/dynamic/instance-identity/document' ]]; then
+    is_doc_get=1
+  fi
+done
+if (( is_token_put )); then
+  echo 'mock-imds-token'
+  exit 0
+fi
+if (( is_field_get )); then
+  case "\${field_path}" in
+    'instance-id')      echo ${id_val}; exit 0 ;;
+    'placement/region') exit 1 ;;
+    *)                  echo 'unhandled-meta' >&2; exit 99 ;;
+  esac
+fi
+if (( is_doc_get )); then
+  printf '%s' '{"region":"${doc_region}","accountId":"999"}'
+  exit 0
+fi
+echo 'unhandled curl' >&2
+exit 99
+ENDMOCK
+  )
+  write_mock "curl" "${body}"
+}
+
 # Run the lib's cleanup trap inside a fresh subshell with a controlled
 # environment. The provided <hook_body> defines the pre-terminate hook.
 # Returns the subshell rc.
@@ -311,6 +356,59 @@ EOF
   teardown_mocks
 }
 
+test_cloud_init_id_strips_trailing_crlf() {
+  # Property: cloud-init file may contain \r\n; stop-instances must get a clean id.
+  setup_mocks
+  write_aws_mock 0 0
+  write_shutdown_mock
+  write_imds_curl_mock 1 1 ""
+
+  cloud_init_path="${MOCK_STATE_DIR}/cloud_init_crlf"
+  printf 'i-crlf-id\r\n' > "${cloud_init_path}"
+
+  script="${MOCK_STATE_DIR}/run_cloud_init_crlf.sh"
+  cat > "${script}" <<EOF
+#!/usr/bin/env bash
+set -uo pipefail
+
+export AWS_BIN=aws
+export SHUTDOWN_BIN=shutdown
+export CLOUD_INIT_INSTANCE_ID_PATH=${cloud_init_path}
+export IMDS_BASE_URL=http://imds-mock.invalid
+export IMDS_TIMEOUT_SEC=1
+export IMDS_RETRY_ATTEMPTS=1
+
+source "${LIB}"
+
+INSTANCE_ID=""
+my_hook() { return 0; }
+CLEANUP_PRE_TERMINATE_HOOKS+=(my_hook)
+install_cleanup_trap
+EOF
+  chmod +x "${script}"
+  bash "${script}" >/dev/null 2>&1
+
+  assert_file_contains "${MOCK_LOG}" "ec2 terminate-instances --instance-ids i-crlf-id" \
+    "terminate uses CRLF-stripped cloud-init id"
+  teardown_mocks
+}
+
+test_region_fallback_from_instance_identity_document() {
+  # Regression: some AMIs / paths omit meta-data/placement/region; region is
+  # still available from /latest/dynamic/instance-identity/document.
+  setup_mocks
+  write_aws_mock 0 0
+  write_shutdown_mock
+  write_imds_curl_mock_doc_region_fallback "i-from-doc" "ap-mock-from-doc"
+
+  run_cleanup_subshell 'return 0' "" 0 >/dev/null 2>&1
+
+  assert_file_contains "${MOCK_LOG}" \
+    "ec2 terminate-instances --instance-ids i-from-doc --region ap-mock-from-doc" \
+    "terminate uses instance-identity region when placement/region missing"
+  teardown_mocks
+}
+
 # ---------------------------------------------------------------------------
 # Run.
 # ---------------------------------------------------------------------------
@@ -326,4 +424,6 @@ run_tests \
   test_terminate_api_failure_falls_back_to_shutdown \
   test_no_instance_id_falls_back_to_shutdown \
   test_hook_failure_does_not_block_termination \
-  test_imds_to_cloud_init_fallback_resolves_instance_id
+  test_imds_to_cloud_init_fallback_resolves_instance_id \
+  test_cloud_init_id_strips_trailing_crlf \
+  test_region_fallback_from_instance_identity_document

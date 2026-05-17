@@ -9,9 +9,10 @@
 #                                   failure.
 #
 #   resolve_instance_metadata        Populate globals INSTANCE_ID and REGION
-#                                   from IMDSv2 -> /var/lib/cloud/data/instance-id
-#                                   -> empty (caller decides what to do).
-#                                   Idempotent — safe to call multiple times.
+#                                   from IMDSv2 (placement/region, else
+#                                   instance-identity document) ->
+#                                   /var/lib/cloud/data/instance-id -> empty
+#                                   (caller decides what to do). Idempotent.
 #
 #   terminate_self                  Terminate the EC2 instance whose ID is in
 #                                   INSTANCE_ID, falling back to `shutdown -h`
@@ -101,6 +102,37 @@ get_imds_field() {
 }
 
 # ---------------------------------------------------------------------------
+# get_imds_identity_region
+#
+# Fallback when meta-data/placement/region is empty (some AMIs / edge paths).
+# Uses /latest/dynamic/instance-identity/document (JSON).
+# ---------------------------------------------------------------------------
+get_imds_identity_region() {
+  local token doc id_region_re
+  id_region_re='"region"[[:space:]]*:[[:space:]]*"([^"]+)"'
+  local _attempt
+  for _attempt in $(seq 1 "${IMDS_RETRY_ATTEMPTS}"); do
+    token="$(curl -fsS --max-time "${IMDS_TIMEOUT_SEC}" \
+      -X PUT "${IMDS_BASE_URL}/latest/api/token" \
+      -H "X-aws-ec2-metadata-token-ttl-seconds: ${IMDS_TOKEN_TTL_SEC}" \
+      2>/dev/null || true)"
+    if [[ -n "${token}" ]]; then
+      doc="$(curl -fsS --max-time "${IMDS_TIMEOUT_SEC}" \
+        -H "X-aws-ec2-metadata-token: ${token}" \
+        "${IMDS_BASE_URL}/latest/dynamic/instance-identity/document" \
+        2>/dev/null || true)"
+      # RHS must stay unquoted so =~ gets an ERE (see AWS lib header / bash(1)).
+      if [[ -n "${doc}" ]] && [[ "${doc}" =~ $id_region_re ]]; then
+        echo "${BASH_REMATCH[1]}"
+        return 0
+      fi
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # resolve_instance_metadata
 #
 # Populates globals INSTANCE_ID and REGION. Sources, in order:
@@ -122,13 +154,21 @@ resolve_instance_metadata() {
   if [[ -n "${imds_id}" ]]; then
     INSTANCE_ID="${imds_id}"
   elif [[ -r "${CLOUD_INIT_INSTANCE_ID_PATH}" ]]; then
-    INSTANCE_ID="$(cat "${CLOUD_INIT_INSTANCE_ID_PATH}")"
+    # cloud-init may write a trailing newline — `cat` would break `stop-instances`.
+    IFS= read -r INSTANCE_ID < "${CLOUD_INIT_INSTANCE_ID_PATH}" || true
+    INSTANCE_ID="${INSTANCE_ID//$'\r'/}"
     echo "[aws_lifecycle] IMDSv2 unreachable; using cloud-init instance-id=${INSTANCE_ID}" >&2
   fi
 
   imds_region="$(get_imds_field placement/region || true)"
   if [[ -n "${imds_region}" ]]; then
     REGION="${imds_region}"
+  else
+    imds_region="$(get_imds_identity_region || true)"
+    if [[ -n "${imds_region}" ]]; then
+      REGION="${imds_region}"
+      echo "[aws_lifecycle] placement/region empty; using instance-identity region=${REGION}" >&2
+    fi
   fi
   # If IMDSv2 region failed, REGION keeps its prior value (default us-east-1
   # or whatever the caller set).
@@ -146,13 +186,25 @@ resolve_instance_metadata() {
 # ---------------------------------------------------------------------------
 terminate_self() {
   if [[ -n "${INSTANCE_ID}" ]]; then
-    echo "[aws_lifecycle] terminating ${INSTANCE_ID} in ${REGION}"
-    if "${AWS_BIN}" ec2 terminate-instances \
-        --instance-ids "${INSTANCE_ID}" \
-        --region "${REGION}"; then
-      return 0
+    # stop: halt billing for on-demand / keep EBS volume (dev validation).
+    # terminate: default — matches long-run runners that must not sit idle.
+    if [[ "${AWS_LIFECYCLE_MODE:-terminate}" == "stop" ]]; then
+      echo "[aws_lifecycle] stopping ${INSTANCE_ID} in ${REGION} (AWS_LIFECYCLE_MODE=stop)"
+      if "${AWS_BIN}" ec2 stop-instances \
+          --instance-ids "${INSTANCE_ID}" \
+          --region "${REGION}"; then
+        return 0
+      fi
+      echo "[aws_lifecycle] stop-instances API call failed; falling back to shutdown -h" >&2
+    else
+      echo "[aws_lifecycle] terminating ${INSTANCE_ID} in ${REGION}"
+      if "${AWS_BIN}" ec2 terminate-instances \
+          --instance-ids "${INSTANCE_ID}" \
+          --region "${REGION}"; then
+        return 0
+      fi
+      echo "[aws_lifecycle] terminate-instances API call failed; falling back to shutdown -h" >&2
     fi
-    echo "[aws_lifecycle] terminate-instances API call failed; falling back to shutdown -h" >&2
   else
     echo "[aws_lifecycle] WARNING: instance-id unresolved; falling back to shutdown -h" >&2
   fi

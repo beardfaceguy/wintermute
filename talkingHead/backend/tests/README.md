@@ -13,6 +13,7 @@ tests/
 ├── test_db_ops.py          # Database operations tests
 ├── test_llm.py             # LLM chat processor tests
 ├── test_runner.py          # Test runner script
+├── test_memory_leaks.py    # tracemalloc (+ optional psutil RSS); use `-m "not slow"` to skip RSS
 └── README.md               # This file
 ```
 
@@ -24,10 +25,12 @@ tests/
 - **Database Operations** (`test_db_ops.py`): Message storage and retrieval tests
 - **LLM Processing** (`test_llm.py`): Chat processor and streaming tests
 
-### Integration Tests
-- **End-to-end workflows**: Complete user interaction flows
-- **API integration**: Full request/response cycles
-- **Database integration**: Real database operations
+### Memory / leak regressions (`test_memory_leaks.py`)
+
+- **`tracemalloc`** net deltas for allocations whose **top** stack frame is under `talkingHead/backend/app/` **or** `talkingHead/backend/memory/` — hits **ConnectionManager**, **dead broadcast eviction**, mocked **voice STT**, **OpenAPI**, **Swagger `/docs`**, **health routes** (stubbed voice loaders), **TTS synthesize**, **send_personal_message**, full mocked **`chat_ws.chat_endpoint`** turns (memory-injected prompts), plus **`memory.strategic.search_relevant_memories`** with MCP enabled and `asyncio.to_thread` mocked.
+- **`psutil` RSS** caps (**`slow`**) for OpenAPI bursts, **`/docs`**, mixed-route fan-out, websocket manager spam, and **`ConnectionManager`** (see markers below).
+
+Skip RSS / long runs: `pytest -m "not slow"`.
 
 ## Running Tests
 
