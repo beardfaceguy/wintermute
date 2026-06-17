@@ -16,6 +16,8 @@ talkingHead/frontend/playwright/.cache/
 # Local env vars or secrets (if any)
 .env
 .env.*
+*/.env
+*/.env.*
 frontend/.env
 frontend/.env.*
 
@@ -100,3 +102,18 @@ params_*.py.json
 aws-doc-sdk-examples/
 mcp_aws/
 openclaw/
+
+# Runtime-generated LlamaIndex storage (rebuilt from source on startup)
+storage/
+
+# Training material datasets (large PR JSON files — kept locally only)
+training_material/
+
+# Model training outputs (binary weights, checkpoints, results)
+model_training/titanProject/checkpoints_sft/
+model_training/titanProject/results/
+
+# Cursor AI IDE files (memory + rules are IDE-specific, not source)
+.cursor/memory/
+.cursor/rules/
+# Note: .cursor/docs/ intentionally tracked (contains implementation docs)
