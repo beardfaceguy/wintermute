@@ -1,0 +1,4 @@
+{
+  "_comment": "Seed facts for the Wintermute mcp-memory recall eval. Add entries that will be stored in mcp-memory and then queried by the eval harness to test retrieval fidelity.",
+  "facts": []
+}
