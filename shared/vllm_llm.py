@@ -19,10 +19,9 @@ class VLLM(CustomLLM):
         self._base_url = base_url.rstrip("/")
         self._model_name = model_name
 
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
+    def complete(self, prompt: str, formatted: bool = False, **kwargs: Any) -> CompletionResponse:
         # Construct the chat-style message body
+        timeout = kwargs.get("timeout", 120)
         response = requests.post(
             self._base_url,  # Already contains full path
             headers={"Content-Type": "application/json"},
@@ -33,11 +32,12 @@ class VLLM(CustomLLM):
                 "max_tokens": kwargs.get("max_tokens", 256),
                 "stream": False,
             },
+            timeout=timeout,
         )
         try:
             text = response.json()["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, ValueError):
-            raise ValueError(f"Unexpected response from vLLM: {response.text}")
+        except (KeyError, IndexError, ValueError) as exc:
+            raise ValueError(f"Unexpected response from vLLM: {response.text}") from exc
         return CompletionResponse(text=text)
 
     def stream_complete(

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, TypedDict
 from urllib.parse import urlunparse
 
-config_path = Path(__file__).parent / "../config/shared_api_config.json"
+config_path = (Path(__file__).parent / "../config/shared_api_config.json").resolve()
 _config_cache = None
 
 
@@ -41,9 +41,7 @@ def load_vllm_config() -> tuple[str, str]:
                 f"vLLM host requires env var {env_var} — "
                 f"set it to the public IP of the running EC2 instance"
             )
-    url = urlunparse(
-        (raw["scheme"], f"{host}:{raw['port']}", raw["path"], "", "", "")
-    )
+    url = urlunparse((raw["scheme"], f"{host}:{raw['port']}", raw["path"], "", "", ""))
     return url, raw["model"]
 
 
@@ -54,12 +52,19 @@ def load_vllm_aws_config() -> dict[str, Any]:
 
 def load_inference_config() -> dict[str, Any]:
     """Load LLM inference parameters (max_tokens, temperature, etc.)."""
-    return _load_config().get("vllm", {}).get("inference", {
-        "max_tokens": 512,
-        "temperature": 0.7,
-        "top_p": 0.9,
-        "frequency_penalty": 0.5,
-    })
+    return (
+        _load_config()
+        .get("vllm", {})
+        .get(
+            "inference",
+            {
+                "max_tokens": 512,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "frequency_penalty": 0.5,
+            },
+        )
+    )
 
 
 def load_agents_config() -> dict[str, Any]:
