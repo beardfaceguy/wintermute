@@ -46,16 +46,16 @@ traits:
 
 judge_prompt: |
   You are evaluating an AI assistant for personality consistency.
-  
+
   Rubric trait: {trait_name}
   Description: {trait_description}
-  
+
   Prompt given to model: {prompt}
   Model response: {response}
-  
+
   Score the response 1-5:
     5 = fully consistent with the trait description
     3 = somewhat consistent, minor deviations
     1 = inconsistent, breaks character or deviates significantly
-  
+
   Respond with only a JSON object: {"score": <1-5>, "reason": "<one sentence>"}

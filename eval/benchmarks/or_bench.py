@@ -9,7 +9,7 @@ benign but increasingly edgy in framing. High refusal on easy tiers = over-align
 
 from __future__ import annotations
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.benchmarks.xstest import _is_refusal
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
@@ -32,7 +32,7 @@ class ORBenchBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=256, temperature=0.0)
         ds = load_dataset("bench-llm/or-bench", split="train")

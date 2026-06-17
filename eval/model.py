@@ -45,8 +45,7 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass
@@ -54,7 +53,7 @@ class GenerateConfig:
     max_tokens: int = 512
     temperature: float = 0.0  # deterministic by default for benchmarks
     top_p: float = 1.0
-    system_prompt: Optional[str] = None
+    system_prompt: str | None = None
 
 
 class ModelBackend(ABC):
@@ -78,6 +77,7 @@ class ModelBackend(ABC):
 # OpenAI-compatible backend
 # ---------------------------------------------------------------------------
 
+
 class OpenAICompatBackend(ModelBackend):
     """
     Talks to any /v1/chat/completions endpoint.
@@ -97,7 +97,7 @@ class OpenAICompatBackend(ModelBackend):
         try:
             from openai import OpenAI
         except ImportError:
-            raise ImportError("pip install openai")
+            raise ImportError("pip install openai") from None
 
         self._model = model
         self._client = OpenAI(
@@ -127,6 +127,7 @@ class OpenAICompatBackend(ModelBackend):
 # Anthropic / Claude backend
 # ---------------------------------------------------------------------------
 
+
 class AnthropicBackend(ModelBackend):
     """
     Claude models via the Anthropic SDK.
@@ -139,8 +140,9 @@ class AnthropicBackend(ModelBackend):
         try:
             import anthropic as _anthropic
         except ImportError:
-            raise ImportError("pip install anthropic")
+            raise ImportError("pip install anthropic") from None
         import anthropic as _anthropic
+
         self._model = model
         self._client = _anthropic.Anthropic(
             api_key=api_key or os.environ.get("ANTHROPIC_API_KEY", "")
@@ -168,6 +170,7 @@ class AnthropicBackend(ModelBackend):
 # Local HuggingFace backend
 # ---------------------------------------------------------------------------
 
+
 class HFLocalBackend(ModelBackend):
     """
     Loads a HuggingFace model locally via transformers.
@@ -180,12 +183,12 @@ class HFLocalBackend(ModelBackend):
     def __init__(self, model_path: str, device: str = "auto"):
         try:
             import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+            from transformers import AutoTokenizer, pipeline
         except ImportError:
-            raise ImportError("pip install transformers torch")
+            raise ImportError("pip install transformers torch") from None
 
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+        from transformers import AutoTokenizer, pipeline
 
         self._model_path = model_path
         self._tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -211,9 +214,9 @@ class HFLocalBackend(ModelBackend):
                 messages, tokenize=False, add_generation_prompt=True
             )
         else:
-            prompt = "\n".join(
-                f"{m['role'].upper()}: {m['content']}" for m in messages
-            ) + "\nASSISTANT:"
+            prompt = (
+                "\n".join(f"{m['role'].upper()}: {m['content']}" for m in messages) + "\nASSISTANT:"
+            )
 
         out = self._pipeline(
             prompt,
@@ -229,6 +232,7 @@ class HFLocalBackend(ModelBackend):
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
+
 
 def make_backend(
     target: str,
@@ -252,11 +256,11 @@ def make_backend(
 
     # Named provider shortcuts
     _OPENAI_COMPAT = {
-        "gemini":   ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
-        "groq":     ("https://api.groq.com/openai", "GROQ_API_KEY"),
+        "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
+        "groq": ("https://api.groq.com/openai", "GROQ_API_KEY"),
         "together": ("https://api.together.xyz", "TOGETHER_API_KEY"),
-        "mistral":  ("https://api.mistral.ai", "MISTRAL_API_KEY"),
-        "openai":   ("https://api.openai.com", "OPENAI_API_KEY"),
+        "mistral": ("https://api.mistral.ai", "MISTRAL_API_KEY"),
+        "openai": ("https://api.openai.com", "OPENAI_API_KEY"),
     }
     if ":" in target and not target.startswith("http"):
         provider, _, model_name = target.partition(":")

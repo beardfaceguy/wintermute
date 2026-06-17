@@ -11,9 +11,8 @@ from the response and compare to ground truth.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -27,7 +26,7 @@ NUMBER_RE = re.compile(r"####\s*([\d,\.\-]+)")
 FALLBACK_RE = re.compile(r"([\d,]+\.?\d*)\s*$", re.MULTILINE)
 
 
-def _extract_answer(text: str) -> Optional[str]:
+def _extract_answer(text: str) -> str | None:
     """Pull the final numeric answer out of a model response."""
     m = NUMBER_RE.search(text)
     if m:
@@ -56,7 +55,7 @@ class GSM8KBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=256, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("openai/gsm8k", "main", split="test")

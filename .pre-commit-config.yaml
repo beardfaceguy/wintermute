@@ -1,0 +1,76 @@
+# Pre-commit hooks for wintermute
+# Install: pip3 install pre-commit && pre-commit install
+# Run on all files: pre-commit run --all-files
+# Update hook versions: pre-commit autoupdate
+
+repos:
+  # ── File hygiene ──────────────────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+      - id: end-of-file-fixer
+        exclude: '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: '^(openclaw/|mcp_aws/)'
+      - id: check-json
+        exclude: '^(openclaw/|mcp_aws/)'
+      - id: check-toml
+      - id: check-ast           # Python syntax check
+      - id: debug-statements    # No leftover breakpoint()/pdb
+      - id: check-added-large-files
+        args: [--maxkb=1000]    # 1MB limit; model weights go to S3/HF, not git
+      - id: detect-private-key  # Hard block on PEM keys, SSH keys
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # ── Secret detection ──────────────────────────────────────────────────────
+  # Catches API keys, tokens, passwords accidentally staged.
+  # Run `detect-secrets scan > .secrets.baseline` to initialise the baseline.
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args:
+          - --baseline
+          - .secrets.baseline
+          - --exclude-files
+          - '(^|/)(\.env\.example|package-lock\.json|pnpm-lock\.yaml|.*\.snap)$'
+          - --exclude-files
+          - '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+
+  # ── Python — ruff (lint + format) ────────────────────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.13
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        exclude: '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+      - id: ruff-format
+        exclude: '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+
+  # ── Python — dependency security audit ───────────────────────────────────
+  # Scans requirements*.txt / pyproject.toml for known CVEs.
+  # Requires: pip install pip-audit
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.9.0
+    hooks:
+      - id: pip-audit
+        args:
+          - --requirement
+          - requirements.txt
+          - --skip-editable
+        # Only runs if requirements.txt changes
+        files: ^requirements\.txt$
+
+  # ── Shell scripts ─────────────────────────────────────────────────────────
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        exclude: '^(thVoice/piper/|openclaw/|mcp_aws/|titans-pytorch/|aws-doc-sdk-examples/)'
+        args: [--severity=warning]

@@ -8,7 +8,7 @@ Each problem has a text description and 3 test assertions.
 
 from __future__ import annotations
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 from eval.sandbox import extract_code_block, run_code
@@ -32,7 +32,7 @@ class MBPPBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=512, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("google-research-datasets/mbpp", "sanitized", split="test")

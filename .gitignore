@@ -14,6 +14,8 @@ talkingHead/frontend/blob-report/
 talkingHead/frontend/playwright/.cache/
 
 # Local env vars or secrets (if any)
+.env
+.env.*
 frontend/.env
 frontend/.env.*
 

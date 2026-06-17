@@ -53,12 +53,14 @@ def run_code(code: str, test_code: str, timeout: int = 10) -> ExecResult:
         return ExecResult(passed=False, stdout="", stderr="", timed_out=True)
     finally:
         import os
+
         os.unlink(tmp_path)
 
 
 def extract_code_block(text: str) -> str:
     """Pull the first fenced code block out of a model response, or return raw text."""
     import re
+
     m = re.search(r"```(?:python)?\n(.*?)```", text, re.DOTALL)
     if m:
         return m.group(1).strip()

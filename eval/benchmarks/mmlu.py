@@ -13,9 +13,8 @@ subset rather than all 57 subjects.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -38,7 +37,7 @@ ANSWER_RE = re.compile(r"\b([A-D])\b", re.IGNORECASE)
 CHOICES = ["A", "B", "C", "D"]
 
 
-def _parse_answer(text: str) -> Optional[str]:
+def _parse_answer(text: str) -> str | None:
     text = text.strip()
     # First char shortcut
     if text and text[0].upper() in CHOICES:
@@ -54,7 +53,7 @@ class MMLUBenchmark(BaseBenchmark):
 
     def __init__(
         self,
-        subjects: Optional[list[str]] = None,
+        subjects: list[str] | None = None,
         max_per_subject: int = 100,
         split: str = "test",
     ):
@@ -71,7 +70,7 @@ class MMLUBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(
             max_tokens=cfg.max_tokens,
@@ -123,24 +122,61 @@ class MMLUBenchmark(BaseBenchmark):
     @staticmethod
     def _all_subjects() -> list[str]:
         return [
-            "abstract_algebra", "anatomy", "astronomy", "business_ethics",
-            "clinical_knowledge", "college_biology", "college_chemistry",
-            "college_computer_science", "college_mathematics", "college_medicine",
-            "college_physics", "computer_security", "conceptual_physics",
-            "econometrics", "electrical_engineering", "elementary_mathematics",
-            "formal_logic", "global_facts", "high_school_biology",
-            "high_school_chemistry", "high_school_computer_science",
-            "high_school_european_history", "high_school_geography",
-            "high_school_government_and_politics", "high_school_macroeconomics",
-            "high_school_mathematics", "high_school_microeconomics",
-            "high_school_physics", "high_school_psychology",
-            "high_school_statistics", "high_school_us_history",
-            "high_school_world_history", "human_aging", "human_sexuality",
-            "international_law", "jurisprudence", "logical_fallacies",
-            "machine_learning", "management", "marketing", "medical_genetics",
-            "miscellaneous", "moral_disputes", "moral_scenarios", "nutrition",
-            "philosophy", "prehistory", "professional_accounting",
-            "professional_law", "professional_medicine", "professional_psychology",
-            "public_relations", "security_studies", "sociology", "us_foreign_policy",
-            "virology", "world_religions",
+            "abstract_algebra",
+            "anatomy",
+            "astronomy",
+            "business_ethics",
+            "clinical_knowledge",
+            "college_biology",
+            "college_chemistry",
+            "college_computer_science",
+            "college_mathematics",
+            "college_medicine",
+            "college_physics",
+            "computer_security",
+            "conceptual_physics",
+            "econometrics",
+            "electrical_engineering",
+            "elementary_mathematics",
+            "formal_logic",
+            "global_facts",
+            "high_school_biology",
+            "high_school_chemistry",
+            "high_school_computer_science",
+            "high_school_european_history",
+            "high_school_geography",
+            "high_school_government_and_politics",
+            "high_school_macroeconomics",
+            "high_school_mathematics",
+            "high_school_microeconomics",
+            "high_school_physics",
+            "high_school_psychology",
+            "high_school_statistics",
+            "high_school_us_history",
+            "high_school_world_history",
+            "human_aging",
+            "human_sexuality",
+            "international_law",
+            "jurisprudence",
+            "logical_fallacies",
+            "machine_learning",
+            "management",
+            "marketing",
+            "medical_genetics",
+            "miscellaneous",
+            "moral_disputes",
+            "moral_scenarios",
+            "nutrition",
+            "philosophy",
+            "prehistory",
+            "professional_accounting",
+            "professional_law",
+            "professional_medicine",
+            "professional_psychology",
+            "public_relations",
+            "security_studies",
+            "sociology",
+            "us_foreign_policy",
+            "virology",
+            "world_religions",
         ]

@@ -40,7 +40,9 @@ def compare(baseline_id: str, candidate_id: str):
     print(f"\nBaseline  : {baseline['model_id']}  ({baseline_id})")
     print(f"Candidate : {candidate['model_id']}  ({candidate_id})")
     print()
-    print(f"{'Benchmark':<25} {'Metric':<12} {'Baseline':>10} {'Candidate':>10} {'Delta':>10} {''}  ")
+    print(
+        f"{'Benchmark':<25} {'Metric':<12} {'Baseline':>10} {'Candidate':>10} {'Delta':>10} {''}  "
+    )
     print("-" * 75)
 
     improved = regressed = unchanged = missing = 0
@@ -71,10 +73,14 @@ def compare(baseline_id: str, candidate_id: str):
                 unchanged += 1
 
         metric = (b or c or {}).get("metric", "")
-        print(f"{bench:<25} {metric:<12} {b_score_str:>10} {c_score_str:>10} {delta_str:>10}  {tag}")
+        print(
+            f"{bench:<25} {metric:<12} {b_score_str:>10} {c_score_str:>10} {delta_str:>10}  {tag}"
+        )
 
     print()
-    print(f"▲ improved: {improved}  ▼ regressed: {regressed}  = unchanged: {unchanged}  — missing: {missing}")
+    print(
+        f"▲ improved: {improved}  ▼ regressed: {regressed}  = unchanged: {unchanged}  — missing: {missing}"
+    )
 
 
 def main():
@@ -92,7 +98,9 @@ def main():
         print(f"{'RUN ID':<35} {'MODEL':<40} {'SUITE':<15} {'FINISHED'}")
         print("-" * 110)
         for r in runs:
-            print(f"{r['run_id']:<35} {r['model_id']:<40} {r['suite']:<15} {r['finished_at'] or 'running'}")
+            print(
+                f"{r['run_id']:<35} {r['model_id']:<40} {r['suite']:<15} {r['finished_at'] or 'running'}"
+            )
         return
 
     if not args.baseline or not args.candidate:

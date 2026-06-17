@@ -9,7 +9,7 @@ contests (LeetCode, Codeforces, AtCoder) after a knowledge-cutoff date.
 
 from __future__ import annotations
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 from eval.sandbox import extract_code_block, run_code
@@ -33,7 +33,7 @@ class LiveCodeBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=1024, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("livecodebench/code_generation_lite", split="test")
@@ -67,6 +67,7 @@ class LiveCodeBenchmark(BaseBenchmark):
 def _build_test(test_cases: list) -> str:
     """Build a simple assertion block from public test cases."""
     import json
+
     lines = []
     for tc in test_cases[:3]:  # run at most 3 public cases
         try:

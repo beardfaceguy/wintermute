@@ -11,21 +11,19 @@ than the original Winograd schema. Two options per question.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
 SYSTEM_PROMPT = (
-    "Complete the sentence by choosing the correct option. "
-    "Respond with only '1' or '2'."
+    "Complete the sentence by choosing the correct option. Respond with only '1' or '2'."
 )
 
 ANSWER_RE = re.compile(r"\b([12])\b")
 
 
-def _parse(text: str) -> Optional[str]:
+def _parse(text: str) -> str | None:
     text = text.strip()
     if text and text[0] in "12":
         return text[0]
@@ -45,7 +43,7 @@ class WinoGrandeBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=8, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("allenai/winogrande", "winogrande_debiased", split="validation")

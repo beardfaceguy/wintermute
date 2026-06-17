@@ -11,9 +11,8 @@ and word co-occurrence models can answer correctly.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -25,7 +24,7 @@ SYSTEM_PROMPT = (
 ANSWER_RE = re.compile(r"\b([A-D])\b", re.IGNORECASE)
 
 
-def _parse(text: str) -> Optional[str]:
+def _parse(text: str) -> str | None:
     text = text.strip()
     if text and text[0].upper() in "ABCD":
         return text[0].upper()
@@ -45,7 +44,7 @@ class ARCChallengeBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=16, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("allenai/ai2_arc", "ARC-Challenge", split="test")
@@ -56,10 +55,10 @@ class ARCChallengeBenchmark(BaseBenchmark):
         correct = 0
         for row in rows:
             choices = row["choices"]
-            labels = choices["label"]   # e.g. ["A","B","C","D"] or ["1","2","3","4"]
+            labels = choices["label"]  # e.g. ["A","B","C","D"] or ["1","2","3","4"]
             texts = choices["text"]
 
-            options = "\n".join(f"{l}) {t}" for l, t in zip(labels, texts))
+            options = "\n".join(f"{lbl}) {t}" for lbl, t in zip(labels, texts, strict=False))
             prompt = f"{row['question']}\n\n{options}\n\nAnswer:"
 
             response = model.complete(prompt, cfg)

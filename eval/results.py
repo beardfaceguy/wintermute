@@ -16,11 +16,9 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
 RESULTS_DIR = Path(__file__).parent / "results"
 DB_PATH = RESULTS_DIR / "runs.db"
@@ -68,19 +66,19 @@ class RunRecord:
     suite: str
     started_at: str
     results: list[BenchmarkResult] = field(default_factory=list)
-    finished_at: Optional[str] = None
+    finished_at: str | None = None
 
     def add(self, result: BenchmarkResult):
         self.results.append(result)
 
     def finish(self):
-        self.finished_at = datetime.now(timezone.utc).isoformat()
+        self.finished_at = datetime.now(UTC).isoformat()
 
 
 def new_run(model_id: str, suite: str) -> RunRecord:
     _ensure_db()
-    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S") + "_" + uuid.uuid4().hex[:6]
-    started_at = datetime.now(timezone.utc).isoformat()
+    run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%S") + "_" + uuid.uuid4().hex[:6]
+    started_at = datetime.now(UTC).isoformat()
     con = sqlite3.connect(DB_PATH)
     con.execute(
         "INSERT INTO runs VALUES (?, ?, ?, ?, NULL)",
@@ -123,7 +121,7 @@ def list_runs() -> list[dict]:
     ).fetchall()
     con.close()
     return [
-        dict(zip(["run_id", "model_id", "suite", "started_at", "finished_at"], r))
+        dict(zip(["run_id", "model_id", "suite", "started_at", "finished_at"], r, strict=False))
         for r in rows
     ]
 

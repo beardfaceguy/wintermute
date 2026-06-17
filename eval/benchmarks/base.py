@@ -12,9 +12,9 @@ DEFAULT_CFG = GenerateConfig(max_tokens=128, temperature=0.0)
 
 class BaseBenchmark(ABC):
     # Subclasses set these as class attributes
-    name: str        # e.g. "mmlu"
-    suite: str       # "intelligence" | "coding" | "agentic" | "memory" | "groundedness" | "compliance" | "personality"
-    metric: str      # e.g. "accuracy"
+    name: str  # e.g. "mmlu"
+    suite: str  # "intelligence" | "coding" | "agentic" | "memory" | "groundedness" | "compliance" | "personality"
+    metric: str  # e.g. "accuracy"
 
     @abstractmethod
     def run(self, model: ModelBackend, cfg: GenerateConfig = DEFAULT_CFG) -> BenchmarkResult:

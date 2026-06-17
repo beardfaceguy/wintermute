@@ -10,9 +10,8 @@ access, non-specialists score ~65%. Expert baseline ~74%.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -34,13 +33,12 @@ Answer with a single letter (A, B, C, or D):"""
 # Patterns to extract a letter from verbose responses (e.g. "The answer is B")
 ANSWER_RE = re.compile(r"\b([A-D])\b", re.IGNORECASE)
 ANSWER_PHRASE_RE = re.compile(
-    r"(?:answer\s*(?:is|:)\s*\*{0,2}([A-D])\b|\b([A-D])\s*(?:is\s+correct|\)|\.))",
-    re.IGNORECASE
+    r"(?:answer\s*(?:is|:)\s*\*{0,2}([A-D])\b|\b([A-D])\s*(?:is\s+correct|\)|\.))", re.IGNORECASE
 )
 CHOICES = ["A", "B", "C", "D"]
 
 
-def _parse(text: str) -> Optional[str]:
+def _parse(text: str) -> str | None:
     text = text.strip()
     # Fast path: single letter response
     if len(text) <= 2 and text and text[0].upper() in CHOICES:
@@ -70,7 +68,7 @@ class GPQADiamondBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=16, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("Idavidrein/gpqa", "gpqa_diamond", split="train")

@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import re
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -33,7 +33,7 @@ class IFEvalBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=512, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("google/IFEval", split="train")
@@ -48,7 +48,6 @@ class IFEvalBenchmark(BaseBenchmark):
             return self._run_builtin(model, cfg, rows)
 
     def _run_official(self, model, cfg, rows):
-        from instruction_following_eval import evaluation_main  # type: ignore
         raise ImportError("use builtin")  # force fallback until officially installed
 
     def _run_builtin(self, model, cfg, rows):
@@ -59,7 +58,7 @@ class IFEvalBenchmark(BaseBenchmark):
         for row in rows:
             response = model.complete(row["prompt"], cfg)
             instructions_satisfied = []
-            for instr_id, kwargs in zip(row["instruction_id_list"], row["kwargs"]):
+            for instr_id, kwargs in zip(row["instruction_id_list"], row["kwargs"], strict=False):
                 ok = _check_instruction(instr_id, kwargs, response)
                 instructions_satisfied.append(ok)
                 instruction_correct += int(ok)
@@ -74,7 +73,9 @@ class IFEvalBenchmark(BaseBenchmark):
             details={
                 "prompt_correct": prompt_correct,
                 "total_prompts": total_prompts,
-                "instruction_accuracy": round(instruction_correct / total_instructions, 4) if total_instructions else 0.0,
+                "instruction_accuracy": round(instruction_correct / total_instructions, 4)
+                if total_instructions
+                else 0.0,
             },
         )
 
@@ -82,6 +83,7 @@ class IFEvalBenchmark(BaseBenchmark):
 # ---------------------------------------------------------------------------
 # Instruction verifiers
 # ---------------------------------------------------------------------------
+
 
 def _check_instruction(instr_id: str, kwargs: dict, response: str) -> bool:
     """Return True if the response satisfies the instruction."""

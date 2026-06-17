@@ -11,9 +11,8 @@ sentence continuation from 4 options. Designed to be easy for humans
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -25,7 +24,7 @@ SYSTEM_PROMPT = (
 ANSWER_RE = re.compile(r"\b([0-3])\b")
 
 
-def _parse(text: str) -> Optional[int]:
+def _parse(text: str) -> int | None:
     text = text.strip()
     if text and text[0] in "0123":
         return int(text[0])
@@ -50,7 +49,7 @@ class HellaSwagBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=8, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("allenai/HellaSwag", split="validation")

@@ -9,9 +9,7 @@ conversation. Key for validating that mcp-memory surfaces context correctly.
 
 from __future__ import annotations
 
-import re
-
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -35,7 +33,7 @@ class LoCoMoBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=128, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("snap-research/LoCoMo", split="test")
@@ -65,11 +63,7 @@ class LoCoMoBenchmark(BaseBenchmark):
                 if not question or not answer:
                     continue
 
-                prompt = (
-                    f"Conversation:\n{conversation}\n\n"
-                    f"Question: {question}\n\n"
-                    f"Answer:"
-                )
+                prompt = f"Conversation:\n{conversation}\n\nQuestion: {question}\n\nAnswer:"
                 response = model.complete(prompt, cfg)
 
                 if _answer_matches(response, answer):

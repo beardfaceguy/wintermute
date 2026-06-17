@@ -9,7 +9,7 @@ the function body. We execute the completion against the bundled test suite.
 
 from __future__ import annotations
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 from eval.sandbox import extract_code_block, run_code
@@ -37,7 +37,7 @@ class HumanEvalBenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=512, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("openai_humaneval", split="test")
@@ -56,13 +56,17 @@ class HumanEvalBenchmark(BaseBenchmark):
             if row["entry_point"] not in code:
                 code = row["prompt"] + "\n" + code
 
-            result = run_code(code, row["test"] + f"\ncheck({row['entry_point']})", timeout=self.timeout)
+            result = run_code(
+                code, row["test"] + f"\ncheck({row['entry_point']})", timeout=self.timeout
+            )
             passed += int(result.passed)
-            details.append({
-                "task_id": row["task_id"],
-                "passed": result.passed,
-                "timed_out": result.timed_out,
-            })
+            details.append(
+                {
+                    "task_id": row["task_id"],
+                    "passed": result.passed,
+                    "timed_out": result.timed_out,
+                }
+            )
 
         total = len(rows)
         return self._result(

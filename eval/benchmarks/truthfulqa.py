@@ -10,9 +10,8 @@ mc2: mark all true answers (partial credit)
 from __future__ import annotations
 
 import re
-from typing import Optional
 
-from eval.benchmarks.base import BaseBenchmark, DEFAULT_CFG
+from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
@@ -28,7 +27,7 @@ def _letters(n: int) -> list[str]:
     return [chr(ord("A") + i) for i in range(n)]
 
 
-def _parse_single(text: str, n_choices: int) -> Optional[str]:
+def _parse_single(text: str, n_choices: int) -> str | None:
     text = text.strip()
     valid = set(_letters(n_choices))
     if text and text[0].upper() in valid:
@@ -51,7 +50,7 @@ class TruthfulQABenchmark(BaseBenchmark):
         try:
             from datasets import load_dataset
         except ImportError:
-            raise ImportError("pip install datasets")
+            raise ImportError("pip install datasets") from None
 
         cfg = GenerateConfig(max_tokens=16, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("truthful_qa", "multiple_choice", split="validation")
@@ -62,10 +61,10 @@ class TruthfulQABenchmark(BaseBenchmark):
         mc1_correct = 0
         for row in rows:
             choices = row["mc1_targets"]["choices"]
-            labels = row["mc1_targets"]["labels"]   # 1 = correct
+            labels = row["mc1_targets"]["labels"]  # 1 = correct
             letters = _letters(len(choices))
 
-            options = "\n".join(f"{l}) {c}" for l, c in zip(letters, choices))
+            options = "\n".join(f"{lbl}) {c}" for lbl, c in zip(letters, choices, strict=False))
             prompt = f"{row['question']}\n\n{options}\n\nAnswer:"
 
             raw = model.complete(prompt, cfg)

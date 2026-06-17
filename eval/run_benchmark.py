@@ -40,7 +40,6 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Ensure repo root is on sys.path when run directly
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -51,6 +50,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 _env_file = _REPO_ROOT / ".env"
 if _env_file.exists():
     import os
+
     for _line in _env_file.read_text().splitlines():
         _line = _line.strip()
         if _line and not _line.startswith("#") and "=" in _line:
@@ -60,32 +60,32 @@ if _env_file.exists():
         if _val and not os.environ.get(_key):
             os.environ[_key] = _val
 
-from eval.model import make_backend, GenerateConfig
-from eval.results import new_run, save_run, list_runs
-
+from eval.model import GenerateConfig, make_backend
+from eval.results import list_runs, new_run, save_run
 
 # ---------------------------------------------------------------------------
 # Benchmark registry
 # ---------------------------------------------------------------------------
 
+
 def _load_benchmarks(suite: str, fast: bool) -> list:
     """Instantiate benchmark objects for the requested suite."""
-    from eval.benchmarks.mmlu import MMLUBenchmark
-    from eval.benchmarks.gpqa import GPQADiamondBenchmark
-    from eval.benchmarks.ifeval import IFEvalBenchmark
-    from eval.benchmarks.gsm8k import GSM8KBenchmark
-    from eval.benchmarks.math_bench import MATHBenchmark
     from eval.benchmarks.arc import ARCChallengeBenchmark
+    from eval.benchmarks.gpqa import GPQADiamondBenchmark
+    from eval.benchmarks.gsm8k import GSM8KBenchmark
     from eval.benchmarks.hellaswag import HellaSwagBenchmark
-    from eval.benchmarks.winogrande import WinoGrandeBenchmark
-    from eval.benchmarks.truthfulqa import TruthfulQABenchmark
     from eval.benchmarks.humaneval import HumanEvalBenchmark
-    from eval.benchmarks.mbpp import MBPPBenchmark
+    from eval.benchmarks.ifeval import IFEvalBenchmark
     from eval.benchmarks.livecodebench import LiveCodeBenchmark
-    from eval.benchmarks.xstest import XSTestBenchmark
-    from eval.benchmarks.or_bench import ORBenchBenchmark
     from eval.benchmarks.locomo import LoCoMoBenchmark
+    from eval.benchmarks.math_bench import MATHBenchmark
+    from eval.benchmarks.mbpp import MBPPBenchmark
+    from eval.benchmarks.mmlu import MMLUBenchmark
+    from eval.benchmarks.or_bench import ORBenchBenchmark
     from eval.benchmarks.swebench import SWEBenchVerifiedBenchmark
+    from eval.benchmarks.truthfulqa import TruthfulQABenchmark
+    from eval.benchmarks.winogrande import WinoGrandeBenchmark
+    from eval.benchmarks.xstest import XSTestBenchmark
 
     max_per = 10 if fast else 100
     max_s = 50 if fast else 0  # 0 = full dataset
@@ -141,6 +141,7 @@ def _load_benchmarks(suite: str, fast: bool) -> list:
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="Wintermute benchmark harness",
@@ -156,18 +157,37 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--model", default="", help="Model name (required for API targets)")
     p.add_argument("--api-key", default="", help="API key (for remote APIs; omit for self-hosted)")
-    p.add_argument("--device", default="auto", help="Device for HF local backend (auto/cpu/cuda/mps)")
+    p.add_argument(
+        "--device", default="auto", help="Device for HF local backend (auto/cpu/cuda/mps)"
+    )
     p.add_argument(
         "--suite",
         default="intelligence",
-        choices=["intelligence", "coding", "agentic", "memory", "groundedness", "compliance", "personality", "all"],
+        choices=[
+            "intelligence",
+            "coding",
+            "agentic",
+            "memory",
+            "groundedness",
+            "compliance",
+            "personality",
+            "all",
+        ],
         help="Benchmark suite to run (default: intelligence)",
     )
-    p.add_argument("--fast", action="store_true", help="Quick run: 10 questions per benchmark (pipeline smoke test)")
+    p.add_argument(
+        "--fast",
+        action="store_true",
+        help="Quick run: 10 questions per benchmark (pipeline smoke test)",
+    )
     p.add_argument("--max-tokens", type=int, default=128, help="Max tokens for model responses")
-    p.add_argument("--parallel", type=int, default=1,
-                   help="Run N benchmarks concurrently. Only useful with vLLM/SageMaker backends "
-                        "that support true batched inference. Ollama queues serially — N>1 adds no speedup there.")
+    p.add_argument(
+        "--parallel",
+        type=int,
+        default=1,
+        help="Run N benchmarks concurrently. Only useful with vLLM/SageMaker backends "
+        "that support true batched inference. Ollama queues serially — N>1 adds no speedup there.",
+    )
     p.add_argument("--list-runs", action="store_true", help="List past runs and exit")
     return p.parse_args()
 
@@ -178,12 +198,13 @@ def _preflight_check(backend, target: str, retries: int = 3) -> None:
     try to restart it via SSH (works for pc-macbook) and retry.
     Aborts with a clear error if still unresponsive after retries.
     """
-    import time, urllib.request
+    import time
 
     base = target.rstrip("/")
     host = base.split("//")[-1].split(":")[0]
 
     from eval.model import GenerateConfig as _GC
+
     _probe_cfg = _GC(max_tokens=5, temperature=0.0)
 
     def _test() -> bool:
@@ -201,10 +222,17 @@ def _preflight_check(backend, target: str, retries: int = 3) -> None:
     print(f"  Ollama unresponsive at {target} — attempting restart via SSH...", flush=True)
     try:
         import subprocess
+
         subprocess.run(
-            ["ssh", "-o", "ConnectTimeout=10", f"beardface@{host}",
-             "OLLAMA_HOST=0.0.0.0:11434 nohup ~/bin/ollama serve > /tmp/ollama_serve.log 2>&1 &"],
-            timeout=15, check=False
+            [
+                "ssh",
+                "-o",
+                "ConnectTimeout=10",
+                f"beardface@{host}",
+                "OLLAMA_HOST=0.0.0.0:11434 nohup ~/bin/ollama serve > /tmp/ollama_serve.log 2>&1 &",
+            ],
+            timeout=15,
+            check=False,
         )
         time.sleep(12)
     except Exception as e:
@@ -231,7 +259,9 @@ def main():
         print(f"{'RUN ID':<35} {'MODEL':<40} {'SUITE':<15} {'FINISHED'}")
         print("-" * 110)
         for r in runs:
-            print(f"{r['run_id']:<35} {r['model_id']:<40} {r['suite']:<15} {r['finished_at'] or 'running'}")
+            print(
+                f"{r['run_id']:<35} {r['model_id']:<40} {r['suite']:<15} {r['finished_at'] or 'running'}"
+            )
         return
 
     if not args.target:
@@ -239,7 +269,9 @@ def main():
         sys.exit(1)
 
     # provider:model shortcuts (e.g. anthropic:claude-sonnet-4-6) embed the model in the target
-    _has_embedded_model = ":" in args.target and not args.target.startswith(("http:", "https:", "hf:"))
+    _has_embedded_model = ":" in args.target and not args.target.startswith(
+        ("http:", "https:", "hf:")
+    )
     if not args.target.startswith("hf:") and not args.model and not _has_embedded_model:
         print("error: --model is required for API targets (or use provider:model shortcut)")
         sys.exit(1)
@@ -259,8 +291,10 @@ def main():
         sys.exit(0)
 
     if args.parallel > 1 and args.target.startswith("http") and "11434" in args.target:
-        print(f"Note: --parallel {args.parallel} has no effect on Ollama (serial queue). "
-              f"Use with vLLM/SageMaker for real speedup.\n")
+        print(
+            f"Note: --parallel {args.parallel} has no effect on Ollama (serial queue). "
+            f"Use with vLLM/SageMaker for real speedup.\n"
+        )
 
     print(f"\nModel   : {backend.model_id}")
     print(f"Suite   : {args.suite}")
@@ -271,8 +305,9 @@ def main():
     record = new_run(model_id=backend.model_id, suite=args.suite)
 
     if args.parallel > 1:
-        from concurrent.futures import ThreadPoolExecutor, as_completed
         import threading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         _print_lock = threading.Lock()
 
         def _run_one(bench):
@@ -318,7 +353,9 @@ def main():
 
 def _notify(model_id: str, suite: str, record) -> None:
     """Fire an ntfy.sh push notification when a benchmark run completes."""
-    import os, urllib.request, urllib.error
+    import os
+    import urllib.error
+    import urllib.request
     from pathlib import Path
 
     topic = os.environ.get("NTFY_TOPIC", "wintermute")
