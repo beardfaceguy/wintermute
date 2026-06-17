@@ -24,7 +24,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -39,6 +39,7 @@ _AGENT_LLM_TIMEOUT = float(os.getenv("AGENT_LLM_TIMEOUT", "120"))
 @dataclass
 class ToolRef:
     """Maps a tool name to its MCP server client."""
+
     server_name: str
     client: Client
     schema: dict[str, Any]
@@ -47,6 +48,7 @@ class ToolRef:
 @dataclass
 class AgentResult:
     """Result of an agent run."""
+
     final_response: str
     messages: list[dict[str, Any]]
     tool_calls_made: int
@@ -60,6 +62,7 @@ class AgentRunner:
     def _load_defaults() -> dict[str, Any]:
         try:
             from shared.config_loader import load_agents_config, load_vllm_config
+
             agents_cfg = load_agents_config()
             try:
                 _, model = load_vllm_config()
@@ -91,7 +94,9 @@ class AgentRunner:
         defaults = self._load_defaults()
         self.llm_base_url = (llm_base_url or defaults["llm_base_url"]).rstrip("/")
         self.model = model or defaults["model"]
-        self.max_iterations = max_iterations if max_iterations is not None else defaults["max_iterations"]
+        self.max_iterations = (
+            max_iterations if max_iterations is not None else defaults["max_iterations"]
+        )
         self.temperature = temperature if temperature is not None else defaults["temperature"]
         self.system_prompt = system_prompt or (
             "You are Wintermute, an AI agent with access to tools. "
@@ -121,6 +126,14 @@ class AgentRunner:
 
                 tools = await client.list_tools()
                 for tool in tools:
+                    if tool.name in self._tools:
+                        existing = self._tools[tool.name].server_name
+                        logger.warning(
+                            "Tool name collision: '%s' from server '%s' overrides '%s'",
+                            tool.name,
+                            name,
+                            existing,
+                        )
                     openai_schema = _mcp_tool_to_openai(tool)
                     self._tools[tool.name] = ToolRef(
                         server_name=name,
@@ -134,7 +147,8 @@ class AgentRunner:
 
         logger.info(
             "Initialized with %d tools from %d servers",
-            len(self._tools), len(self._mcp_servers),
+            len(self._tools),
+            len(self._mcp_servers),
         )
         self._initialized = True
 
@@ -170,15 +184,13 @@ class AgentRunner:
         try:
             result = await ref.client.call_tool(name, arguments)
             if result.content:
-                return result.content[0].text
+                return "\n".join(part.text for part in result.content if hasattr(part, "text"))
             return json.dumps({"result": "ok"})
         except Exception as e:
             logger.error("Tool %s failed: %s", name, e)
             return json.dumps({"error": str(e)})
 
-    async def _chat_completion(
-        self, messages: list[dict], tools: list[dict]
-    ) -> dict:
+    async def _chat_completion(self, messages: list[dict], tools: list[dict]) -> dict:
         """Call the LLM's chat/completions endpoint."""
         payload: dict[str, Any] = {
             "model": self.model,
@@ -225,30 +237,41 @@ class AgentRunner:
             logger.info("Iteration %d/%d", iteration, self.max_iterations)
 
             completion = await self._chat_completion(messages, tools)
-            choice = completion["choices"][0]
-            msg = choice["message"]
+            choices = completion.get("choices") or []
+            if not choices:
+                logger.error("LLM returned empty choices: %s", completion)
+                break
+            choice = choices[0]
+            msg = choice.get("message") or {}
 
             messages.append(msg)
 
             if choice.get("finish_reason") == "tool_calls" or msg.get("tool_calls"):
-                tool_calls = msg["tool_calls"]
+                tool_calls = msg.get("tool_calls") or []
                 for tc in tool_calls:
                     fn = tc["function"]
                     tool_name = fn["name"]
                     try:
                         tool_args = json.loads(fn["arguments"])
                     except json.JSONDecodeError:
-                        tool_args = {}
+                        logger.warning(
+                            "Malformed tool-call JSON for %s: %r — skipping call",
+                            tool_name,
+                            fn["arguments"][:200],
+                        )
+                        continue
 
                     logger.info("Calling tool: %s(%s)", tool_name, json.dumps(tool_args)[:200])
                     result_text = await self.call_tool(tool_name, tool_args)
                     total_tool_calls += 1
 
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tc["id"],
-                        "content": result_text,
-                    })
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc["id"],
+                            "content": result_text,
+                        }
+                    )
             else:
                 final = msg.get("content", "")
                 return AgentResult(
@@ -258,9 +281,17 @@ class AgentRunner:
                     iterations=iteration,
                 )
 
-        last_msg = messages[-1]
+        # Max iterations reached — return last non-tool-call content if available
+        for msg in reversed(messages):
+            if msg.get("role") == "assistant" and msg.get("content") and not msg.get("tool_calls"):
+                return AgentResult(
+                    final_response=msg["content"],
+                    messages=messages,
+                    tool_calls_made=total_tool_calls,
+                    iterations=self.max_iterations,
+                )
         return AgentResult(
-            final_response=last_msg.get("content", "[max iterations reached]"),
+            final_response="[max iterations reached]",
             messages=messages,
             tool_calls_made=total_tool_calls,
             iterations=self.max_iterations,

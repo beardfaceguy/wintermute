@@ -28,7 +28,7 @@ import sys
 import time
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -39,15 +39,14 @@ if str(ROOT_DIR) not in sys.path:
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from mcp_memory.app.db.session import SessionLocal
+from mcp_memory.app.models.memory_entry import MemoryEntry
 from mcp_memory.server import (
-    _embed,
     _ensure_tables,
     memory_flag,
     memory_promote,
     memory_update_trust,
 )
-from mcp_memory.app.db.session import SessionLocal
-from mcp_memory.app.models.memory_entry import MemoryEntry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -79,11 +78,27 @@ BATCH_SIZE = int(os.getenv("FREUD_BATCH_SIZE", "500"))
 # 0 = unlimited; positive cap stops the audit after this many entries.
 MAX_ENTRIES_PER_RUN = int(os.getenv("FREUD_MAX_ENTRIES_PER_RUN", "0"))
 
-NEGATION_MARKERS: frozenset[str] = frozenset({
-    "not", "never", "don't", "doesn't", "didn't", "won't", "can't",
-    "cannot", "shouldn't", "failed", "incorrect", "wrong", "false",
-    "no", "none", "neither", "nor",
-})
+NEGATION_MARKERS: frozenset[str] = frozenset(
+    {
+        "not",
+        "never",
+        "don't",
+        "doesn't",
+        "didn't",
+        "won't",
+        "can't",
+        "cannot",
+        "shouldn't",
+        "failed",
+        "incorrect",
+        "wrong",
+        "false",
+        # "no" removed — too broad, matches "I know", "no problem", etc.
+        "none",
+        "neither",
+        "nor",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +109,7 @@ NEGATION_MARKERS: frozenset[str] = frozenset({
 @dataclass
 class AuditFinding:
     """A single finding from an audit check."""
+
     entry_id: str
     check: str
     severity: str  # "info", "warning", "critical"
@@ -104,6 +120,7 @@ class AuditFinding:
 @dataclass
 class AuditReport:
     """Aggregate results from a full audit pass."""
+
     started_at: str = ""
     finished_at: str = ""
     entries_scanned: int = 0
@@ -153,7 +170,7 @@ def _cosine_sim(a: list[float], b: list[float]) -> float:
     if len(a) != len(b):
         logger.warning("Embedding length mismatch (%d vs %d), returning 0.0", len(a), len(b))
         return 0.0
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=False))
     norm_a = sum(x * x for x in a) ** 0.5
     norm_b = sum(x * x for x in b) ** 0.5
     if norm_a == 0 or norm_b == 0:
@@ -167,19 +184,23 @@ def check_low_quality(entries: list[MemoryEntry]) -> list[AuditFinding]:
     for e in entries:
         text = (e.text or "").strip()
         if len(text) < MIN_TEXT_LENGTH:
-            findings.append(AuditFinding(
-                entry_id=str(e.id),
-                check="low_quality",
-                severity="warning",
-                detail=f"Text too short ({len(text)} chars, min {MIN_TEXT_LENGTH}): {text[:80]!r}",
-            ))
+            findings.append(
+                AuditFinding(
+                    entry_id=str(e.id),
+                    check="low_quality",
+                    severity="warning",
+                    detail=f"Text too short ({len(text)} chars, min {MIN_TEXT_LENGTH}): {text[:80]!r}",
+                )
+            )
         elif text.count(" ") < 2:
-            findings.append(AuditFinding(
-                entry_id=str(e.id),
-                check="low_quality",
-                severity="warning",
-                detail=f"Suspiciously few word boundaries: {text[:80]!r}",
-            ))
+            findings.append(
+                AuditFinding(
+                    entry_id=str(e.id),
+                    check="low_quality",
+                    severity="warning",
+                    detail=f"Suspiciously few word boundaries: {text[:80]!r}",
+                )
+            )
     return findings
 
 
@@ -194,7 +215,7 @@ def check_near_duplicates(entries: list[MemoryEntry]) -> list[AuditFinding]:
     for i, a in enumerate(entries):
         if a.embedding is None:
             continue
-        for b in entries[i + 1:]:
+        for b in entries[i + 1 :]:
             if b.embedding is None:
                 continue
             pair = tuple(sorted([str(a.id), str(b.id)]))
@@ -204,13 +225,15 @@ def check_near_duplicates(entries: list[MemoryEntry]) -> list[AuditFinding]:
 
             sim = _cosine_sim(list(a.embedding), list(b.embedding))
             if sim >= DUPLICATE_SIMILARITY_THRESHOLD:
-                findings.append(AuditFinding(
-                    entry_id=str(a.id),
-                    check="near_duplicate",
-                    severity="warning",
-                    detail=f"Similarity {sim:.4f} with entry {b.id}: {b.text[:60]!r}",
-                    related_entry_id=str(b.id),
-                ))
+                findings.append(
+                    AuditFinding(
+                        entry_id=str(a.id),
+                        check="near_duplicate",
+                        severity="warning",
+                        detail=f"Similarity {sim:.4f} with entry {b.id}: {b.text[:60]!r}",
+                        related_entry_id=str(b.id),
+                    )
+                )
     return findings
 
 
@@ -230,7 +253,7 @@ def check_contradictions(entries: list[MemoryEntry]) -> list[AuditFinding]:
         a_words = set((a.text or "").lower().split())
         a_negations = a_words & NEGATION_MARKERS
 
-        for b in entries[i + 1:]:
+        for b in entries[i + 1 :]:
             if b.embedding is None:
                 continue
             sim = _cosine_sim(list(a.embedding), list(b.embedding))
@@ -239,18 +262,20 @@ def check_contradictions(entries: list[MemoryEntry]) -> list[AuditFinding]:
                 b_words = set((b.text or "").lower().split())
                 b_negations = b_words & NEGATION_MARKERS
                 if bool(a_negations) != bool(b_negations):
-                    findings.append(AuditFinding(
-                        entry_id=str(a.id),
-                        check="contradiction",
-                        severity="critical",
-                        detail=(
-                            f"Possible contradiction (sim={sim:.4f}). "
-                            f"Entry A negations: {a_negations or 'none'}, "
-                            f"Entry B negations: {b_negations or 'none'}. "
-                            f"B: {b.text[:60]!r}"
-                        ),
-                        related_entry_id=str(b.id),
-                    ))
+                    findings.append(
+                        AuditFinding(
+                            entry_id=str(a.id),
+                            check="contradiction",
+                            severity="critical",
+                            detail=(
+                                f"Possible contradiction (sim={sim:.4f}). "
+                                f"Entry A negations: {a_negations or 'none'}, "
+                                f"Entry B negations: {b_negations or 'none'}. "
+                                f"B: {b.text[:60]!r}"
+                            ),
+                            related_entry_id=str(b.id),
+                        )
+                    )
     return findings
 
 
@@ -261,6 +286,7 @@ def check_contradictions(entries: list[MemoryEntry]) -> list[AuditFinding]:
 # Each pair of entries (A, B) is reported exactly once: when the *older* of
 # the pair is being processed. This preserves the prior semantics where the
 # entry encountered first (in created_at-ascending order) emitted the finding.
+
 
 def _is_pair_owner(
     entry: MemoryEntry,
@@ -322,25 +348,26 @@ def check_near_duplicates_ann(
 
     max_distance = 1.0 - threshold
     q, distance_expr = _neighbors_query(db, entry, zone)
-    rows = (
-        q.filter(distance_expr <= max_distance)
-        .order_by(distance_expr)
-        .limit(k)
-        .all()
-    )
+    # Fetch k*4 candidates before Python-side _is_pair_owner filter to avoid
+    # starving owned neighbors when the first k rows all belong to the other entry.
+    rows = q.filter(distance_expr <= max_distance).order_by(distance_expr).limit(k * 4).all()
 
     findings: list[AuditFinding] = []
     for nid, ntext, ncreated, distance in rows:
         if not _is_pair_owner(entry, ncreated, nid):
             continue
+        if len(findings) >= k:
+            break
         sim = 1.0 - float(distance)
-        findings.append(AuditFinding(
-            entry_id=str(entry.id),
-            check="near_duplicate",
-            severity="warning",
-            detail=f"Similarity {sim:.4f} with entry {nid}: {(ntext or '')[:60]!r}",
-            related_entry_id=str(nid),
-        ))
+        findings.append(
+            AuditFinding(
+                entry_id=str(entry.id),
+                check="near_duplicate",
+                severity="warning",
+                detail=f"Similarity {sim:.4f} with entry {nid}: {(ntext or '')[:60]!r}",
+                related_entry_id=str(nid),
+            )
+        )
     return findings
 
 
@@ -371,7 +398,7 @@ def check_contradictions_ann(
         q.filter(distance_expr >= min_distance)
         .filter(distance_expr <= max_distance)
         .order_by(distance_expr)
-        .limit(k)
+        .limit(k * 4)  # over-fetch before Python-side _is_pair_owner filter
         .all()
     )
 
@@ -382,29 +409,33 @@ def check_contradictions_ann(
     for nid, ntext, ncreated, distance in rows:
         if not _is_pair_owner(entry, ncreated, nid):
             continue
+        if len(findings) >= k:
+            break
         sim = 1.0 - float(distance)
         b_words = set((ntext or "").lower().split())
         b_negations = b_words & NEGATION_MARKERS
         if bool(a_negations) != bool(b_negations):
-            findings.append(AuditFinding(
-                entry_id=str(entry.id),
-                check="contradiction",
-                severity="critical",
-                detail=(
-                    f"Possible contradiction (sim={sim:.4f}). "
-                    f"Entry A negations: {a_negations or 'none'}, "
-                    f"Entry B negations: {b_negations or 'none'}. "
-                    f"B: {(ntext or '')[:60]!r}"
-                ),
-                related_entry_id=str(nid),
-            ))
+            findings.append(
+                AuditFinding(
+                    entry_id=str(entry.id),
+                    check="contradiction",
+                    severity="critical",
+                    detail=(
+                        f"Possible contradiction (sim={sim:.4f}). "
+                        f"Entry A negations: {a_negations or 'none'}, "
+                        f"Entry B negations: {b_negations or 'none'}. "
+                        f"B: {(ntext or '')[:60]!r}"
+                    ),
+                    related_entry_id=str(nid),
+                )
+            )
     return findings
 
 
 def check_stale_entries(entries: list[MemoryEntry]) -> list[AuditFinding]:
     """Flag live entries that have sat unreviewed beyond the staleness window."""
     findings = []
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for e in entries:
         if e.zone != "live":
             continue
@@ -412,15 +443,17 @@ def check_stale_entries(entries: list[MemoryEntry]) -> list[AuditFinding]:
             continue
         created = e.created_at
         if created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
+            created = created.replace(tzinfo=UTC)
         age_days = (now - created).days
         if age_days >= STALE_DAYS:
-            findings.append(AuditFinding(
-                entry_id=str(e.id),
-                check="stale",
-                severity="info",
-                detail=f"Live entry is {age_days} days old (threshold: {STALE_DAYS})",
-            ))
+            findings.append(
+                AuditFinding(
+                    entry_id=str(e.id),
+                    check="stale",
+                    severity="info",
+                    detail=f"Live entry is {age_days} days old (threshold: {STALE_DAYS})",
+                )
+            )
     return findings
 
 
@@ -482,13 +515,15 @@ class FreudAuditor:
             if self.flagged_only:
                 q = q.filter(MemoryEntry.audit_flagged == True)  # noqa: E712
             if last_created is not None:
-                q = q.filter(or_(
-                    MemoryEntry.created_at > last_created,
-                    and_(
-                        MemoryEntry.created_at == last_created,
-                        MemoryEntry.id > last_id,
-                    ),
-                ))
+                q = q.filter(
+                    or_(
+                        MemoryEntry.created_at > last_created,
+                        and_(
+                            MemoryEntry.created_at == last_created,
+                            MemoryEntry.id > last_id,
+                        ),
+                    )
+                )
             q = q.order_by(MemoryEntry.created_at.asc(), MemoryEntry.id.asc())
             q = q.limit(self.batch_size)
 
@@ -524,12 +559,22 @@ class FreudAuditor:
         findings: list[AuditFinding] = []
         findings.extend(check_low_quality([entry]))
         findings.extend(check_stale_entries([entry]))
-        findings.extend(check_near_duplicates_ann(
-            db, entry, k=self.neighbor_k, zone=self.zone,
-        ))
-        findings.extend(check_contradictions_ann(
-            db, entry, k=self.neighbor_k, zone=self.zone,
-        ))
+        findings.extend(
+            check_near_duplicates_ann(
+                db,
+                entry,
+                k=self.neighbor_k,
+                zone=self.zone,
+            )
+        )
+        findings.extend(
+            check_contradictions_ann(
+                db,
+                entry,
+                k=self.neighbor_k,
+                zone=self.zone,
+            )
+        )
         return findings
 
     def _flag_entry(
@@ -554,11 +599,13 @@ class FreudAuditor:
                 continue
             if "error" not in result:
                 report.entries_flagged += 1
-                report.actions_taken.append({
-                    "action": "flag",
-                    "entry_id": entry_id,
-                    "reason": reason,
-                })
+                report.actions_taken.append(
+                    {
+                        "action": "flag",
+                        "entry_id": entry_id,
+                        "reason": reason,
+                    }
+                )
                 logger.info("Flagged %s: %s", entry_id[:8], f.check)
                 return True
         return False
@@ -586,12 +633,14 @@ class FreudAuditor:
             return
         if "error" not in result:
             report.entries_trust_updated += 1
-            report.actions_taken.append({
-                "action": "trust_update",
-                "entry_id": eid,
-                "old_trust": current_trust,
-                "new_trust": new_trust,
-            })
+            report.actions_taken.append(
+                {
+                    "action": "trust_update",
+                    "entry_id": eid,
+                    "old_trust": current_trust,
+                    "new_trust": new_trust,
+                }
+            )
 
     def _auto_promote_one(
         self,
@@ -603,7 +652,21 @@ class FreudAuditor:
         if entry.zone != "live" or was_flagged:
             return
         eid = str(entry.id)
-        current_trust = float(entry.trust_score) if entry.trust_score else 0.0
+        # Re-read trust from the report's most recent update rather than the
+        # stale in-memory value (which may differ after _calibrate_trust_one ran).
+        last_update = next(
+            (
+                a
+                for a in reversed(report.actions_taken)
+                if a.get("action") == "trust_update" and a.get("entry_id") == eid
+            ),
+            None,
+        )
+        current_trust = (
+            float(last_update["new_trust"])
+            if last_update
+            else (float(entry.trust_score) if entry.trust_score else 0.0)
+        )
         effective_trust = min(1.0, current_trust + TRUST_BOOST_CLEAN)
         if effective_trust < AUTO_PROMOTE_TRUST_THRESHOLD:
             return
@@ -614,11 +677,13 @@ class FreudAuditor:
             return
         if "error" not in result:
             report.entries_promoted += 1
-            report.actions_taken.append({
-                "action": "promote",
-                "entry_id": eid,
-                "trust_score": effective_trust,
-            })
+            report.actions_taken.append(
+                {
+                    "action": "promote",
+                    "entry_id": eid,
+                    "trust_score": effective_trust,
+                }
+            )
             logger.info("Promoted %s to cold (trust=%.3f)", eid[:8], effective_trust)
 
     # -----------------------------------------------------------------
@@ -627,13 +692,18 @@ class FreudAuditor:
 
     def run(self) -> AuditReport:
         report = AuditReport(
-            started_at=datetime.now(timezone.utc).isoformat(),
+            started_at=datetime.now(UTC).isoformat(),
         )
         logger.info(
             "Freud audit starting (zone=%s, dry_run=%s, flagged_only=%s, "
             "promote_ready=%s, batch=%d, k=%d, max_entries=%s)",
-            self.zone, self.dry_run, self.flagged_only, self.promote_ready,
-            self.batch_size, self.neighbor_k, self.max_entries or "unlimited",
+            self.zone,
+            self.dry_run,
+            self.flagged_only,
+            self.promote_ready,
+            self.batch_size,
+            self.neighbor_k,
+            self.max_entries or "unlimited",
         )
 
         _ensure_tables()
@@ -651,7 +721,9 @@ class FreudAuditor:
                         continue
 
                     was_flagged = self._flag_entry(
-                        str(entry.id), entry_findings, report,
+                        str(entry.id),
+                        entry_findings,
+                        report,
                     )
                     self._calibrate_trust_one(entry, was_flagged, report)
                     if self.promote_ready:
@@ -661,11 +733,13 @@ class FreudAuditor:
 
         logger.info(
             "Audit complete: scanned=%d findings=%d flagged=%d trust_updates=%d promoted=%d",
-            report.entries_scanned, len(report.findings),
-            report.entries_flagged, report.entries_trust_updated,
+            report.entries_scanned,
+            len(report.findings),
+            report.entries_flagged,
+            report.entries_trust_updated,
             report.entries_promoted,
         )
-        report.finished_at = datetime.now(timezone.utc).isoformat()
+        report.finished_at = datetime.now(UTC).isoformat()
         return report
 
     def _apply_flags(self, report: AuditReport) -> set[str]:
@@ -682,11 +756,13 @@ class FreudAuditor:
                 if "error" not in result:
                     flagged_ids.add(f.entry_id)
                     report.entries_flagged += 1
-                    report.actions_taken.append({
-                        "action": "flag",
-                        "entry_id": f.entry_id,
-                        "reason": reason,
-                    })
+                    report.actions_taken.append(
+                        {
+                            "action": "flag",
+                            "entry_id": f.entry_id,
+                            "reason": reason,
+                        }
+                    )
                     logger.info("Flagged %s: %s", f.entry_id[:8], f.check)
         return flagged_ids
 
@@ -752,7 +828,7 @@ def _print_report(report: AuditReport) -> None:
                 print(f"      related: {f.related_entry_id[:8]}...")
         print()
 
-    print(f"  Actions taken:")
+    print("  Actions taken:")
     print(f"    Entries flagged:       {report.entries_flagged}")
     print(f"    Trust scores updated:  {report.entries_trust_updated}")
     print(f"    Entries promoted:      {report.entries_promoted}")

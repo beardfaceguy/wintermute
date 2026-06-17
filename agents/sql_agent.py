@@ -24,11 +24,10 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import re
 import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +48,7 @@ logger = logging.getLogger("sql-agent")
 # Test case model
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TestCase:
     id: str
@@ -57,7 +57,7 @@ class TestCase:
     hints: list[str]
 
     @classmethod
-    def from_dict(cls, d: dict) -> "TestCase":
+    def from_dict(cls, d: dict) -> TestCase:
         return cls(
             id=d["id"],
             question=d["question"],
@@ -80,6 +80,7 @@ class TestResult:
 # ---------------------------------------------------------------------------
 # Pre-flight LLM check
 # ---------------------------------------------------------------------------
+
 
 async def preflight_check(llm_base_url: str, model: str | None) -> tuple[bool, str, str]:
     """Validate LLM connectivity and discover models.
@@ -120,6 +121,7 @@ async def preflight_check(llm_base_url: str, model: str | None) -> tuple[bool, s
 # Validation
 # ---------------------------------------------------------------------------
 
+
 def validate_result(result_data: dict, expected: dict) -> tuple[bool, str]:
     """Validate query results against the expected specification."""
     if "error" in result_data:
@@ -146,11 +148,17 @@ def validate_result(result_data: dict, expected: dict) -> tuple[bool, str]:
     elif check_type == "column_value":
         col = expected.get("column", "")
         val = expected.get("value")
-        for row in rows:
-            if col in row and row[col] != val:
-                return False, f"Row has {col}={row[col]}, expected {val}"
         if not rows:
             return False, "No rows returned"
+        rows_with_col = [r for r in rows if col in r]
+        if not rows_with_col:
+            return (
+                False,
+                f"Column '{col}' not found in any row (got columns: {list(rows[0].keys())})",
+            )
+        for row in rows_with_col:
+            if row[col] != val:
+                return False, f"Row has {col}={row[col]}, expected {val}"
         return True, f"All rows have {col}={val}"
 
     return False, f"Unknown check type: {check_type}"
@@ -159,6 +167,7 @@ def validate_result(result_data: dict, expected: dict) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # SQL Agent (manual mode — no LLM, generates SQL via heuristics/hints)
 # ---------------------------------------------------------------------------
+
 
 async def run_test_case_manual(
     pg_client: Client,
@@ -170,24 +179,35 @@ async def run_test_case_manual(
     logger.info("Running test: %s — %s", case.id, case.question)
 
     try:
-        schema_result = await pg_client.call_tool("sql_describe_table", {
-            "table_name": "memory_entries",
-        })
-        schema_result.content[0].text
+        schema_result = await pg_client.call_tool(
+            "sql_describe_table",
+            {
+                "table_name": "memory_entries",
+            },
+        )
+        schema_info = schema_result.content[0].text if schema_result.content else ""
     except Exception as e:
         return TestResult(
-            test_id=case.id, passed=False, sql_used="",
-            result_data=None, error=f"Schema fetch failed: {e}",
-            attempts=0, elapsed_s=time.monotonic() - t0,
+            test_id=case.id,
+            passed=False,
+            sql_used="",
+            result_data=None,
+            error=f"Schema fetch failed: {e}",
+            attempts=0,
+            elapsed_s=time.monotonic() - t0,
         )
-    logger.info("Schema loaded for memory_entries")
+    logger.info("Schema loaded for memory_entries (%d chars)", len(schema_info))
 
     sql = _generate_sql_from_hints(case)
     if not sql:
         return TestResult(
-            test_id=case.id, passed=False, sql_used="",
-            result_data=None, error="Could not generate SQL from hints",
-            attempts=0, elapsed_s=time.monotonic() - t0,
+            test_id=case.id,
+            passed=False,
+            sql_used="",
+            result_data=None,
+            error="Could not generate SQL from hints",
+            attempts=0,
+            elapsed_s=time.monotonic() - t0,
         )
 
     logger.info("Generated SQL: %s", sql)
@@ -197,9 +217,13 @@ async def run_test_case_manual(
         result_data = json.loads(query_result.content[0].text)
     except Exception as e:
         return TestResult(
-            test_id=case.id, passed=False, sql_used=sql,
-            result_data=None, error=f"Query execution failed: {e}",
-            attempts=1, elapsed_s=time.monotonic() - t0,
+            test_id=case.id,
+            passed=False,
+            sql_used=sql,
+            result_data=None,
+            error=f"Query execution failed: {e}",
+            attempts=1,
+            elapsed_s=time.monotonic() - t0,
         )
 
     passed, reason = validate_result(result_data, case.expected)
@@ -210,27 +234,35 @@ async def run_test_case_manual(
         f"Result: {'PASS' if passed else 'FAIL'} — {reason}"
     )
     try:
-        await mem_client.call_tool("memory_add", {
-            "text": strategy_text,
-            "tags": {
-                "type": "sql_strategy",
-                "test_id": case.id,
-                "passed": str(passed),
+        await mem_client.call_tool(
+            "memory_add",
+            {
+                "text": strategy_text,
+                "tags": {
+                    "type": "sql_strategy",
+                    "test_id": case.id,
+                    "passed": str(passed),
+                },
             },
-        })
+        )
     except Exception as e:
         logger.error("Failed to store strategy for %s: %s", case.id, e)
 
     return TestResult(
-        test_id=case.id, passed=passed, sql_used=sql,
-        result_data=result_data, error=None if passed else reason,
-        attempts=1, elapsed_s=time.monotonic() - t0,
+        test_id=case.id,
+        passed=passed,
+        sql_used=sql,
+        result_data=result_data,
+        error=None if passed else reason,
+        attempts=1,
+        elapsed_s=time.monotonic() - t0,
     )
 
 
 # ---------------------------------------------------------------------------
 # SQL Agent (LLM mode — uses vLLM for query generation)
 # ---------------------------------------------------------------------------
+
 
 async def run_test_case_llm(
     pg_client: Client,
@@ -246,16 +278,22 @@ async def run_test_case_llm(
     t0 = time.monotonic()
     logger.info("Running test (LLM): %s — %s", case.id, case.question)
 
-    schema_result = await pg_client.call_tool("sql_describe_table", {
-        "table_name": "memory_entries",
-    })
+    schema_result = await pg_client.call_tool(
+        "sql_describe_table",
+        {
+            "table_name": "memory_entries",
+        },
+    )
     schema_info = schema_result.content[0].text
 
-    prior = await mem_client.call_tool("memory_search", {
-        "query": case.question,
-        "limit": 3,
-        "zone": "cold",
-    })
+    prior = await mem_client.call_tool(
+        "memory_search",
+        {
+            "query": case.question,
+            "limit": 3,
+            "zone": "cold",
+        },
+    )
     prior_strategies = prior.content[0].text if prior.content else "[]"
 
     sql = ""
@@ -272,12 +310,15 @@ async def run_test_case_llm(
                     json={
                         "model": model,
                         "messages": [
-                            {"role": "system", "content": (
-                                "You are a SQL expert. Generate a PostgreSQL query to "
-                                "answer the user's question. Return ONLY the raw SQL query. "
-                                "Do not include markdown formatting, code fences, or explanations. "
-                                "Do not include a trailing semicolon."
-                            )},
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are a SQL expert. Generate a PostgreSQL query to "
+                                    "answer the user's question. Return ONLY the raw SQL query. "
+                                    "Do not include markdown formatting, code fences, or explanations. "
+                                    "Do not include a trailing semicolon."
+                                ),
+                            },
                             {"role": "user", "content": prompt},
                         ],
                         "temperature": 0.1,
@@ -307,7 +348,7 @@ async def run_test_case_llm(
         if not sql:
             reason = f"Could not extract SQL from LLM output: {raw_output[:200]}"
             logger.warning("Attempt %d: %s", attempt, reason)
-            prior_strategies += f"\n\nFailed attempt: LLM returned non-SQL output"
+            prior_strategies += "\n\nFailed attempt: LLM returned non-SQL output"
             continue
 
         logger.info("Attempt %d SQL: %s", attempt, sql)
@@ -331,19 +372,26 @@ async def run_test_case_llm(
                 f"Result: PASS — {reason}\n"
                 f"Attempts needed: {attempt}"
             )
-            await mem_client.call_tool("memory_add", {
-                "text": strategy_text,
-                "tags": {
-                    "type": "sql_strategy",
-                    "test_id": case.id,
-                    "passed": "true",
-                    "model": model,
-                    "attempts": str(attempt),
+            await mem_client.call_tool(
+                "memory_add",
+                {
+                    "text": strategy_text,
+                    "tags": {
+                        "type": "sql_strategy",
+                        "test_id": case.id,
+                        "passed": "true",
+                        "model": model,
+                        "attempts": str(attempt),
+                    },
                 },
-            })
+            )
             return TestResult(
-                test_id=case.id, passed=True, sql_used=sql,
-                result_data=result_data, error=None, attempts=attempt,
+                test_id=case.id,
+                passed=True,
+                sql_used=sql,
+                result_data=result_data,
+                error=None,
+                attempts=attempt,
                 elapsed_s=elapsed,
             )
 
@@ -351,22 +399,32 @@ async def run_test_case_llm(
         prior_strategies += f"\n\nFailed attempt: {sql}\nReason: {reason}"
 
     elapsed = time.monotonic() - t0
-    await mem_client.call_tool("memory_add", {
-        "text": (
-            f"SQL strategy FAILED for '{case.question}' after {max_retries} attempts.\n"
-            f"Last SQL: {sql}\nLast error: {reason}"
-        ),
-        "tags": {
-            "type": "sql_strategy",
-            "test_id": case.id,
-            "passed": "false",
-            "model": model,
-        },
-    })
+    try:
+        await mem_client.call_tool(
+            "memory_add",
+            {
+                "text": (
+                    f"SQL strategy FAILED for '{case.question}' after {max_retries} attempts.\n"
+                    f"Last SQL: {sql}\nLast error: {reason}"
+                ),
+                "tags": {
+                    "type": "sql_strategy",
+                    "test_id": case.id,
+                    "passed": "false",
+                    "model": model,
+                },
+            },
+        )
+    except Exception as exc:
+        logger.warning("Failed to record failed strategy in memory: %s", exc)
 
     return TestResult(
-        test_id=case.id, passed=False, sql_used=sql,
-        result_data=result_data, error=reason, attempts=max_retries,
+        test_id=case.id,
+        passed=False,
+        sql_used=sql,
+        result_data=result_data,
+        error=reason,
+        attempts=max_retries,
         elapsed_s=elapsed,
     )
 
@@ -386,7 +444,7 @@ _HINT_SQL_MAP = {
 
 
 def _generate_sql_from_hints(case: TestCase) -> str | None:
-    """Use known test case IDs to provide reference SQL for manual mode."""
+    """Return reference SQL by test case ID (does not use case.hints — ID lookup only)."""
     return _HINT_SQL_MAP.get(case.id)
 
 
@@ -405,7 +463,9 @@ def _build_llm_prompt(
     if prior_strategies and prior_strategies != "[]":
         parts.append(f"Prior strategies for reference:\n{prior_strategies}\n")
     if attempt > 1:
-        parts.append(f"This is attempt {attempt}. Previous attempts failed. Try a different approach.\n")
+        parts.append(
+            f"This is attempt {attempt}. Previous attempts failed. Try a different approach.\n"
+        )
     parts.append("Generate a PostgreSQL SELECT query:")
     return "\n".join(parts)
 
@@ -456,6 +516,7 @@ def _clean_sql(raw: str) -> str:
 # Results reporting
 # ---------------------------------------------------------------------------
 
+
 def _print_summary(
     results: list[TestResult],
     mode: str,
@@ -484,14 +545,16 @@ def _print_summary(
         print(f"  [{status}] {r.test_id:20s}  (attempts: {r.attempts}, {r.elapsed_s:.1f}s)")
         if not r.passed and r.error:
             print(f"         Error: {r.error}")
-        test_details.append({
-            "test_id": r.test_id,
-            "passed": r.passed,
-            "attempts": r.attempts,
-            "elapsed_s": round(r.elapsed_s, 2),
-            "sql": r.sql_used,
-            "error": r.error,
-        })
+        test_details.append(
+            {
+                "test_id": r.test_id,
+                "passed": r.passed,
+                "attempts": r.attempts,
+                "elapsed_s": round(r.elapsed_s, 2),
+                "sql": r.sql_used,
+                "error": r.error,
+            }
+        )
 
     print("-" * 60)
     print(f"  {passed}/{total} tests passed")
@@ -512,6 +575,7 @@ def _print_summary(
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def _parse_args() -> tuple[str | None, str | None, int]:
     """Parse CLI arguments. Returns (llm_url, model, max_retries).
@@ -551,12 +615,18 @@ def _parse_args() -> tuple[str | None, str | None, int]:
 
     if use_default_llm:
         vllm_url_default, model_default = load_vllm_config()
-        llm_url = vllm_url_default.rsplit("/", 1)[0]  # strip /completions → /v1
+        # Robustly extract base URL (scheme://host:port/v1) regardless of
+        # what path load_vllm_config returns (/v1, /v1/chat/completions, etc.)
+        from urllib.parse import urlparse as _urlparse
+
+        _parsed = _urlparse(vllm_url_default)
+        llm_url = f"{_parsed.scheme}://{_parsed.netloc}/v1"
         if not model:
             model = model_default
 
     if llm_url and not model:
-        model = "/model"
+        # Don't silently use a nonsense default — surface the missing arg
+        raise SystemExit("--llm requires --model (or use --default-llm to read both from config)")
 
     return llm_url, model, max_retries
 
@@ -590,7 +660,11 @@ async def main():
         for case in cases:
             if llm_url:
                 result = await run_test_case_llm(
-                    pg_client, mem_client, case, llm_url, model,
+                    pg_client,
+                    mem_client,
+                    case,
+                    llm_url,
+                    model,
                     max_retries=max_retries,
                 )
             else:
@@ -600,10 +674,13 @@ async def main():
         total_elapsed = time.monotonic() - t_total
         summary = _print_summary(results, mode, model, llm_url, total_elapsed)
 
-        strategies = await mem_client.call_tool("memory_search", {
-            "query": "SQL strategy",
-            "limit": 10,
-        })
+        strategies = await mem_client.call_tool(
+            "memory_search",
+            {
+                "query": "SQL strategy",
+                "limit": 10,
+            },
+        )
         strat_data = json.loads(strategies.content[0].text)
         print(f"\n  {len(strat_data)} strategies stored in memory")
 

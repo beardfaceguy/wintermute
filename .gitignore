@@ -117,3 +117,7 @@ model_training/titanProject/results/
 .cursor/memory/
 .cursor/rules/
 # Note: .cursor/docs/ intentionally tracked (contains implementation docs)
+
+# Generated agent run artifacts — rebuild on every run
+agents/test_cases/last_freud_audit.json
+agents/test_cases/last_run.json
