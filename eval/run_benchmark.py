@@ -56,9 +56,9 @@ if _env_file.exists():
         if _line and not _line.startswith("#") and "=" in _line:
             _k, _, _v = _line.partition("=")
             # Force-set: .env values override empty shell vars (e.g. from shell rc files)
-        _key, _val = _k.strip(), _v.strip()
-        if _val and not os.environ.get(_key):
-            os.environ[_key] = _val
+            _key, _val = _k.strip(), _v.strip()
+            if _val and not os.environ.get(_key):
+                os.environ[_key] = _val
 
 from eval.model import GenerateConfig, make_backend
 from eval.results import list_runs, new_run, save_run

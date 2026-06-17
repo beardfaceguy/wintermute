@@ -1,8 +1,10 @@
 """
-Sandboxed Python code execution for coding benchmarks.
+Code execution for coding benchmarks.
 
-Runs generated code in a subprocess with a strict timeout.
-No network, no file writes outside /tmp — enforced by ulimits.
+Runs generated code in a subprocess with a strict timeout. The timeout
+prevents infinite loops but does NOT enforce network isolation or filesystem
+restrictions — model-generated code runs with the same permissions as the
+harness process. Run in a container or VM if stricter isolation is required.
 """
 
 from __future__ import annotations

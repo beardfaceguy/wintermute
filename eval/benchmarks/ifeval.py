@@ -195,17 +195,26 @@ def _v_quotation(kwargs, resp):
     return resp.strip().startswith('"') and resp.strip().endswith('"')
 
 
+def _v_word_count_relation(kwargs: dict, resp: str) -> bool:
+    """Route to less/greater verifier based on the 'relation' kwarg."""
+    rel = kwargs.get("relation", "at least")
+    if rel in ("at most", "less than"):
+        return _v_word_count_less(kwargs, resp)
+    return _v_word_count_greater(kwargs, resp)
+
+
 _VERIFIERS = {
     "keywords:existence": _v_keyword_existence,
     "keywords:frequency": _v_keyword_frequency,
     "keywords:forbidden_words": _v_forbidden_words,
-    "length_constraints:number_words": _v_word_count_greater,
+    "length_constraints:number_words": _v_word_count_relation,  # dispatches on relation kwarg
     "length_constraints:number_sentences": _v_num_sentences,
     "detectable_format:json_format": _v_json_format,
     "detectable_format:number_bullet_lists": _v_num_bullets,
     "detectable_content:postscript": _v_postscript,
     "detectable_format:title": _v_title,
     "startend:end_checker": _v_end_with,
+    "startend:start_checker": _v_start_with,  # was missing
     "startend:quotation": _v_quotation,
     "change_case:english_lowercase": _v_lowercase,
     "change_case:english_capital": _v_uppercase,

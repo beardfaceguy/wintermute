@@ -42,6 +42,8 @@ class LiveCodeBenchmark(BaseBenchmark):
             rows = rows[: self.max_samples]
 
         passed = 0
+        attempted = 0
+        skipped = 0
         for row in rows:
             prompt = f"Problem: {row['question_content']}"
             raw = model.complete(prompt, cfg)
@@ -50,17 +52,18 @@ class LiveCodeBenchmark(BaseBenchmark):
             # Build test harness from public test cases
             test_inputs = row.get("public_test_cases", [])
             if not test_inputs:
-                # No runnable tests available — skip scoring this row
+                # No runnable tests — skip and exclude from denominator
+                skipped += 1
                 continue
 
             test_code = _build_test(test_inputs)
             result = run_code(code, test_code, timeout=self.timeout)
             passed += int(result.passed)
+            attempted += 1
 
-        total = len(rows)
         return self._result(
-            score=round(passed / total, 4) if total else 0.0,
-            details={"passed": passed, "total": total},
+            score=round(passed / attempted, 4) if attempted else 0.0,
+            details={"passed": passed, "attempted": attempted, "skipped_no_tests": skipped},
         )
 
 

@@ -141,7 +141,6 @@ class AnthropicBackend(ModelBackend):
             import anthropic as _anthropic
         except ImportError:
             raise ImportError("pip install anthropic") from None
-        import anthropic as _anthropic
 
         self._model = model
         self._client = _anthropic.Anthropic(
@@ -186,9 +185,6 @@ class HFLocalBackend(ModelBackend):
             from transformers import AutoTokenizer, pipeline
         except ImportError:
             raise ImportError("pip install transformers torch") from None
-
-        import torch
-        from transformers import AutoTokenizer, pipeline
 
         self._model_path = model_path
         self._tokenizer = AutoTokenizer.from_pretrained(model_path)

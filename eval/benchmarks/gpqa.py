@@ -9,6 +9,7 @@ access, non-specialists score ~65%. Expert baseline ~74%.
 
 from __future__ import annotations
 
+import hashlib
 import re
 
 from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
@@ -78,24 +79,30 @@ class GPQADiamondBenchmark(BaseBenchmark):
 
         correct = 0
         for row in rows:
-            # GPQA stores the correct answer text, not an index
+            # Raw data always puts the correct answer at index 0 — shuffle
+            # deterministically by question hash so the correct answer lands at
+            # a different position each time, making the benchmark meaningful.
             choices = [
                 row["Correct Answer"],
                 row["Incorrect Answer 1"],
                 row["Incorrect Answer 2"],
                 row["Incorrect Answer 3"],
             ]
-            # Shuffle is baked into the dataset; correct is always index 0 in raw data
-            # We present them in a fixed A-D order matching the dataset's randomized order
+            seed = int(hashlib.md5(row["Question"].encode()).hexdigest()[:8], 16)
+            order = sorted(range(4), key=lambda i: (seed + i * 2654435761) % (2**32))
+            shuffled = [choices[i] for i in order]
+            correct_idx = order.index(0)  # where the correct answer landed
+            correct_letter = CHOICES[correct_idx]
+
             prompt = PROMPT_TEMPLATE.format(
                 question=row["Question"],
-                A=choices[0],
-                B=choices[1],
-                C=choices[2],
-                D=choices[3],
+                A=shuffled[0],
+                B=shuffled[1],
+                C=shuffled[2],
+                D=shuffled[3],
             )
             raw = model.complete(prompt, cfg)
-            if _parse(raw) == "A":  # correct answer is always choice index 0
+            if _parse(raw) == correct_letter:
                 correct += 1
 
         total = len(rows)

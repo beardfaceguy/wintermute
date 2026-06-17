@@ -1,12 +1,10 @@
 """
-MATH — Hendrycks Math Benchmark
-Dataset: hendrycks/MATH
+MATH — Competition Math Benchmark
+Dataset: TIGER-Lab/MATH-plus (train split, capped at max_samples)
 Metric:  accuracy (exact answer match after normalization)
 
-Challenging problems from AMC, AIME, and competition math.
-Answers are often expressions, fractions, or LaTeX — we normalize
-before comparing. Covers 7 subjects: algebra, counting, geometry,
-intermediate algebra, number theory, prealgebra, precalculus.
+Challenging competition math problems. Solutions contain \\boxed{} answers
+which we extract and normalize for comparison.
 """
 
 from __future__ import annotations
@@ -45,13 +43,11 @@ class MATHBenchmark(BaseBenchmark):
     suite = "intelligence"
     metric = "accuracy"
 
-    def __init__(self, max_samples: int = 0, levels: list[str] | None = None):
+    def __init__(self, max_samples: int = 0):
         """
-        max_samples: cap total problems (0 = all ~5000)
-        levels:      difficulty filter e.g. ["Level 1", "Level 2"] (None = all)
+        max_samples: cap total problems (0 = all ~893k — use a cap in practice)
         """
         self.max_samples = max_samples
-        self.levels = levels
 
     def run(self, model: ModelBackend, cfg: GenerateConfig = DEFAULT_CFG) -> BenchmarkResult:
         try:
@@ -62,8 +58,6 @@ class MATHBenchmark(BaseBenchmark):
         cfg = GenerateConfig(max_tokens=1024, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("TIGER-Lab/MATH-plus", split="train")
         rows = list(ds)
-        if self.levels:
-            rows = [r for r in rows if r.get("level") in self.levels]
         if self.max_samples:
             rows = rows[: self.max_samples]
 
