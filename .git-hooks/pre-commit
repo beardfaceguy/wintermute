@@ -52,6 +52,56 @@ if [ -n "$req_changed" ] && command -v pip-audit >/dev/null 2>&1; then
   pip-audit --requirement requirements.txt --skip-editable --ignore-vuln CVE-2026-45829 --ignore-vuln CVE-2025-69872 --ignore-vuln CVE-2025-3000 --ignore-vuln CVE-2026-53923 --ignore-vuln CVE-2026-54236 --ignore-vuln GHSA-8jr5-v98p-w75m --ignore-vuln CVE-2026-54235 --ignore-vuln CVE-2026-54233 || exit 1
 fi
 
+# ── Secrets: gitleaks ─────────────────────────────────────────────────────────
+# Catches hardcoded API keys, tokens, and credentials before they are committed.
+# Self-skips if gitleaks is not installed. Install: brew install gitleaks
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks..."
+  gitleaks git --pre-commit --redact --staged --verbose || exit 1
+fi
+
+# ── SAST: semgrep ─────────────────────────────────────────────────────────────
+# Multi-language static analysis: injection, auth, and unsafe-API patterns.
+# Scoped to staged files only to keep commit time reasonable on a large repo.
+# Self-skips if semgrep is not installed. Install: pip install semgrep
+if command -v semgrep >/dev/null 2>&1; then
+  staged_code=$(git diff --cached --name-only --diff-filter=ACMR \
+    | grep -E '\.(py|ts|tsx|js|jsx)$' || true)
+  if [ -n "$staged_code" ]; then
+    echo "pre-commit: semgrep..."
+    echo "$staged_code" | xargs semgrep scan --config auto --error --quiet || exit 1
+  fi
+fi
+
+# ── Supply-chain: osv-scanner ─────────────────────────────────────────────────
+# Scans dependency manifests (requirements.txt, package-lock.json) for known
+# CVEs and OpenSSF Malicious Packages (supply-chain compromise tracking).
+# Only runs when dependency files change — expensive to run on every commit.
+# Install: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
+if command -v osv-scanner >/dev/null 2>&1; then
+  dep_changed=$(git diff --cached --name-only --diff-filter=ACMR \
+    | grep -E '(requirements.*\.txt|package-lock\.json|yarn\.lock|Cargo\.lock|go\.sum)$' || true)
+  if [ -n "$dep_changed" ]; then
+    echo "pre-commit: osv-scanner..."
+    osv-scanner scan source --recursive --verbosity=error . || exit 1
+  fi
+fi
+
+# ── Supply-chain: shai-hulud-detect ──────────────────────────────────────────
+# Detects on-disk traces of the Shai-Hulud npm supply-chain worm:
+# compromised package versions, malicious hooks, dead-man's-switch artifacts.
+# Only runs when npm dependency files change (scan is ~60s — too slow otherwise).
+# Install: git clone https://github.com/Cobenian/shai-hulud-detect /opt/shai-hulud-detect
+#          ln -s /opt/shai-hulud-detect/shai-hulud-detector.sh /usr/local/bin/
+if command -v shai-hulud-detector.sh >/dev/null 2>&1; then
+  npm_changed=$(git diff --cached --name-only --diff-filter=ACMR \
+    | grep -E '(package\.json|package-lock\.json|yarn\.lock|\.npmrc)$' || true)
+  if [ -n "$npm_changed" ] && [ -d "$REPO_ROOT/talkingHead/frontend" ]; then
+    echo "pre-commit: shai-hulud..."
+    shai-hulud-detector.sh "$REPO_ROOT/talkingHead/frontend" || exit 1
+  fi
+fi
+
 echo "pre-commit: lint gate passed."
 
 # ── Update knowledge graph (graphify) ────────────────────────────────────────
