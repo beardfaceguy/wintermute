@@ -16,8 +16,7 @@ import os
 import subprocess
 import sys
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any
 
 DEFAULT_BUCKET = os.getenv("TITAN_S3_BUCKET", "alix-ai-ml-staging-data")
 DEFAULT_PREFIX = "titan/"
@@ -34,7 +33,7 @@ DEFAULT_AZ = os.getenv("TITAN_AZ", "us-east-1d")
 DEFAULT_AZ_FALLBACKS = ["us-east-1d", "us-east-1c", "us-east-1b", "us-east-1f", "us-east-1a"]
 DEFAULT_VOLUME_SIZE = int(os.getenv("TITAN_VOLUME_SIZE", "500"))
 
-DEFAULT_TAGS: List[Dict[str, str]] = [
+DEFAULT_TAGS: list[dict[str, str]] = [
     {"Key": "Owner", "Value": os.getenv("TITAN_OWNER", "patrick.clawson")},
     {"Key": "Project", "Value": "Titan-LLM"},
     {"Key": "Env", "Value": "staging"},
@@ -50,18 +49,18 @@ class AwsContext:
     region: str
 
 
-def _cmd_display(cmd: List[str]) -> str:
+def _cmd_display(cmd: list[str]) -> str:
     return " ".join(cmd)
 
 
 def run_aws(
     ctx: AwsContext,
-    args: List[str],
+    args: list[str],
     expect_json: bool = True,
     allow_failure: bool = False,
-) -> Tuple[int, Optional[Dict[str, Any]], str, str]:
+) -> tuple[int, dict[str, Any] | None, str, str]:
     base_args = ["--no-cli-pager", "--profile", ctx.profile, "--region", ctx.region] + args
-    aws_bins: List[str] = []
+    aws_bins: list[str] = []
     if os.environ.get("AWS_CLI_BIN"):
         aws_bins.append(os.environ["AWS_CLI_BIN"])
     aws_bins.extend(
@@ -72,8 +71,8 @@ def run_aws(
         ]
     )
 
-    cmd: List[str] = []
-    proc: Optional[subprocess.CompletedProcess[str]] = None
+    cmd: list[str] = []
+    proc: subprocess.CompletedProcess[str] | None = None
     for aws_bin in aws_bins:
         cmd = [aws_bin] + base_args
         try:
@@ -90,7 +89,7 @@ def run_aws(
     stdout = proc.stdout.strip()
     stderr = proc.stderr.strip()
 
-    payload: Optional[Dict[str, Any]] = None
+    payload: dict[str, Any] | None = None
     if expect_json and stdout:
         try:
             payload = json.loads(stdout)
@@ -110,8 +109,8 @@ def run_aws(
     return proc.returncode, payload, stdout, stderr
 
 
-def flatten_instances(data: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    out: List[Dict[str, Any]] = []
+def flatten_instances(data: dict[str, Any] | None) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
     if not data:
         return out
     for reservation in data.get("Reservations", []):
@@ -119,7 +118,7 @@ def flatten_instances(data: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
-def describe_sg_by_name(ctx: AwsContext, sg_name: str) -> List[Dict[str, Any]]:
+def describe_sg_by_name(ctx: AwsContext, sg_name: str) -> list[dict[str, Any]]:
     _, data, _, _ = run_aws(
         ctx,
         ["ec2", "describe-security-groups", "--filters", f"Name=group-name,Values={sg_name}"],
@@ -131,7 +130,7 @@ def describe_sg_by_name(ctx: AwsContext, sg_name: str) -> List[Dict[str, Any]]:
     return data.get("SecurityGroups", [])
 
 
-def describe_sg_by_id(ctx: AwsContext, sg_id: str) -> List[Dict[str, Any]]:
+def describe_sg_by_id(ctx: AwsContext, sg_id: str) -> list[dict[str, Any]]:
     _, data, _, _ = run_aws(
         ctx,
         ["ec2", "describe-security-groups", "--group-ids", sg_id],
@@ -143,7 +142,7 @@ def describe_sg_by_id(ctx: AwsContext, sg_id: str) -> List[Dict[str, Any]]:
     return data.get("SecurityGroups", [])
 
 
-def get_default_vpc_id(ctx: AwsContext) -> Optional[str]:
+def get_default_vpc_id(ctx: AwsContext) -> str | None:
     _, data, _, _ = run_aws(
         ctx,
         ["ec2", "describe-vpcs", "--filters", "Name=isDefault,Values=true"],
@@ -158,7 +157,7 @@ def get_default_vpc_id(ctx: AwsContext) -> Optional[str]:
     return vpcs[0].get("VpcId")
 
 
-def ensure_sg(ctx: AwsContext, sg_name: str, ssh_cidr: str, vpc_id: Optional[str]) -> str:
+def ensure_sg(ctx: AwsContext, sg_name: str, ssh_cidr: str, vpc_id: str | None) -> str:
     existing = describe_sg_by_name(ctx, sg_name)
     if existing:
         return existing[0]["GroupId"]
@@ -199,7 +198,14 @@ def ensure_sg(ctx: AwsContext, sg_name: str, ssh_cidr: str, vpc_id: Optional[str
     )
     run_aws(
         ctx,
-        ["ec2", "authorize-security-group-ingress", "--group-id", group_id, "--ip-permissions", ip_permissions],
+        [
+            "ec2",
+            "authorize-security-group-ingress",
+            "--group-id",
+            group_id,
+            "--ip-permissions",
+            ip_permissions,
+        ],
         expect_json=True,
         allow_failure=True,
     )
@@ -216,7 +222,7 @@ def ensure_sg(ctx: AwsContext, sg_name: str, ssh_cidr: str, vpc_id: Optional[str
     return group_id
 
 
-def resolve_sg_id(ctx: AwsContext, sg_id: Optional[str], sg_name: str) -> str:
+def resolve_sg_id(ctx: AwsContext, sg_id: str | None, sg_name: str) -> str:
     if sg_id:
         return sg_id
     by_name = describe_sg_by_name(ctx, sg_name)
@@ -240,20 +246,20 @@ def key_pair_exists(ctx: AwsContext, key_name: str) -> bool:
 def launch_instance(
     ctx: AwsContext,
     spot: bool,
-    az_candidates: List[str],
+    az_candidates: list[str],
     sg_id: str,
     key_name: str,
     ami: str,
     instance_type: str,
     instance_profile: str,
     volume_size: int,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     if not key_pair_exists(ctx, key_name):
         raise RuntimeError(
             f"Key pair `{key_name}` is not available in {ctx.region} for profile {ctx.profile}."
         )
 
-    run_errors: List[str] = []
+    run_errors: list[str] = []
     tag_spec = json.dumps([{"ResourceType": "instance", "Tags": DEFAULT_TAGS}])
     bdm = json.dumps(
         [
@@ -325,8 +331,8 @@ def launch_instance(
     raise RuntimeError(f"Failed to launch instance in all AZ candidates:\n{joined}")
 
 
-def check_audit(ctx: AwsContext) -> Dict[str, Any]:
-    out: Dict[str, Any] = {}
+def check_audit(ctx: AwsContext) -> dict[str, Any]:
+    out: dict[str, Any] = {}
 
     identity_rc, ident, identity_stdout, identity_stderr = run_aws(
         ctx, ["sts", "get-caller-identity"], expect_json=True, allow_failure=True
@@ -362,7 +368,9 @@ def check_audit(ctx: AwsContext) -> Dict[str, Any]:
     )
     titan_prefixes = []
     if titan_listing:
-        titan_prefixes = [entry.get("Prefix", "") for entry in titan_listing.get("CommonPrefixes", [])]
+        titan_prefixes = [
+            entry.get("Prefix", "") for entry in titan_listing.get("CommonPrefixes", [])
+        ]
     out["titan_prefixes"] = titan_prefixes
 
     _, ckpt_listing, _, _ = run_aws(
@@ -402,7 +410,8 @@ def check_audit(ctx: AwsContext) -> Dict[str, Any]:
     )
     attached = (attached_payload or {}).get("AttachedPolicies", [])
     out["ssm_attached"] = any(
-        p.get("PolicyArn") == "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore" for p in attached
+        p.get("PolicyArn") == "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+        for p in attached
     )
 
     inline_rc, inline_payload, _, _ = run_aws(
@@ -482,7 +491,9 @@ def check_audit(ctx: AwsContext) -> Dict[str, Any]:
             "State": i.get("State", {}).get("Name", ""),
             "Type": i.get("InstanceType", ""),
             "AZ": i.get("Placement", {}).get("AvailabilityZone", ""),
-            "NameTag": next((t.get("Value") for t in i.get("Tags", []) if t.get("Key") == "Name"), ""),
+            "NameTag": next(
+                (t.get("Value") for t in i.get("Tags", []) if t.get("Key") == "Name"), ""
+            ),
         }
         for i in gpu_runner_instances
     ]
@@ -507,7 +518,7 @@ def check_audit(ctx: AwsContext) -> Dict[str, Any]:
     return out
 
 
-def checklist_from_audit(audit: Dict[str, Any]) -> List[Dict[str, str]]:
+def checklist_from_audit(audit: dict[str, Any]) -> list[dict[str, str]]:
     prefixes = set(audit.get("titan_prefixes", []))
     code_present = "titan/code/" in prefixes
     data_present = "titan/data/" in prefixes
@@ -520,7 +531,9 @@ def checklist_from_audit(audit: Dict[str, Any]) -> List[Dict[str, str]]:
     bootstrap_status = "done" if code_present and data_present else "pending"
     if baseline_ckpt:
         baseline_status = "done"
-        baseline_detail = "Baseline checkpoint objects found in s3://alix-ai-ml-staging-data/titan/checkpoints/."
+        baseline_detail = (
+            "Baseline checkpoint objects found in s3://alix-ai-ml-staging-data/titan/checkpoints/."
+        )
     elif checkpoints:
         baseline_status = "pending"
         baseline_detail = "Checkpoint objects exist, but none appear baseline-labeled."
@@ -555,7 +568,7 @@ def checklist_from_audit(audit: Dict[str, Any]) -> List[Dict[str, str]]:
     ]
 
 
-def print_audit(audit: Dict[str, Any], ctx: AwsContext) -> None:
+def print_audit(audit: dict[str, Any], ctx: AwsContext) -> None:
     identity = audit.get("identity", {})
     account = identity.get("Account", "unknown")
     arn = identity.get("Arn", "unknown")
@@ -577,7 +590,9 @@ def print_audit(audit: Dict[str, Any], ctx: AwsContext) -> None:
     print(f"IAM role `{DEFAULT_ROLE}` exists: {audit.get('role_exists')}")
     print(f"SSM attached on role: {audit.get('ssm_attached')}")
     print(f"Inline policy `{DEFAULT_INLINE_POLICY}` exists: {audit.get('inline_policy_exists')}")
-    print(f"Instance profile `{DEFAULT_INSTANCE_PROFILE}` exists: {audit.get('instance_profile_exists')}")
+    print(
+        f"Instance profile `{DEFAULT_INSTANCE_PROFILE}` exists: {audit.get('instance_profile_exists')}"
+    )
     print(f"Instance profile roles: {audit.get('instance_profile_role_names', [])}")
     print(f"Security group by name `{DEFAULT_SG_NAME}` count: {audit.get('sg_by_name_count')}")
     print(f"Security group IDs by name: {audit.get('sg_by_name_ids', [])}")
@@ -588,7 +603,7 @@ def print_audit(audit: Dict[str, Any], ctx: AwsContext) -> None:
     print(f"Spot requests: {audit.get('spot_requests', [])}")
     print()
 
-    mismatches: List[str] = []
+    mismatches: list[str] = []
     if identity_error:
         mismatches.append(
             "AWS authentication/profile resolution failed. Resource checks may be incomplete until credentials are fixed."
@@ -621,10 +636,7 @@ def print_audit(audit: Dict[str, Any], ctx: AwsContext) -> None:
 
     print("== Recommended Next Commands ==")
     if identity_error:
-        print(
-            "1) Verify profile exists:\n"
-            "   /home/zombi/.local/bin/aws configure list-profiles"
-        )
+        print("1) Verify profile exists:\n   /home/zombi/.local/bin/aws configure list-profiles")
         print(
             "2) Authenticate/profile setup in WSL:\n"
             "   /home/zombi/.local/bin/aws configure sso --profile experimental-admin"
@@ -694,20 +706,30 @@ def handle_launch(args: argparse.Namespace, spot: bool) -> int:
     print("ssh ubuntu@<public-ip>  # or use your SSH config host")
     print("sudo mkdir -p /mnt/data")
     print('ROOT_DISK="/dev/$(lsblk -no PKNAME \\"$(findmnt -n -o SOURCE /)\\")"')
-    print('DATA_DEV="$(lsblk -dpno NAME,TYPE | awk \'$2==\\"disk\\"{print $1}\' | grep -v \\"^${ROOT_DISK}$\\" | head -1)"')
+    print(
+        'DATA_DEV="$(lsblk -dpno NAME,TYPE | awk \'$2==\\"disk\\"{print $1}\' | grep -v \\"^${ROOT_DISK}$\\" | head -1)"'
+    )
     print('sudo mkfs -t xfs "$DATA_DEV"')
     print('UUID="$(sudo blkid -s UUID -o value "$DATA_DEV")"')
     print('echo "UUID=$UUID /mnt/data xfs defaults,nofail 0 2" | sudo tee -a /etc/fstab')
     print("sudo mount -a")
     print("cd /mnt/data/code/wintermute/model_training/titanProject")
-    print("python train.py --config configs/config_baseline_nomem.yaml --device cuda --log-every 100")
+    print(
+        "python train.py --config configs/config_baseline_nomem.yaml --device cuda --log-every 100"
+    )
     return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="AWS Titans hosting helper")
-    parser.add_argument("--profile", default=None, help="AWS profile (default: env AWS_PROFILE or experimental-admin)")
-    parser.add_argument("--region", default=None, help="AWS region (default: env AWS_DEFAULT_REGION or us-east-1)")
+    parser.add_argument(
+        "--profile",
+        default=None,
+        help="AWS profile (default: env AWS_PROFILE or experimental-admin)",
+    )
+    parser.add_argument(
+        "--region", default=None, help="AWS region (default: env AWS_DEFAULT_REGION or us-east-1)"
+    )
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -716,31 +738,53 @@ def build_parser() -> argparse.ArgumentParser:
 
     sg_parser = subparsers.add_parser("ensure-sg", help="Create SG if missing (idempotent)")
     sg_parser.add_argument("--sg-name", default=DEFAULT_SG_NAME, help="Security group name")
-    sg_parser.add_argument("--ssh-cidr", default=DEFAULT_SSH_CIDR, help="Allowed SSH CIDR for port 22")
-    sg_parser.add_argument("--vpc-id", default=None, help="VPC ID override; default is account default VPC")
+    sg_parser.add_argument(
+        "--ssh-cidr", default=DEFAULT_SSH_CIDR, help="Allowed SSH CIDR for port 22"
+    )
+    sg_parser.add_argument(
+        "--vpc-id", default=None, help="VPC ID override; default is account default VPC"
+    )
 
     spot_parser = subparsers.add_parser("launch-spot", help="Launch spot runner with AZ fallback")
     spot_parser.add_argument("--sg-id", default=None, help="Security group ID override")
-    spot_parser.add_argument("--sg-name", default=DEFAULT_SG_NAME, help="Security group name lookup")
+    spot_parser.add_argument(
+        "--sg-name", default=DEFAULT_SG_NAME, help="Security group name lookup"
+    )
     spot_parser.add_argument("--key-name", default=DEFAULT_KEY_NAME, help="EC2 key pair name")
     spot_parser.add_argument("--ami", default=DEFAULT_AMI, help="AMI ID")
-    spot_parser.add_argument("--instance-type", default=DEFAULT_INSTANCE_TYPE, help="EC2 instance type")
-    spot_parser.add_argument("--instance-profile", default=DEFAULT_INSTANCE_PROFILE, help="IAM instance profile name")
-    spot_parser.add_argument("--volume-size", type=int, default=DEFAULT_VOLUME_SIZE, help="Root volume size GiB")
+    spot_parser.add_argument(
+        "--instance-type", default=DEFAULT_INSTANCE_TYPE, help="EC2 instance type"
+    )
+    spot_parser.add_argument(
+        "--instance-profile", default=DEFAULT_INSTANCE_PROFILE, help="IAM instance profile name"
+    )
+    spot_parser.add_argument(
+        "--volume-size", type=int, default=DEFAULT_VOLUME_SIZE, help="Root volume size GiB"
+    )
     spot_parser.add_argument(
         "--az-order",
         default=",".join(DEFAULT_AZ_FALLBACKS),
         help="Comma-separated AZ priority for spot launch fallback",
     )
 
-    ondemand_parser = subparsers.add_parser("launch-ondemand", help="Launch on-demand runner in a single AZ")
+    ondemand_parser = subparsers.add_parser(
+        "launch-ondemand", help="Launch on-demand runner in a single AZ"
+    )
     ondemand_parser.add_argument("--sg-id", default=None, help="Security group ID override")
-    ondemand_parser.add_argument("--sg-name", default=DEFAULT_SG_NAME, help="Security group name lookup")
+    ondemand_parser.add_argument(
+        "--sg-name", default=DEFAULT_SG_NAME, help="Security group name lookup"
+    )
     ondemand_parser.add_argument("--key-name", default=DEFAULT_KEY_NAME, help="EC2 key pair name")
     ondemand_parser.add_argument("--ami", default=DEFAULT_AMI, help="AMI ID")
-    ondemand_parser.add_argument("--instance-type", default=DEFAULT_INSTANCE_TYPE, help="EC2 instance type")
-    ondemand_parser.add_argument("--instance-profile", default=DEFAULT_INSTANCE_PROFILE, help="IAM instance profile name")
-    ondemand_parser.add_argument("--volume-size", type=int, default=DEFAULT_VOLUME_SIZE, help="Root volume size GiB")
+    ondemand_parser.add_argument(
+        "--instance-type", default=DEFAULT_INSTANCE_TYPE, help="EC2 instance type"
+    )
+    ondemand_parser.add_argument(
+        "--instance-profile", default=DEFAULT_INSTANCE_PROFILE, help="IAM instance profile name"
+    )
+    ondemand_parser.add_argument(
+        "--volume-size", type=int, default=DEFAULT_VOLUME_SIZE, help="Root volume size GiB"
+    )
     ondemand_parser.add_argument("--az", default=DEFAULT_AZ, help="Single AZ for on-demand launch")
 
     return parser

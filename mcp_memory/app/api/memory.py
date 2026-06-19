@@ -1,10 +1,7 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-
 from app.db.session import SessionLocal
 from app.services import memory_ops
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 router: APIRouter = APIRouter()
 
@@ -26,7 +23,7 @@ async def ping():
 async def add_entry(
     text: str,
     embedding: list[float],
-    tags: Optional[dict[str, str]] = None,
+    tags: dict[str, str] | None = None,
     db: Session = Depends(get_db),
 ):
     if tags is None:

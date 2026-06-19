@@ -2,10 +2,8 @@ import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, List
 
 from datasets import load_dataset
-
 
 DEFAULT_CATEGORIES = [
     "classification",
@@ -34,7 +32,7 @@ def normalize_block_text(value: str) -> str:
     while raw_lines and not raw_lines[-1].strip():
         raw_lines.pop()
 
-    lines: List[str] = []
+    lines: list[str] = []
     prev_blank = False
     for line in raw_lines:
         line = " ".join(line.split())
@@ -48,8 +46,8 @@ def normalize_block_text(value: str) -> str:
     return "\n".join(lines).strip()
 
 
-def read_jsonl(path: Path) -> List[Dict[str, object]]:
-    rows: List[Dict[str, object]] = []
+def read_jsonl(path: Path) -> list[dict[str, object]]:
+    rows: list[dict[str, object]] = []
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
@@ -58,14 +56,14 @@ def read_jsonl(path: Path) -> List[Dict[str, object]]:
     return rows
 
 
-def write_jsonl(path: Path, rows: List[Dict[str, object]]) -> None:
+def write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=True) + "\n")
 
 
-def as_instruction_row(instruction: str, input_text: str, response: str) -> Dict[str, str]:
+def as_instruction_row(instruction: str, input_text: str, response: str) -> dict[str, str]:
     return {
         "format": "raschka_instruction",
         "instruction": instruction,
@@ -75,7 +73,7 @@ def as_instruction_row(instruction: str, input_text: str, response: str) -> Dict
 
 
 def row_passes_filters(
-    row: Dict[str, str],
+    row: dict[str, str],
     *,
     max_instruction_chars: int,
     max_input_chars: int,
@@ -107,16 +105,16 @@ def select_rows(
     *,
     dataset_id: str,
     split: str,
-    categories: List[str],
+    categories: list[str],
     limit: int,
     max_instruction_chars: int,
     max_input_chars: int,
     min_response_chars: int,
     max_response_chars: int,
     max_response_newlines: int,
-) -> List[Dict[str, object]]:
+) -> list[dict[str, object]]:
     ds = load_dataset(dataset_id, split=split)
-    grouped: Dict[str, List[Dict[str, object]]] = defaultdict(list)
+    grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
 
     for row in ds:
         category = str(row.get("category", "")).strip()
@@ -140,7 +138,7 @@ def select_rows(
             }
         )
 
-    selected: List[Dict[str, object]] = []
+    selected: list[dict[str, object]] = []
     positions = {category: 0 for category in categories}
     while len(selected) < limit:
         advanced = False
@@ -159,8 +157,15 @@ def select_rows(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build a deterministic Dolly-backed instruction-smoke variant.")
-    parser.add_argument("--output-dir", type=Path, required=True, help="Output directory for train/val JSONL and meta.json")
+    parser = argparse.ArgumentParser(
+        description="Build a deterministic Dolly-backed instruction-smoke variant."
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        required=True,
+        help="Output directory for train/val JSONL and meta.json",
+    )
     parser.add_argument(
         "--variant-name",
         type=str,
@@ -170,12 +175,16 @@ def main() -> None:
     parser.add_argument(
         "--base-train",
         type=Path,
-        default=Path("model_training/LLM/data/sft_smoke_instruction_micro_balanced/train_sft_instruction.jsonl"),
+        default=Path(
+            "model_training/LLM/data/sft_smoke_instruction_micro_balanced/train_sft_instruction.jsonl"
+        ),
     )
     parser.add_argument(
         "--base-val",
         type=Path,
-        default=Path("model_training/LLM/data/sft_smoke_instruction_micro_balanced/val_sft_instruction.jsonl"),
+        default=Path(
+            "model_training/LLM/data/sft_smoke_instruction_micro_balanced/val_sft_instruction.jsonl"
+        ),
     )
     parser.add_argument(
         "--dataset-id",

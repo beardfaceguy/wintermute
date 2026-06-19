@@ -3,17 +3,17 @@ Dataset/dataloader scaffold for Titans LM.
 Tokenization is pluggable; here we assume a text file with one sample per line.
 """
 
-from array import array
-from bisect import bisect_right
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import time
-from typing import Callable, Iterable, List, Optional
-from urllib.parse import urlparse
 import uuid
+from array import array
+from bisect import bisect_right
+from collections.abc import Callable, Iterable
+from pathlib import Path
+from urllib.parse import urlparse
 
 try:
     import boto3
@@ -22,7 +22,7 @@ except Exception:  # boto3 is available on DLAMI; keep optional for local CPU ru
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 DEFAULT_CACHE_VERSION = 3
 DEFAULT_SHARD_SIZE_TOKENS = 1_750_000
@@ -37,11 +37,11 @@ class TextWindowDataset(Dataset):
     def __init__(
         self,
         path: str,
-        tokenizer: Callable[[str], List[int]],
+        tokenizer: Callable[[str], list[int]],
         tokenizer_fingerprint: str,
         seq_len: int,
-        max_tokens: Optional[int] = None,
-        log_fn: Optional[Callable[[str], None]] = None,
+        max_tokens: int | None = None,
+        log_fn: Callable[[str], None] | None = None,
         progress_every_lines: int = 200000,
         progress_label: str = "dataset",
     ):
@@ -56,17 +56,19 @@ class TextWindowDataset(Dataset):
             progress_label=progress_label,
         )
         if self.token_cache.num_tokens <= seq_len:
-            raise ValueError(f"Not enough tokens ({self.token_cache.num_tokens}) for seq_len={seq_len}")
+            raise ValueError(
+                f"Not enough tokens ({self.token_cache.num_tokens}) for seq_len={seq_len}"
+            )
         self.num_tokens = self.token_cache.num_tokens
         self.num_windows = (self.num_tokens - 1) // seq_len
 
     def _load_tokens(
         self,
         path: str,
-        tokenizer: Callable[[str], List[int]],
+        tokenizer: Callable[[str], list[int]],
         tokenizer_fingerprint: str,
-        max_tokens: Optional[int],
-        log_fn: Optional[Callable[[str], None]],
+        max_tokens: int | None,
+        log_fn: Callable[[str], None] | None,
         progress_every_lines: int,
         progress_label: str,
     ) -> "TokenCache":
@@ -90,7 +92,9 @@ class TextWindowDataset(Dataset):
                 version_ok = manifest.get("cache_version") == DEFAULT_CACHE_VERSION
                 tokenizer_ok = manifest.get("tokenizer_fingerprint") == tokenizer_fingerprint
                 shard_ok = int(manifest.get("shard_size_tokens", 0)) == shard_size_tokens
-                source_ok = trust_existing or manifest.get("source_fingerprint") == source_fingerprint
+                source_ok = (
+                    trust_existing or manifest.get("source_fingerprint") == source_fingerprint
+                )
                 if version_ok and tokenizer_ok and shard_ok and source_ok:
                     trust_note = " (trust_existing)" if trust_existing else ""
                     emit(
@@ -98,7 +102,9 @@ class TextWindowDataset(Dataset):
                         f"tokens={manifest.get('num_tokens', 0):,} shards={len(manifest.get('shards', []))}"
                         f"{trust_note}"
                     )
-                    return TokenCache(cache_dir=cache_dir, manifest_path=manifest_path, manifest=manifest)
+                    return TokenCache(
+                        cache_dir=cache_dir, manifest_path=manifest_path, manifest=manifest
+                    )
             except Exception:
                 emit(f"[data] [{progress_label}] cache manifest unreadable; rebuilding {cache_dir}")
 
@@ -151,7 +157,7 @@ class TextWindowDataset(Dataset):
                         elapsed = max(time.time() - start_ts, 1e-6)
                         emit(
                             f"[data] [{progress_label}] lines={line_count:,} nonempty={nonempty_line_count:,} "
-                            f"tokens={token_count:,} elapsed={elapsed:.1f}s tok/s={token_count/elapsed:,.0f}"
+                            f"tokens={token_count:,} elapsed={elapsed:.1f}s tok/s={token_count / elapsed:,.0f}"
                         )
                     continue
 
@@ -168,7 +174,7 @@ class TextWindowDataset(Dataset):
                     elapsed = max(now - start_ts, 1e-6)
                     emit(
                         f"[data] [{progress_label}] lines={line_count:,} nonempty={nonempty_line_count:,} "
-                        f"tokens={token_count:,} elapsed={elapsed:.1f}s tok/s={token_count/elapsed:,.0f}"
+                        f"tokens={token_count:,} elapsed={elapsed:.1f}s tok/s={token_count / elapsed:,.0f}"
                     )
                     last_log_ts = now
 
@@ -187,7 +193,7 @@ class TextWindowDataset(Dataset):
             emit(
                 f"[data] [{progress_label}] token cache build done lines={line_count:,} "
                 f"nonempty={nonempty_line_count:,} tokens={token_count:,} shards={len(shards):,} "
-                f"elapsed={elapsed:.1f}s tok/s={token_count/elapsed:,.0f}"
+                f"elapsed={elapsed:.1f}s tok/s={token_count / elapsed:,.0f}"
             )
             if source_fingerprint is None:
                 source_fingerprint = get_source_fingerprint(path)
@@ -205,7 +211,9 @@ class TextWindowDataset(Dataset):
                 "source_fingerprint": source_fingerprint,
                 "created_at_epoch_s": time.time(),
             }
-            (tmp_cache_dir / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True))
+            (tmp_cache_dir / "manifest.json").write_text(
+                json.dumps(manifest, indent=2, sort_keys=True)
+            )
             shutil.rmtree(cache_dir, ignore_errors=True)
             os.replace(tmp_cache_dir, cache_dir)
             return TokenCache(cache_dir=cache_dir, manifest_path=manifest_path, manifest=manifest)
@@ -232,7 +240,7 @@ class TokenCache:
         self.num_tokens = int(manifest["num_tokens"])
         self.shards = manifest.get("shards", [])
         self._shard_starts = [int(shard["start_token"]) for shard in self.shards]
-        self._memmaps: List[Optional[np.memmap]] = [None] * len(self.shards)
+        self._memmaps: list[np.memmap | None] = [None] * len(self.shards)
 
     @property
     def token_path(self) -> Path:
@@ -249,7 +257,9 @@ class TokenCache:
         if memmap is None:
             shard = self.shards[shard_idx]
             shard_path = self.cache_dir / shard["filename"]
-            memmap = np.memmap(shard_path, dtype=np.uint32, mode="r", shape=(int(shard["num_tokens"]),))
+            memmap = np.memmap(
+                shard_path, dtype=np.uint32, mode="r", shape=(int(shard["num_tokens"]),)
+            )
             self._memmaps[shard_idx] = memmap
         return memmap
 
@@ -279,15 +289,15 @@ class TokenCache:
 
 def build_dataloader(
     path: str,
-    tokenizer: Callable[[str], List[int]],
+    tokenizer: Callable[[str], list[int]],
     tokenizer_fingerprint: str,
     seq_len: int,
     batch_size: int,
     shuffle_buffer: int = 100000,  # kept for API compatibility; unused
     num_workers: int = 0,
     shuffle: bool = True,
-    max_tokens: Optional[int] = None,
-    log_fn: Optional[Callable[[str], None]] = None,
+    max_tokens: int | None = None,
+    log_fn: Callable[[str], None] | None = None,
     progress_every_lines: int = 200000,
     progress_label: str = "dataset",
 ) -> DataLoader:
@@ -302,7 +312,9 @@ def build_dataloader(
         progress_every_lines=progress_every_lines,
         progress_label=progress_label,
     )
-    return DataLoader(ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=True)
+    return DataLoader(
+        ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=True
+    )
 
 
 def _iter_lines(path: str) -> Iterable[str]:
@@ -320,7 +332,7 @@ def _iter_lines(path: str) -> Iterable[str]:
                 continue
             yield raw.decode("utf-8", errors="ignore")
     else:
-        with open(Path(path), "r", encoding="utf-8") as f:
+        with open(Path(path), encoding="utf-8") as f:
             for line in f:
                 yield line
 
@@ -334,7 +346,7 @@ def get_cache_root(path: str) -> Path:
 def build_cache_key(
     path: str,
     tokenizer_fingerprint: str,
-    max_tokens: Optional[int],
+    max_tokens: int | None,
     shard_size_tokens: int,
 ) -> str:
     # Use basename so the cache is portable across data root paths
@@ -382,4 +394,3 @@ def get_shard_size_tokens() -> int:
     if value <= 0:
         raise ValueError("TITAN_TOKEN_CACHE_SHARD_SIZE_TOKENS must be > 0")
     return value
-

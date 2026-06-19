@@ -20,14 +20,14 @@ from contextlib import nullcontext
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.optim import AdamW
-from torch.amp import autocast as amp_autocast, GradScaler
-
+import torch.nn.functional as F
 from data import build_dataloader
 from model import ModelConfig, build_model, load_model_source
+from torch.amp import GradScaler
+from torch.amp import autocast as amp_autocast
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.optim import AdamW
 from train_utils import (
     build_distributed_dataloader,
     cleanup_distributed,
@@ -48,59 +48,89 @@ from train_utils import (
 
 def main():
     parser = argparse.ArgumentParser(description="Titans model trainer (single & multi-GPU)")
-    parser.add_argument("--config", type=str, default="config_small.yaml",
-                        help="Path to YAML config (relative or absolute)")
-    parser.add_argument("--device", type=str, default="auto",
-                        choices=["auto", "cpu", "mps", "cuda"],
-                        help="Device override (ignored under torchrun, which forces CUDA)")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="config_small.yaml",
+        help="Path to YAML config (relative or absolute)",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "mps", "cuda"],
+        help="Device override (ignored under torchrun, which forces CUDA)",
+    )
     parser.add_argument("--max-steps", type=int, default=None, help="Override max_steps")
     parser.add_argument(
-        "--grad-accum-steps", type=int, default=None,
+        "--grad-accum-steps",
+        type=int,
+        default=None,
         help="Override gradient accumulation steps (auto-scaled by world_size unless --no-accum-scale)",
     )
-    parser.add_argument("--no-accum-scale", action="store_true",
-                        help="Disable automatic grad_accum_steps scaling by world_size")
+    parser.add_argument(
+        "--no-accum-scale",
+        action="store_true",
+        help="Disable automatic grad_accum_steps scaling by world_size",
+    )
     parser.add_argument("--log-every", type=int, default=50, help="Log training loss every N steps")
     parser.add_argument("--debug", action="store_true", help="Verbose debug logging")
-    parser.add_argument("--max-tokens", type=int, default=None,
-                        help="Optional cap on tokens to load (per split)")
     parser.add_argument(
-        "--data-log-every-lines", type=int, default=200000,
+        "--max-tokens", type=int, default=None, help="Optional cap on tokens to load (per split)"
+    )
+    parser.add_argument(
+        "--data-log-every-lines",
+        type=int,
+        default=200000,
         help="Emit dataset tokenization heartbeat every N input lines (set 0 to disable)",
     )
-    parser.add_argument("--debug-every", type=int, default=1,
-                        help="If --debug, log every N steps (default 1)")
-    parser.add_argument("--resume", type=str, default=None,
-                        help="Path to checkpoint (.pt) to resume from")
     parser.add_argument(
-        "--init-from", type=str, default=None,
+        "--debug-every", type=int, default=1, help="If --debug, log every N steps (default 1)"
+    )
+    parser.add_argument(
+        "--resume", type=str, default=None, help="Path to checkpoint (.pt) to resume from"
+    )
+    parser.add_argument(
+        "--init-from",
+        type=str,
+        default=None,
         help="Optional model init source (checkpoint path or Hugging Face ref like hf://gpt2)",
     )
-    parser.add_argument("--save-every", type=int, default=None,
-                        help="Override checkpoint save interval (steps)")
     parser.add_argument(
-        "--checkpoint-dir", type=str, default=None,
+        "--save-every", type=int, default=None, help="Override checkpoint save interval (steps)"
+    )
+    parser.add_argument(
+        "--checkpoint-dir",
+        type=str,
+        default=None,
         help="Directory to write checkpoints (default: model_training/titanProject)",
     )
     parser.add_argument(
-        "--s3-checkpoint-uri", type=str, default=None,
+        "--s3-checkpoint-uri",
+        type=str,
+        default=None,
         help="Optional S3 URI (s3://bucket/prefix/) to sync checkpoints after each save",
     )
-    parser.add_argument("--aws-bin", type=str, default="aws",
-                        help="AWS CLI binary for checkpoint sync")
     parser.add_argument(
-        "--target-tokens", type=int, default=None,
+        "--aws-bin", type=str, default="aws", help="AWS CLI binary for checkpoint sync"
+    )
+    parser.add_argument(
+        "--target-tokens",
+        type=int,
+        default=None,
         help="Optional token budget target for progress logging (e.g., 2300000000)",
     )
     parser.add_argument(
-        "--min-free-gb", type=float, default=20.0,
+        "--min-free-gb",
+        type=float,
+        default=20.0,
         help="Minimum free disk space (GiB) required to write a checkpoint",
     )
     amp_group = parser.add_mutually_exclusive_group()
-    amp_group.add_argument("--amp", dest="amp", action="store_true",
-                           help="Force enable AMP")
-    amp_group.add_argument("--no-amp", dest="amp", action="store_false",
-                           help="Force disable AMP (default on MPS/CPU)")
+    amp_group.add_argument("--amp", dest="amp", action="store_true", help="Force enable AMP")
+    amp_group.add_argument(
+        "--no-amp", dest="amp", action="store_false", help="Force disable AMP (default on MPS/CPU)"
+    )
     parser.set_defaults(amp=None)
     args = parser.parse_args()
 
@@ -108,6 +138,7 @@ def main():
     # Determine whether we are in DDP mode or single-process mode
     # ------------------------------------------------------------------
     import os
+
     use_ddp = "RANK" in os.environ
 
     if use_ddp:
@@ -138,7 +169,9 @@ def main():
     train_path = resolve_path(cfg["data"]["train_path"])
     val_path = resolve_path(cfg["data"]["val_path"])
     train_max_tokens = args.max_tokens or cfg["data"].get("max_tokens")
-    val_max_tokens = args.max_tokens or cfg["data"].get("max_tokens_val", cfg["data"].get("max_tokens"))
+    val_max_tokens = args.max_tokens or cfg["data"].get(
+        "max_tokens_val", cfg["data"].get("max_tokens")
+    )
 
     log(f"[init] world_size={world_size} rank={rank} local_rank={local_rank} device={device}")
     log(f"[init] tokenizer={tokenizer_path}")
@@ -158,10 +191,13 @@ def main():
     if world_size > 1:
         log("[data] building train dataloader")
         train_loader, train_sampler = build_distributed_dataloader(
-            str(train_path), tokenizer, tokenizer_fingerprint,
+            str(train_path),
+            tokenizer,
+            tokenizer_fingerprint,
             seq_len=cfg["train"]["seq_len"],
             batch_size=cfg["train"]["batch_size"],
-            rank=rank, world_size=world_size,
+            rank=rank,
+            world_size=world_size,
             shuffle=True,
             max_tokens=train_max_tokens,
             log_fn=log if is_main(rank) else None,
@@ -170,10 +206,13 @@ def main():
         )
         log("[data] building val dataloader")
         val_loader, _ = build_distributed_dataloader(
-            str(val_path), tokenizer, tokenizer_fingerprint,
+            str(val_path),
+            tokenizer,
+            tokenizer_fingerprint,
             seq_len=cfg["train"]["seq_len"],
             batch_size=cfg["train"]["batch_size"],
-            rank=rank, world_size=world_size,
+            rank=rank,
+            world_size=world_size,
             shuffle=False,
             max_tokens=val_max_tokens,
             log_fn=log if is_main(rank) else None,
@@ -184,7 +223,8 @@ def main():
         train_sampler = None
         log("[data] building train dataloader (tokenization can take a while)")
         train_loader = build_dataloader(
-            str(train_path), tokenizer,
+            str(train_path),
+            tokenizer,
             tokenizer_fingerprint=tokenizer_fingerprint,
             seq_len=cfg["train"]["seq_len"],
             batch_size=cfg["train"]["batch_size"],
@@ -196,7 +236,8 @@ def main():
         )
         log("[data] building val dataloader (tokenization can take a while)")
         val_loader = build_dataloader(
-            str(val_path), tokenizer,
+            str(val_path),
+            tokenizer,
             tokenizer_fingerprint=tokenizer_fingerprint,
             seq_len=cfg["train"]["seq_len"],
             batch_size=cfg["train"]["batch_size"],
@@ -216,7 +257,9 @@ def main():
         f"[init] train_dataset_size={len(train_loader.dataset)} windows, "
         f"tokens={train_loader.dataset.num_tokens}"
     )
-    log(f"[init] val_dataset_size={len(val_loader.dataset)} windows, tokens={val_loader.dataset.num_tokens}")
+    log(
+        f"[init] val_dataset_size={len(val_loader.dataset)} windows, tokens={val_loader.dataset.num_tokens}"
+    )
     if train_max_tokens:
         log(f"[init] train max_tokens cap: {train_max_tokens}")
     if val_max_tokens:
@@ -246,7 +289,9 @@ def main():
         model.load_state_dict(ckpt["model"], strict=True)
         log(f"[resume] loaded weights from {ckpt_path}")
     elif args.init_from:
-        init_source = load_model_source(model, resolve_path(args.init_from), map_location=device, strict=True)
+        init_source = load_model_source(
+            model, resolve_path(args.init_from), map_location=device, strict=True
+        )
         log(f"[init] loaded model weights from {init_source}")
 
     if world_size > 1:
@@ -284,7 +329,9 @@ def main():
     if world_size > 1 and not args.no_accum_scale:
         original_accum = grad_accum_steps
         grad_accum_steps = max(1, grad_accum_steps // world_size)
-        log(f"[init] auto-scaled grad_accum_steps: {original_accum} -> {grad_accum_steps} (world_size={world_size})")
+        log(
+            f"[init] auto-scaled grad_accum_steps: {original_accum} -> {grad_accum_steps} (world_size={world_size})"
+        )
 
     warmup = cfg["train"]["warmup_steps"]
     lr_min = cfg["train"].get("lr_min", 0.0)
@@ -417,12 +464,18 @@ def main():
                         if amp_device:
                             with amp_autocast(device_type=amp_device, dtype=torch.float16):
                                 out = model(vx, return_loss=False)
-                                logits = out if not isinstance(out, dict) else out.get("logits", out)
-                                val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
+                                logits = (
+                                    out if not isinstance(out, dict) else out.get("logits", out)
+                                )
+                                val_loss = F.cross_entropy(
+                                    logits.view(-1, logits.size(-1)), vy.view(-1)
+                                )
                         else:
                             out = model(vx, return_loss=False)
                             logits = out if not isinstance(out, dict) else out.get("logits", out)
-                            val_loss = F.cross_entropy(logits.view(-1, logits.size(-1)), vy.view(-1))
+                            val_loss = F.cross_entropy(
+                                logits.view(-1, logits.size(-1)), vy.view(-1)
+                            )
                         total_loss += val_loss.item()
                         count += 1
 
@@ -436,18 +489,27 @@ def main():
             if global_step % save_every == 0 and is_main(rank):
                 if has_min_free_space(checkpoint_dir, args.min_free_gb, log):
                     ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
-                    save_checkpoint(ckpt_path, raw_model.state_dict(), opt.state_dict(), global_step,
-                                    scaler.state_dict() if scaler else None)
+                    save_checkpoint(
+                        ckpt_path,
+                        raw_model.state_dict(),
+                        opt.state_dict(),
+                        global_step,
+                        scaler.state_dict() if scaler else None,
+                    )
                     log(f"Saved {ckpt_path}")
                     if args.s3_checkpoint_uri:
-                        sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
+                        sync_checkpoints_to_s3(
+                            checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log
+                        )
 
             if global_step >= max_steps:
                 break
 
     # --- Final checkpoint + eval (if not already on a save boundary) ---
     if global_step > 0 and global_step % save_every != 0:
-        log(f"[final] training ended at step {global_step} (not on save_every={save_every} boundary)")
+        log(
+            f"[final] training ended at step {global_step} (not on save_every={save_every} boundary)"
+        )
         model.eval()
         total_loss = 0.0
         count = 0
@@ -474,11 +536,18 @@ def main():
 
             if has_min_free_space(checkpoint_dir, args.min_free_gb, log):
                 ckpt_path = checkpoint_dir / f"ckpt_step_{global_step}.pt"
-                save_checkpoint(ckpt_path, raw_model.state_dict(), opt.state_dict(), global_step,
-                                scaler.state_dict() if scaler else None)
+                save_checkpoint(
+                    ckpt_path,
+                    raw_model.state_dict(),
+                    opt.state_dict(),
+                    global_step,
+                    scaler.state_dict() if scaler else None,
+                )
                 log(f"[final] Saved {ckpt_path}")
                 if args.s3_checkpoint_uri:
-                    sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log)
+                    sync_checkpoints_to_s3(
+                        checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log
+                    )
         model.train()
     elif global_step > 0:
         log(f"[final] training ended at step {global_step} (on save boundary, already saved)")

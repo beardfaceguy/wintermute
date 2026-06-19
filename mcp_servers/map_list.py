@@ -1,13 +1,15 @@
-from flask import Flask, request, jsonify
 import os
 import subprocess
+
+from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
 MAP_LIST_HOST = os.getenv("MAP_LIST_HOST", "0.0.0.0")
 MAP_LIST_PORT = int(os.getenv("MAP_LIST_PORT", "6011"))
 
-@app.route('/list', methods=['POST'])
+
+@app.route("/list", methods=["POST"])
 def list_directory():
     data = request.get_json()
     path = data.get("test")
@@ -25,6 +27,6 @@ def list_directory():
     except subprocess.CalledProcessError as e:
         return jsonify({"error": "ls failed", "details": e.output}), 500
 
-if __name__ == '__main__':
-    app.run(host=MAP_LIST_HOST, port=MAP_LIST_PORT)
 
+if __name__ == "__main__":
+    app.run(host=MAP_LIST_HOST, port=MAP_LIST_PORT)

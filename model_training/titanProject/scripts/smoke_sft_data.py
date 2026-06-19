@@ -23,7 +23,6 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
@@ -44,16 +43,21 @@ def _download_s3_head(uri: str, max_bytes: int, dest_dir: Path) -> Path:
         raise RuntimeError("aws CLI is required to fetch s3:// inputs")
     if not uri.startswith("s3://"):
         raise ValueError(f"not an s3 URI: {uri}")
-    without_scheme = uri[len("s3://"):]
+    without_scheme = uri[len("s3://") :]
     bucket, _, key = without_scheme.partition("/")
     if not bucket or not key:
         raise ValueError(f"malformed s3 URI: {uri}")
     dest = dest_dir / "sample.jsonl"
     cmd = [
-        "aws", "s3api", "get-object",
-        "--bucket", bucket,
-        "--key", key,
-        "--range", f"bytes=0-{max_bytes - 1}",
+        "aws",
+        "s3api",
+        "get-object",
+        "--bucket",
+        bucket,
+        "--key",
+        key,
+        "--range",
+        f"bytes=0-{max_bytes - 1}",
     ]
     profile = os.environ.get("AWS_PROFILE")
     if profile:
@@ -73,8 +77,10 @@ def _trim_to_complete_lines(path: Path, max_lines: int) -> Path:
     out = path.with_suffix(".trimmed.jsonl")
     kept = 0
     last_line: str | None = None
-    with path.open("r", encoding="utf-8", errors="replace") as src, \
-         out.open("w", encoding="utf-8") as dst:
+    with (
+        path.open("r", encoding="utf-8", errors="replace") as src,
+        out.open("w", encoding="utf-8") as dst,
+    ):
         for raw in src:
             if last_line is not None:
                 dst.write(last_line)
@@ -89,9 +95,7 @@ def _load_tokenizer(hf_model: str):
     try:
         from transformers import AutoTokenizer
     except ImportError as e:
-        raise RuntimeError(
-            "transformers is required for the smoke test"
-        ) from e
+        raise RuntimeError("transformers is required for the smoke test") from e
     tok = AutoTokenizer.from_pretrained(hf_model)
     if tok.pad_token_id is None and tok.eos_token_id is not None:
         tok.pad_token = tok.eos_token
@@ -126,8 +130,10 @@ def run_smoke(
     sample_path = data_path
     if max_lines is not None:
         sample_path = data_path.with_suffix(".smoke-head.jsonl")
-        with data_path.open("r", encoding="utf-8") as src, \
-             sample_path.open("w", encoding="utf-8") as dst:
+        with (
+            data_path.open("r", encoding="utf-8") as src,
+            sample_path.open("w", encoding="utf-8") as dst,
+        ):
             for i, raw in enumerate(src):
                 if i >= max_lines:
                     break
@@ -165,7 +171,7 @@ def run_smoke(
             for chunk in ln.split():
                 if chunk.startswith("total="):
                     try:
-                        total_seen = int(chunk[len("total="):].rstrip(",").replace(",", ""))
+                        total_seen = int(chunk[len("total=") :].rstrip(",").replace(",", ""))
                     except ValueError:
                         pass
         print(f"[smoke] {ln}")

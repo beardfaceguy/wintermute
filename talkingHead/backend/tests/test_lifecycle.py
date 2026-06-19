@@ -6,9 +6,7 @@ so nothing accumulates unboundedly at runtime.
 """
 
 import asyncio
-import os
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,7 +15,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.websocket.connection_manager import ConnectionManager
-
 
 # ---------------------------------------------------------------------------
 # ConnectionManager lifecycle
@@ -135,7 +132,6 @@ async def test_broadcast_removes_dead_connection():
 async def test_voice_temp_files_cleaned_on_success():
     """After a successful transcription, the .webm temp file is removed via os.remove."""
     fake_path = "/tmp/_test_voice_success.webm"
-    fake_wav = "/tmp/_test_voice_success.wav"
 
     mock_tmp_file = MagicMock()
     mock_tmp_file.name = fake_path
@@ -176,7 +172,7 @@ async def test_voice_webm_cleaned_when_write_fails():
 
     mock_tmp_file = MagicMock()
     mock_tmp_file.name = fake_path
-    mock_tmp_file.write = MagicMock(side_effect=IOError("disk full"))
+    mock_tmp_file.write = MagicMock(side_effect=OSError("disk full"))
     mock_tmp_file.flush = MagicMock()
 
     mock_ntf = MagicMock()
@@ -195,8 +191,9 @@ async def test_voice_webm_cleaned_when_write_fails():
 
         resp = await voice_input(file=mock_upload)
 
-    assert fake_path in [c.args[0] for c in mock_remove.call_args_list], \
+    assert fake_path in [c.args[0] for c in mock_remove.call_args_list], (
         f".webm leaked on write error; os.remove called with: {[c.args[0] for c in mock_remove.call_args_list]}"
+    )
     assert "error" in resp
 
 
@@ -222,12 +219,13 @@ async def test_voice_webm_cleaned_when_read_fails():
         from app.api.voice_chat import voice_input
 
         mock_upload = MagicMock()
-        mock_upload.read = AsyncMock(side_effect=IOError("connection reset"))
+        mock_upload.read = AsyncMock(side_effect=OSError("connection reset"))
 
         resp = await voice_input(file=mock_upload)
 
-    assert fake_path in [c.args[0] for c in mock_remove.call_args_list], \
+    assert fake_path in [c.args[0] for c in mock_remove.call_args_list], (
         f".webm leaked on read error; os.remove called with: {[c.args[0] for c in mock_remove.call_args_list]}"
+    )
     assert "error" in resp
 
 
@@ -304,8 +302,12 @@ async def test_voice_wav_file_cleaned_on_error():
         resp = await voice_input(file=mock_upload)
 
     remove_calls = [c.args[0] for c in mock_remove.call_args_list]
-    assert fake_wav in remove_calls, f".wav not cleaned up on error; os.remove called with: {remove_calls}"
-    assert fake_path in remove_calls, f".webm not cleaned up on error; os.remove called with: {remove_calls}"
+    assert fake_wav in remove_calls, (
+        f".wav not cleaned up on error; os.remove called with: {remove_calls}"
+    )
+    assert fake_path in remove_calls, (
+        f".webm not cleaned up on error; os.remove called with: {remove_calls}"
+    )
     assert "error" in resp or "STT failed" in str(resp)
 
 
@@ -361,7 +363,7 @@ async def test_async_session_closes_after_use():
     with patch("db.session_async.AsyncSessionLocal", mock_factory):
         from db.session_async import AsyncSessionLocal
 
-        async with AsyncSessionLocal() as session:
+        async with AsyncSessionLocal():
             pass
 
     mock_session.__aexit__.assert_awaited_once()
@@ -380,7 +382,7 @@ async def test_session_closes_on_exception():
         from db.session_async import AsyncSessionLocal
 
         with pytest.raises(ValueError):
-            async with AsyncSessionLocal() as session:
+            async with AsyncSessionLocal():
                 raise ValueError("intentional")
 
     mock_session.__aexit__.assert_awaited_once()

@@ -19,9 +19,7 @@ class TestWhisperModel:
         model = Model("fake_model_path")
         assert model is not None
 
-    def test_whisper_model_transcribe_success(
-        self, mock_whisper_model: MagicMock
-    ) -> None:
+    def test_whisper_model_transcribe_success(self, mock_whisper_model: MagicMock) -> None:
         """Test successful transcription."""
         from pywhispercpp.model import Model
 
@@ -37,9 +35,7 @@ class TestWhisperModel:
         # Verify transcribe was called
         mock_whisper_model.transcribe.assert_called_once_with("test_audio.wav")
 
-    def test_whisper_model_transcribe_empty_result(
-        self, mock_whisper_model: MagicMock
-    ) -> None:
+    def test_whisper_model_transcribe_empty_result(self, mock_whisper_model: MagicMock) -> None:
         """Test transcription with empty result."""
         mock_whisper_model.transcribe.return_value = []
 
@@ -101,9 +97,7 @@ class TestWhisperModel:
             assert len(result) == 1
             assert result[0].text == "Test transcription"
 
-    def test_whisper_model_segment_attributes(
-        self, mock_whisper_model: MagicMock
-    ) -> None:
+    def test_whisper_model_segment_attributes(self, mock_whisper_model: MagicMock) -> None:
         """Test that Whisper segments have expected attributes."""
         # Create a more detailed mock segment
         mock_segment = MagicMock()
@@ -122,9 +116,7 @@ class TestWhisperModel:
         # Note: Additional attributes like start, end, probability may exist
         # but are not guaranteed to be available on all Whisper segment objects
 
-    def test_whisper_model_different_audio_formats(
-        self, mock_whisper_model: MagicMock
-    ) -> None:
+    def test_whisper_model_different_audio_formats(self, mock_whisper_model: MagicMock) -> None:
         """Test Whisper model with different audio formats."""
         model = Model("fake_model_path")
 
@@ -156,13 +148,9 @@ class TestWhisperModel:
                 model = Model(model_path)
                 assert model is not None
 
-    def test_whisper_model_error_handling_invalid_file(
-        self, mock_whisper_model: MagicMock
-    ) -> None:
+    def test_whisper_model_error_handling_invalid_file(self, mock_whisper_model: MagicMock) -> None:
         """Test Whisper model error handling with invalid file."""
-        mock_whisper_model.transcribe.side_effect = FileNotFoundError(
-            "Audio file not found"
-        )
+        mock_whisper_model.transcribe.side_effect = FileNotFoundError("Audio file not found")
 
         model = Model("fake_model_path")
 

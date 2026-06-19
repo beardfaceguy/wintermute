@@ -7,7 +7,7 @@ sentence-transformers model is required.
 
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -16,7 +16,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 FAKE_UUID = uuid.UUID("12345678-1234-5678-1234-567812345678")
-FAKE_NOW = datetime(2026, 5, 1, 12, 0, 0, tzinfo=timezone.utc)
+FAKE_NOW = datetime(2026, 5, 1, 12, 0, 0, tzinfo=UTC)
 
 
 def _make_entry(**overrides):
@@ -108,7 +108,7 @@ class TestMemoryAdd:
             patch.object(_srv, "_ensure_tables"),
             patch.object(_srv, "MemoryEntry", return_value=mock_entry_instance) as MockEntry,
         ):
-            result = _srv.memory_add(text="learned something", tags={"role": "agent"}, zone="live")
+            _srv.memory_add(text="learned something", tags={"role": "agent"}, zone="live")
             MockEntry.assert_called_once()
             kw = MockEntry.call_args[1]
             assert kw["text"] == "learned something"

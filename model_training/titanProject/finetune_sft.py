@@ -30,20 +30,18 @@ import json
 import math
 import os
 import time
+from collections.abc import Callable, Sequence
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple
 
 import torch
 import torch.nn.functional as F
-import torch.distributed as dist
+from model import ModelConfig, build_model, load_model_source
 from torch.amp import GradScaler, autocast
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
-
-from model import ModelConfig, build_model, load_model_source
 from train_utils import (
     cleanup_distributed,
     cosine_lr,
@@ -63,7 +61,7 @@ from train_utils import (
 
 def cycle_batches(
     loader: DataLoader,
-    sampler: Optional[DistributedSampler] = None,
+    sampler: DistributedSampler | None = None,
 ):
     """Infinite iterator over a dataloader, calling set_epoch on each restart."""
     epoch = 0
@@ -91,7 +89,7 @@ def _render_instruction_prompt(instruction_text: str, input_text: str = "") -> s
     return prompt
 
 
-def _format_messages_as_chat(messages: list) -> Tuple[str, str]:
+def _format_messages_as_chat(messages: list) -> tuple[str, str]:
     """Convert a list of role/content message dicts into a (prompt, response) pair.
 
     Supports both HF messages format (role/content) and ShareGPT format
@@ -103,9 +101,7 @@ def _format_messages_as_chat(messages: list) -> Tuple[str, str]:
         if not isinstance(msg, dict):
             continue
         role = str(msg.get("role") or msg.get("from") or "").strip().lower()
-        content = str(
-            msg.get("content") or msg.get("value") or msg.get("text") or ""
-        ).strip()
+        content = str(msg.get("content") or msg.get("value") or msg.get("text") or "").strip()
         if role in ("user", "human", "prompter"):
             normalized.append(("user", content))
         elif role in ("assistant", "gpt", "bot", "chatbot"):
@@ -141,7 +137,7 @@ def _format_messages_as_chat(messages: list) -> Tuple[str, str]:
     return prompt_text, f" {response_text}"
 
 
-def _split_sft_sample(sample: str) -> Tuple[str, str]:
+def _split_sft_sample(sample: str) -> tuple[str, str]:
     """Parse one line of SFT data into (prompt, response).
 
     Supported formats (auto-detected):
@@ -180,9 +176,7 @@ def _split_sft_sample(sample: str) -> Tuple[str, str]:
         # --- Alpaca / instruction format ("output" accepted as alias) ---
         instruction_text = str(payload.get("instruction", "")).strip()
         input_text = str(payload.get("input", "")).strip()
-        response_text = str(
-            payload.get("response") or payload.get("output") or ""
-        ).strip()
+        response_text = str(payload.get("response") or payload.get("output") or "").strip()
         if not instruction_text or not response_text:
             raise ValueError(
                 "Instruction-format SFT sample must include instruction and response/output"
@@ -200,7 +194,7 @@ def _split_sft_sample(sample: str) -> Tuple[str, str]:
     return f"User: {user_text} Assistant:", f" {assistant_text}"
 
 
-def _get_boundary_tokens(tokenizer: Callable[[str], List[int]]) -> List[int]:
+def _get_boundary_tokens(tokenizer: Callable[[str], list[int]]) -> list[int]:
     eos_id = getattr(tokenizer, "eos_id", -1)
     if isinstance(eos_id, int) and eos_id >= 0:
         return [eos_id]
@@ -228,7 +222,9 @@ def _hf_tokenizer_to_adapter(hf_tokenizer):
     return TokenizerAdapter(
         encode_fn=lambda text: hf_tokenizer.encode(text, add_special_tokens=False),
         decode_fn=lambda ids: hf_tokenizer.decode(
-            ids, clean_up_tokenization_spaces=False, skip_special_tokens=True,
+            ids,
+            clean_up_tokenization_spaces=False,
+            skip_special_tokens=True,
         ),
         tokenizer_fingerprint=_hf_tokenizer_fingerprint(hf_tokenizer),
         tokenizer_source_path=hf_tokenizer.name_or_path,
@@ -241,7 +237,7 @@ def _tokenize_with_chat_template(
     hf_tokenizer,
     sample: str,
     seq_len: int,
-) -> Optional[Tuple[List[int], List[int]]]:
+) -> tuple[list[int], list[int]] | None:
     """Tokenize a sample using the model's native chat template.
 
     Returns (input_ids, labels) with proper masking: the user/system prompt
@@ -259,7 +255,7 @@ def _tokenize_with_chat_template(
 
     user_content = prompt_text
     if user_content.startswith("User:"):
-        user_content = user_content[len("User:"):].strip()
+        user_content = user_content[len("User:") :].strip()
     if user_content.endswith("Assistant:"):
         user_content = user_content[: -len("Assistant:")].strip()
 
@@ -300,7 +296,7 @@ class MaskedSFTDataset(Dataset):
     def __init__(
         self,
         path: str,
-        tokenizer: Callable[[str], List[int]],
+        tokenizer: Callable[[str], list[int]],
         seq_len: int,
         *,
         log_fn: Callable[[str], None],
@@ -308,8 +304,8 @@ class MaskedSFTDataset(Dataset):
         chat_template_tokenizer=None,
     ):
         self.seq_len = seq_len
-        self.input_ids: List[List[int]] = []
-        self.labels: List[List[int]] = []
+        self.input_ids: list[list[int]] = []
+        self.labels: list[list[int]] = []
 
         use_chat_tpl = chat_template_tokenizer is not None
         boundary_tokens = _get_boundary_tokens(tokenizer) if not use_chat_tpl else []
@@ -319,7 +315,7 @@ class MaskedSFTDataset(Dataset):
         skipped_no_answer_room = 0
         truncated = 0
 
-        with open(Path(path), "r", encoding="utf-8") as f:
+        with open(Path(path), encoding="utf-8") as f:
             for raw_line in f:
                 total += 1
                 sample = raw_line.strip()
@@ -328,7 +324,9 @@ class MaskedSFTDataset(Dataset):
 
                 if use_chat_tpl:
                     result = _tokenize_with_chat_template(
-                        chat_template_tokenizer, sample, seq_len,
+                        chat_template_tokenizer,
+                        sample,
+                        seq_len,
                     )
                     if result is None:
                         skipped_empty += 1
@@ -362,7 +360,9 @@ class MaskedSFTDataset(Dataset):
                     truncated += 1
                     if boundary_tokens and available_answer_tokens >= len(boundary_tokens):
                         answer_body_budget = available_answer_tokens - len(boundary_tokens)
-                        full_answer_tokens = answer_tokens[:answer_body_budget] + list(boundary_tokens)
+                        full_answer_tokens = answer_tokens[:answer_body_budget] + list(
+                            boundary_tokens
+                        )
                     else:
                         full_answer_tokens = full_answer_tokens[:available_answer_tokens]
 
@@ -396,7 +396,7 @@ class MaskedSFTDataset(Dataset):
     def __len__(self) -> int:
         return len(self.input_ids)
 
-    def __getitem__(self, idx: int) -> Tuple[List[int], List[int]]:
+    def __getitem__(self, idx: int) -> tuple[list[int], list[int]]:
         return self.input_ids[idx], self.labels[idx]
 
 
@@ -404,7 +404,9 @@ def _maybe_enable_hf_gradient_checkpointing(model, *, log_fn: Callable[[str], No
     """Enable HF gradient checkpointing to cut activation VRAM (needed for 7B full FT on 40GB)."""
     fn = getattr(model, "gradient_checkpointing_enable", None)
     if fn is None:
-        log_fn("[warn] gradient checkpointing requested but model has no gradient_checkpointing_enable()")
+        log_fn(
+            "[warn] gradient checkpointing requested but model has no gradient_checkpointing_enable()"
+        )
         return
     try:
         fn(gradient_checkpointing_kwargs={"use_reentrant": False})
@@ -415,7 +417,7 @@ def _maybe_enable_hf_gradient_checkpointing(model, *, log_fn: Callable[[str], No
 
 def build_sft_dataloader(
     path: str,
-    tokenizer: Callable[[str], List[int]],
+    tokenizer: Callable[[str], list[int]],
     *,
     seq_len: int,
     batch_size: int,
@@ -425,7 +427,7 @@ def build_sft_dataloader(
     rank: int = 0,
     world_size: int = 1,
     chat_template_tokenizer=None,
-) -> Tuple[DataLoader, Optional[DistributedSampler]]:
+) -> tuple[DataLoader, DistributedSampler | None]:
     dataset = MaskedSFTDataset(
         path,
         tokenizer,
@@ -440,7 +442,9 @@ def build_sft_dataloader(
     if not isinstance(pad_id, int) or pad_id < 0:
         pad_id = 0
 
-    def collate_fn(batch: Sequence[Tuple[List[int], List[int]]]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def collate_fn(
+        batch: Sequence[tuple[list[int], list[int]]],
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         max_len = max(len(x) for x, _ in batch)
         x_out = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
         y_out = torch.full((len(batch), max_len), -100, dtype=torch.long)
@@ -452,14 +456,22 @@ def build_sft_dataloader(
     if world_size > 1:
         sampler = DistributedSampler(dataset, num_replicas=world_size, rank=rank, shuffle=shuffle)
         loader = DataLoader(
-            dataset, batch_size=batch_size, sampler=sampler,
-            num_workers=0, drop_last=True, collate_fn=collate_fn,
+            dataset,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=0,
+            drop_last=True,
+            collate_fn=collate_fn,
         )
     else:
         sampler = None
         loader = DataLoader(
-            dataset, batch_size=batch_size, shuffle=shuffle,
-            num_workers=0, drop_last=shuffle, collate_fn=collate_fn,
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=0,
+            drop_last=shuffle,
+            collate_fn=collate_fn,
         )
     return loader, sampler
 
@@ -468,33 +480,55 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="SFT finetune loop (single & multi-GPU)")
     parser.add_argument("--config", type=str, default="configs/config_sft_pilot_oasst1_dolly.yaml")
     parser.add_argument(
-        "--ckpt", type=str, default=None,
+        "--ckpt",
+        type=str,
+        default=None,
         help="Titan checkpoint path or hf://gpt2 ref (mutually exclusive with --hf-model)",
     )
 
     # --- HuggingFace model arguments ---
     parser.add_argument(
-        "--hf-model", type=str, default=None,
+        "--hf-model",
+        type=str,
+        default=None,
         help="HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B). Mutually exclusive with --ckpt.",
     )
     lora_group = parser.add_mutually_exclusive_group()
-    lora_group.add_argument("--qlora", action="store_true",
-                            help="QLoRA: 4-bit quantized base + LoRA adapters (best for single GPU)")
-    lora_group.add_argument("--lora", action="store_true",
-                            help="LoRA: fp16 base + LoRA adapters")
-    lora_group.add_argument("--no-lora", action="store_true",
-                            help="Full fine-tuning of HF model (requires multi-GPU or large GPU)")
+    lora_group.add_argument(
+        "--qlora",
+        action="store_true",
+        help="QLoRA: 4-bit quantized base + LoRA adapters (best for single GPU)",
+    )
+    lora_group.add_argument("--lora", action="store_true", help="LoRA: fp16 base + LoRA adapters")
+    lora_group.add_argument(
+        "--no-lora",
+        action="store_true",
+        help="Full fine-tuning of HF model (requires multi-GPU or large GPU)",
+    )
     parser.add_argument("--lora-rank", type=int, default=16, help="LoRA rank (default 16)")
     parser.add_argument("--lora-alpha", type=int, default=32, help="LoRA alpha (default 32)")
-    parser.add_argument("--lora-dropout", type=float, default=0.05, help="LoRA dropout (default 0.05)")
-    parser.add_argument("--lora-targets", type=str, default=None,
-                        help="Comma-separated LoRA target modules (auto-detected if omitted)")
-    parser.add_argument("--chat-template", action="store_true",
-                        help="Use the HF model's native chat template for tokenization")
+    parser.add_argument(
+        "--lora-dropout", type=float, default=0.05, help="LoRA dropout (default 0.05)"
+    )
+    parser.add_argument(
+        "--lora-targets",
+        type=str,
+        default=None,
+        help="Comma-separated LoRA target modules (auto-detected if omitted)",
+    )
+    parser.add_argument(
+        "--chat-template",
+        action="store_true",
+        help="Use the HF model's native chat template for tokenization",
+    )
 
-    parser.add_argument("--device", type=str, default="auto",
-                        choices=["auto", "cpu", "mps", "cuda"],
-                        help="Device override (ignored under torchrun, which forces CUDA)")
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        choices=["auto", "cpu", "mps", "cuda"],
+        help="Device override (ignored under torchrun, which forces CUDA)",
+    )
     parser.add_argument("--steps", type=int, default=600)
     parser.add_argument("--log-every", type=int, default=20)
     parser.add_argument("--eval-every", type=int, default=100)
@@ -505,20 +539,25 @@ def main() -> int:
     parser.add_argument("--aws-bin", type=str, default="aws")
     parser.add_argument("--lr", type=float, default=None, help="Override LR from config")
     parser.add_argument(
-        "--grad-accum-steps", type=int, default=None,
+        "--grad-accum-steps",
+        type=int,
+        default=None,
         help="Override gradient accumulation steps (auto-scaled by world_size unless --no-accum-scale)",
     )
-    parser.add_argument("--no-accum-scale", action="store_true",
-                        help="Disable automatic grad_accum_steps scaling by world_size")
     parser.add_argument(
-        "--min-free-gb", type=float, default=20.0,
+        "--no-accum-scale",
+        action="store_true",
+        help="Disable automatic grad_accum_steps scaling by world_size",
+    )
+    parser.add_argument(
+        "--min-free-gb",
+        type=float,
+        default=20.0,
         help="Minimum free disk space (GiB) required to write a checkpoint",
     )
     amp_group = parser.add_mutually_exclusive_group()
-    amp_group.add_argument("--amp", dest="amp", action="store_true",
-                           help="Force enable AMP")
-    amp_group.add_argument("--no-amp", dest="amp", action="store_false",
-                           help="Force disable AMP")
+    amp_group.add_argument("--amp", dest="amp", action="store_true", help="Force enable AMP")
+    amp_group.add_argument("--no-amp", dest="amp", action="store_false", help="Force disable AMP")
     parser.set_defaults(amp=None)
     parser.add_argument(
         "--gradient-checkpointing",
@@ -598,6 +637,7 @@ def main() -> int:
 
     if hf_mode:
         from hf_utils import get_hf_tokenizer
+
         hf_tokenizer_obj = get_hf_tokenizer(args.hf_model)
         tokenizer = _hf_tokenizer_to_adapter(hf_tokenizer_obj)
         log(f"[init] HF tokenizer loaded from {args.hf_model}")
@@ -617,21 +657,27 @@ def main() -> int:
     log(f"[init] world_size={world_size} rank={rank} local_rank={local_rank} device={device}")
 
     train_loader, train_sampler = build_sft_dataloader(
-        str(train_path), tokenizer,
+        str(train_path),
+        tokenizer,
         seq_len=cfg["train"]["seq_len"],
         batch_size=cfg["train"]["batch_size"],
-        shuffle=True, log_fn=log if is_main(rank) else lambda m: None,
+        shuffle=True,
+        log_fn=log if is_main(rank) else lambda m: None,
         progress_label="train_sft",
-        rank=rank, world_size=world_size,
+        rank=rank,
+        world_size=world_size,
         chat_template_tokenizer=hf_tokenizer_obj if use_chat_tpl else None,
     )
     val_loader, _ = build_sft_dataloader(
-        str(val_path), tokenizer,
+        str(val_path),
+        tokenizer,
         seq_len=cfg["train"]["seq_len"],
         batch_size=cfg["train"]["batch_size"],
-        shuffle=False, log_fn=log if is_main(rank) else lambda m: None,
+        shuffle=False,
+        log_fn=log if is_main(rank) else lambda m: None,
         progress_label="val_sft",
-        rank=rank, world_size=world_size,
+        rank=rank,
+        world_size=world_size,
         chat_template_tokenizer=hf_tokenizer_obj if use_chat_tpl else None,
     )
     log(
@@ -649,7 +695,7 @@ def main() -> int:
     # Model + checkpoint
     # ------------------------------------------------------------------
     if hf_mode:
-        from hf_utils import load_hf_model, apply_lora, save_hf_checkpoint
+        from hf_utils import apply_lora, load_hf_model, save_hf_checkpoint
 
         hf_load_kwargs = {}
         quant_cfg = cfg.get("quantization", {})
@@ -657,7 +703,9 @@ def main() -> int:
 
         if use_qlora:
             hf_load_kwargs["load_in_4bit"] = True
-            hf_load_kwargs["bnb_4bit_compute_dtype"] = quant_cfg.get("bnb_4bit_compute_dtype", "float16")
+            hf_load_kwargs["bnb_4bit_compute_dtype"] = quant_cfg.get(
+                "bnb_4bit_compute_dtype", "float16"
+            )
             hf_load_kwargs["bnb_4bit_quant_type"] = quant_cfg.get("bnb_4bit_quant_type", "nf4")
             hf_load_kwargs["device_map"] = {"": local_rank} if use_ddp else "auto"
         else:
@@ -680,7 +728,9 @@ def main() -> int:
                 model,
                 rank=args.lora_rank if args.lora_rank != 16 else lora_cfg.get("rank", 16),
                 alpha=args.lora_alpha if args.lora_alpha != 32 else lora_cfg.get("alpha", 32),
-                dropout=args.lora_dropout if args.lora_dropout != 0.05 else lora_cfg.get("dropout", 0.05),
+                dropout=args.lora_dropout
+                if args.lora_dropout != 0.05
+                else lora_cfg.get("dropout", 0.05),
                 target_modules=lora_targets,
                 log_fn=log,
             )
@@ -744,13 +794,17 @@ def main() -> int:
     if world_size > 1 and not args.no_accum_scale:
         original_accum = grad_accum_steps
         grad_accum_steps = max(1, grad_accum_steps // world_size)
-        log(f"[init] auto-scaled grad_accum_steps: {original_accum} -> {grad_accum_steps} (world_size={world_size})")
+        log(
+            f"[init] auto-scaled grad_accum_steps: {original_accum} -> {grad_accum_steps} (world_size={world_size})"
+        )
 
     use_cosine = cfg["train"].get("cosine_decay", False)
     warmup = cfg["train"].get("warmup_steps", 0)
     lr_min = cfg["train"].get("lr_min", 0.0)
 
-    checkpoint_dir = resolve_checkpoint_dir(args.checkpoint_dir, Path(__file__).parent / "checkpoints_sft")
+    checkpoint_dir = resolve_checkpoint_dir(
+        args.checkpoint_dir, Path(__file__).parent / "checkpoints_sft"
+    )
 
     log(
         f"[init] device={device} amp={amp_enabled} "
@@ -789,7 +843,9 @@ def main() -> int:
                 with autocast(device_type=amp_device, dtype=autocast_dtype):
                     logits = _forward_logits(model, x, hf_mode)
                     raw_loss = F.cross_entropy(
-                        logits.view(-1, logits.size(-1)), y.view(-1), ignore_index=-100,
+                        logits.view(-1, logits.size(-1)),
+                        y.view(-1),
+                        ignore_index=-100,
                     )
                     loss = raw_loss / grad_accum_steps
                 if use_amp_scaler:
@@ -799,7 +855,9 @@ def main() -> int:
             else:
                 logits = _forward_logits(model, x, hf_mode)
                 raw_loss = F.cross_entropy(
-                    logits.view(-1, logits.size(-1)), y.view(-1), ignore_index=-100,
+                    logits.view(-1, logits.size(-1)),
+                    y.view(-1),
+                    ignore_index=-100,
                 )
                 loss = raw_loss / grad_accum_steps
                 loss.backward()
@@ -840,12 +898,16 @@ def main() -> int:
                         with autocast(device_type=amp_device, dtype=autocast_dtype):
                             vlogits = _forward_logits(model, bx, hf_mode)
                             vloss = F.cross_entropy(
-                                vlogits.view(-1, vlogits.size(-1)), by.view(-1), ignore_index=-100,
+                                vlogits.view(-1, vlogits.size(-1)),
+                                by.view(-1),
+                                ignore_index=-100,
                             )
                     else:
                         vlogits = _forward_logits(model, bx, hf_mode)
                         vloss = F.cross_entropy(
-                            vlogits.view(-1, vlogits.size(-1)), by.view(-1), ignore_index=-100,
+                            vlogits.view(-1, vlogits.size(-1)),
+                            by.view(-1),
+                            ignore_index=-100,
                         )
                     total_val += vloss.item()
                     count += 1
@@ -863,7 +925,8 @@ def main() -> int:
                 if hf_mode:
                     ckpt_out = checkpoint_dir / f"step_{global_step}"
                     save_hf_checkpoint(
-                        raw_model, ckpt_out,
+                        raw_model,
+                        ckpt_out,
                         tokenizer=hf_tokenizer_obj,
                         step=global_step,
                         is_lora=use_lora,
@@ -871,12 +934,22 @@ def main() -> int:
                     )
                 else:
                     ckpt_out = checkpoint_dir / f"ckpt_sft_step_{global_step}.pt"
-                    save_checkpoint(ckpt_out, raw_model.state_dict(), opt.state_dict(), global_step,
-                                    extra={"source_ckpt": str(ckpt_path)})
+                    save_checkpoint(
+                        ckpt_out,
+                        raw_model.state_dict(),
+                        opt.state_dict(),
+                        global_step,
+                        extra={"source_ckpt": str(ckpt_path)},
+                    )
                     log(f"[save] {ckpt_out}")
                 if args.s3_checkpoint_uri:
-                    sync_checkpoints_to_s3(checkpoint_dir, args.s3_checkpoint_uri, args.aws_bin, log,
-                                           glob_pattern="step_*" if hf_mode else "ckpt_sft_step_*.pt")
+                    sync_checkpoints_to_s3(
+                        checkpoint_dir,
+                        args.s3_checkpoint_uri,
+                        args.aws_bin,
+                        log,
+                        glob_pattern="step_*" if hf_mode else "ckpt_sft_step_*.pt",
+                    )
 
     log("[done] SFT finished")
     cleanup_distributed()

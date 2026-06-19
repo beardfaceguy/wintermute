@@ -8,19 +8,18 @@ to teach the model to emit the answer token(s).
 import argparse
 from pathlib import Path
 
+import sentencepiece as spm
 import torch
 import torch.nn.functional as F
-from torch.optim import AdamW
-from torch.utils.data import Dataset, DataLoader
 import yaml
-import sentencepiece as spm
-
 from model import ModelConfig, build_model
+from torch.optim import AdamW
+from torch.utils.data import DataLoader, Dataset
 from train_utils import resolve_path
 
 
 def load_config(path: Path):
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
@@ -34,7 +33,7 @@ def load_tokenizer(path: Path):
 class QADataset(Dataset):
     def __init__(self, texts, answers, tokenizer, seq_len: int):
         self.samples = []
-        for t, a in zip(texts, answers):
+        for t, a in zip(texts, answers, strict=False):
             full = f"{t} {a}"
             ids = tokenizer.encode(full)
             if len(ids) < 2:
@@ -43,8 +42,12 @@ class QADataset(Dataset):
                 ids = ids[:seq_len]
             input_ids = ids[:-1]
             target_ids = ids[1:]
-            self.samples.append((torch.tensor(input_ids, dtype=torch.long),
-                                 torch.tensor(target_ids, dtype=torch.long)))
+            self.samples.append(
+                (
+                    torch.tensor(input_ids, dtype=torch.long),
+                    torch.tensor(target_ids, dtype=torch.long),
+                )
+            )
 
     def __len__(self):
         return len(self.samples)
@@ -62,7 +65,9 @@ def main():
     parser.add_argument("--steps", type=int, default=300)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--batch-size", type=int, default=6)
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument("--save", type=str, default="ckpt_finetune_qa.pt")
     args = parser.parse_args()
 
@@ -124,5 +129,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

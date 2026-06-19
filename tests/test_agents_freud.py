@@ -7,12 +7,9 @@ Uses mock MemoryEntry objects with the required attributes.
 import math
 import sys
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -20,9 +17,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 # We temporarily inject mocks into sys.modules so agents/freud.py can be imported,
 # then immediately restore originals so other test files get the real modules.
 _mcp_keys = [
-    "mcp_memory", "mcp_memory.server",
-    "mcp_memory.app", "mcp_memory.app.db",
-    "mcp_memory.app.db.session", "mcp_memory.app.models",
+    "mcp_memory",
+    "mcp_memory.server",
+    "mcp_memory.app",
+    "mcp_memory.app.db",
+    "mcp_memory.app.db.session",
+    "mcp_memory.app.models",
     "mcp_memory.app.models.memory_entry",
 ]
 _saved = {}
@@ -35,6 +35,11 @@ for _k in _mcp_keys:
 
 import agents.freud as _freud_mod
 from agents.freud import (
+    AUTO_PROMOTE_TRUST_THRESHOLD,
+    DUPLICATE_SIMILARITY_THRESHOLD,
+    STALE_DAYS,
+    TRUST_BOOST_CLEAN,
+    TRUST_PENALTY_FLAGGED,
     AuditFinding,
     AuditReport,
     FreudAuditor,
@@ -46,11 +51,6 @@ from agents.freud import (
     check_near_duplicates,
     check_near_duplicates_ann,
     check_stale_entries,
-    DUPLICATE_SIMILARITY_THRESHOLD,
-    STALE_DAYS,
-    TRUST_BOOST_CLEAN,
-    TRUST_PENALTY_FLAGGED,
-    AUTO_PROMOTE_TRUST_THRESHOLD,
 )
 
 # Restore original sys.modules so other test files get the real mcp_memory modules.
@@ -68,6 +68,7 @@ del _saved, _mcp_keys, _mock_mcp_memory
 @dataclass
 class FakeMemoryEntry:
     """Lightweight stand-in for mcp_memory MemoryEntry ORM model."""
+
     id: str = "entry-001"
     text: str = "This is a normal memory entry with enough words."
     embedding: list[float] | None = None
@@ -130,7 +131,7 @@ def test_cosine_sim_known_angle():
 def test_cosine_sim_mismatched_lengths_returns_zero():
     """Vectors of different lengths should return 0.0, not silently truncate."""
     a = [1.0, 0.0, 1.0]  # 3D
-    b = [1.0, 0.0]        # 2D
+    b = [1.0, 0.0]  # 2D
     assert _cosine_sim(a, b) == 0.0
 
 
@@ -180,12 +181,14 @@ def test_audit_report_defaults():
 
 def test_audit_report_finding_counts():
     """finding_counts should group findings by check name."""
-    r = AuditReport(findings=[
-        AuditFinding("a", "low_quality", "warning", "short"),
-        AuditFinding("b", "low_quality", "warning", "short"),
-        AuditFinding("c", "stale", "info", "old"),
-        AuditFinding("d", "contradiction", "critical", "conflict"),
-    ])
+    r = AuditReport(
+        findings=[
+            AuditFinding("a", "low_quality", "warning", "short"),
+            AuditFinding("b", "low_quality", "warning", "short"),
+            AuditFinding("c", "stale", "info", "old"),
+            AuditFinding("d", "contradiction", "critical", "conflict"),
+        ]
+    )
     counts = r.finding_counts
     assert counts == {"low_quality": 2, "stale": 1, "contradiction": 1}
 
@@ -223,8 +226,11 @@ def test_audit_report_to_dict():
 def test_audit_report_to_dict_roundtrips_json():
     """to_dict() output should be JSON-serializable."""
     import json
+
     r = AuditReport(
-        started_at="t0", finished_at="t1", entries_scanned=5,
+        started_at="t0",
+        finished_at="t1",
+        entries_scanned=5,
         findings=[AuditFinding("a", "low_quality", "warning", "x")],
     )
     serialized = json.dumps(r.to_dict())
@@ -420,7 +426,7 @@ def test_check_contradictions_skips_none_embedding():
 
 def test_check_stale_entries_old_live_entry():
     """Live entries older than STALE_DAYS should be flagged."""
-    old_date = datetime.now(timezone.utc) - timedelta(days=STALE_DAYS + 1)
+    old_date = datetime.now(UTC) - timedelta(days=STALE_DAYS + 1)
     entry = _make_entry(id="old", zone="live", created_at=old_date)
     findings = check_stale_entries([entry])
     assert len(findings) == 1
@@ -430,7 +436,7 @@ def test_check_stale_entries_old_live_entry():
 
 def test_check_stale_entries_recent_live_entry():
     """Live entries younger than STALE_DAYS should not be flagged."""
-    recent = datetime.now(timezone.utc) - timedelta(days=1)
+    recent = datetime.now(UTC) - timedelta(days=1)
     entry = _make_entry(id="fresh", zone="live", created_at=recent)
     findings = check_stale_entries([entry])
     assert findings == []
@@ -438,7 +444,7 @@ def test_check_stale_entries_recent_live_entry():
 
 def test_check_stale_entries_exact_threshold():
     """Entry exactly at STALE_DAYS boundary should be flagged (>= threshold)."""
-    boundary = datetime.now(timezone.utc) - timedelta(days=STALE_DAYS)
+    boundary = datetime.now(UTC) - timedelta(days=STALE_DAYS)
     entry = _make_entry(id="boundary", zone="live", created_at=boundary)
     findings = check_stale_entries([entry])
     assert len(findings) == 1
@@ -446,7 +452,7 @@ def test_check_stale_entries_exact_threshold():
 
 def test_check_stale_entries_non_live_zone_ignored():
     """Entries not in the 'live' zone should never be flagged as stale."""
-    old_date = datetime.now(timezone.utc) - timedelta(days=STALE_DAYS + 100)
+    old_date = datetime.now(UTC) - timedelta(days=STALE_DAYS + 100)
     entry = _make_entry(id="cold", zone="cold", created_at=old_date)
     findings = check_stale_entries([entry])
     assert findings == []
@@ -461,7 +467,7 @@ def test_check_stale_entries_none_created_at_skipped():
 
 def test_check_stale_entries_naive_datetime_handled():
     """Naive datetime (no tzinfo) should be treated as UTC."""
-    old_naive = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=STALE_DAYS + 5)
+    old_naive = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=STALE_DAYS + 5)
     entry = _make_entry(id="naive", zone="live", created_at=old_naive)
     findings = check_stale_entries([entry])
     assert len(findings) == 1
@@ -507,9 +513,15 @@ def test_apply_flags_continues_past_failed_entry():
     auditor = FreudAuditor(dry_run=False)
     report = AuditReport(
         findings=[
-            AuditFinding(entry_id="aaa", check="low_quality", severity="warning", detail="too short"),
-            AuditFinding(entry_id="bbb", check="low_quality", severity="warning", detail="too short"),
-            AuditFinding(entry_id="ccc", check="low_quality", severity="warning", detail="too short"),
+            AuditFinding(
+                entry_id="aaa", check="low_quality", severity="warning", detail="too short"
+            ),
+            AuditFinding(
+                entry_id="bbb", check="low_quality", severity="warning", detail="too short"
+            ),
+            AuditFinding(
+                entry_id="ccc", check="low_quality", severity="warning", detail="too short"
+            ),
         ]
     )
 
@@ -585,17 +597,17 @@ def test_auto_promote_continues_past_failed_entry():
 
 
 def test_pair_owner_older_created_at_wins():
-    a = _make_entry(id="aaa", created_at=datetime(2025, 1, 1, tzinfo=timezone.utc))
+    a = _make_entry(id="aaa", created_at=datetime(2025, 1, 1, tzinfo=UTC))
     # neighbor newer → entry A owns the pair
-    assert _is_pair_owner(a, datetime(2025, 6, 1, tzinfo=timezone.utc), "bbb") is True
+    assert _is_pair_owner(a, datetime(2025, 6, 1, tzinfo=UTC), "bbb") is True
     # neighbor older → entry A does NOT own the pair
-    assert _is_pair_owner(a, datetime(2024, 1, 1, tzinfo=timezone.utc), "bbb") is False
+    assert _is_pair_owner(a, datetime(2024, 1, 1, tzinfo=UTC), "bbb") is False
 
 
 def test_pair_owner_tiebreak_by_id_when_created_at_equal():
-    same = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    same = datetime(2025, 1, 1, tzinfo=UTC)
     a = _make_entry(id="aaa", created_at=same)
-    assert _is_pair_owner(a, same, "bbb") is True   # "aaa" < "bbb"
+    assert _is_pair_owner(a, same, "bbb") is True  # "aaa" < "bbb"
     assert _is_pair_owner(a, same, "000") is False  # "aaa" > "000"
 
 
@@ -633,17 +645,35 @@ class _MockColumn:
     def __init__(self, name: str) -> None:
         self.name = name
 
-    def __eq__(self, other): return MagicMock(name=f"{self.name}==")
-    def __ne__(self, other): return MagicMock(name=f"{self.name}!=")
-    def __gt__(self, other): return MagicMock(name=f"{self.name}>")
-    def __ge__(self, other): return MagicMock(name=f"{self.name}>=")
-    def __lt__(self, other): return MagicMock(name=f"{self.name}<")
-    def __le__(self, other): return MagicMock(name=f"{self.name}<=")
-    def __hash__(self): return id(self)
+    def __eq__(self, other):
+        return MagicMock(name=f"{self.name}==")
 
-    def isnot(self, _other): return MagicMock(name=f"{self.name}.isnot")
-    def asc(self): return MagicMock(name=f"{self.name}.asc")
-    def desc(self): return MagicMock(name=f"{self.name}.desc")
+    def __ne__(self, other):
+        return MagicMock(name=f"{self.name}!=")
+
+    def __gt__(self, other):
+        return MagicMock(name=f"{self.name}>")
+
+    def __ge__(self, other):
+        return MagicMock(name=f"{self.name}>=")
+
+    def __lt__(self, other):
+        return MagicMock(name=f"{self.name}<")
+
+    def __le__(self, other):
+        return MagicMock(name=f"{self.name}<=")
+
+    def __hash__(self):
+        return id(self)
+
+    def isnot(self, _other):
+        return MagicMock(name=f"{self.name}.isnot")
+
+    def asc(self):
+        return MagicMock(name=f"{self.name}.asc")
+
+    def desc(self):
+        return MagicMock(name=f"{self.name}.desc")
 
     def cosine_distance(self, _vec):
         return _MockExpr(f"{self.name}.cosine_distance")
@@ -662,17 +692,31 @@ class _MockExpr:
     def label(self, _alias: str) -> "_MockExpr":
         return self
 
-    def __le__(self, _other): return MagicMock(name=f"{self.name}<=")
-    def __ge__(self, _other): return MagicMock(name=f"{self.name}>=")
-    def __lt__(self, _other): return MagicMock(name=f"{self.name}<")
-    def __gt__(self, _other): return MagicMock(name=f"{self.name}>")
-    def __eq__(self, _other): return MagicMock(name=f"{self.name}==")
-    def __ne__(self, _other): return MagicMock(name=f"{self.name}!=")
-    def __hash__(self): return id(self)
+    def __le__(self, _other):
+        return MagicMock(name=f"{self.name}<=")
+
+    def __ge__(self, _other):
+        return MagicMock(name=f"{self.name}>=")
+
+    def __lt__(self, _other):
+        return MagicMock(name=f"{self.name}<")
+
+    def __gt__(self, _other):
+        return MagicMock(name=f"{self.name}>")
+
+    def __eq__(self, _other):
+        return MagicMock(name=f"{self.name}==")
+
+    def __ne__(self, _other):
+        return MagicMock(name=f"{self.name}!=")
+
+    def __hash__(self):
+        return id(self)
 
 
 class _MockEntry:
     """Stand-in for the MemoryEntry ORM class used during streaming/ANN tests."""
+
     id = _MockColumn("id")
     text = _MockColumn("text")
     embedding = _MockColumn("embedding")
@@ -712,14 +756,16 @@ def test_check_near_duplicates_ann_returns_no_findings_when_no_embedding():
 def test_check_near_duplicates_ann_emits_finding_when_owner_of_pair():
     """Entry with older created_at owns the pair → finding is emitted."""
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        # neighbor row: (id, text, created_at, distance)
-        ("nbr-1", "duplicate text", datetime(2025, 6, 1, tzinfo=timezone.utc), 0.05),
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            # neighbor row: (id, text, created_at, distance)
+            ("nbr-1", "duplicate text", datetime(2025, 6, 1, tzinfo=UTC), 0.05),
+        ]
+    )
     entry = _make_entry(
         id="aaa",
         embedding=[0.1, 0.2, 0.3],
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
@@ -735,13 +781,15 @@ def test_check_near_duplicates_ann_emits_finding_when_owner_of_pair():
 def test_check_near_duplicates_ann_skips_when_neighbor_is_older():
     """When the neighbor is older, ownership belongs to the neighbor → no finding."""
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        ("nbr-1", "older dup", datetime(2024, 6, 1, tzinfo=timezone.utc), 0.05),
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            ("nbr-1", "older dup", datetime(2024, 6, 1, tzinfo=UTC), 0.05),
+        ]
+    )
     entry = _make_entry(
         id="aaa",
         embedding=[0.1, 0.2, 0.3],
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
@@ -778,14 +826,16 @@ def test_check_contradictions_ann_no_embedding_returns_empty():
 
 def test_check_contradictions_ann_emits_finding_on_negation_mismatch():
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        ("nbr-1", "The system is not working", datetime(2025, 6, 1, tzinfo=timezone.utc), 0.25),
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            ("nbr-1", "The system is not working", datetime(2025, 6, 1, tzinfo=UTC), 0.25),
+        ]
+    )
     entry = _make_entry(
         id="aaa",
         text="The system is working correctly",
         embedding=[1.0, 0.0],
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
@@ -798,14 +848,16 @@ def test_check_contradictions_ann_emits_finding_on_negation_mismatch():
 
 def test_check_contradictions_ann_no_finding_when_both_have_negation():
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        ("nbr-1", "It does not work either", datetime(2025, 6, 1, tzinfo=timezone.utc), 0.25),
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            ("nbr-1", "It does not work either", datetime(2025, 6, 1, tzinfo=UTC), 0.25),
+        ]
+    )
     entry = _make_entry(
         id="aaa",
         text="The system never works",
         embedding=[1.0, 0.0],
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
@@ -816,14 +868,16 @@ def test_check_contradictions_ann_no_finding_when_both_have_negation():
 def test_check_contradictions_ann_applies_pair_ownership():
     """Older entry owns the pair, but here entry is younger → no finding."""
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        ("nbr-1", "It does not work", datetime(2024, 6, 1, tzinfo=timezone.utc), 0.25),
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            ("nbr-1", "It does not work", datetime(2024, 6, 1, tzinfo=UTC), 0.25),
+        ]
+    )
     entry = _make_entry(
         id="aaa",
         text="The system works",
         embedding=[1.0, 0.0],
-        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+        created_at=datetime(2025, 1, 1, tzinfo=UTC),
     )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
@@ -840,15 +894,15 @@ def test_iter_batches_walks_all_pages():
 
     # Two full pages, then a half page → stop.
     page1 = [
-        _make_entry(id="e1", created_at=datetime(2025, 1, 1, tzinfo=timezone.utc)),
-        _make_entry(id="e2", created_at=datetime(2025, 1, 2, tzinfo=timezone.utc)),
+        _make_entry(id="e1", created_at=datetime(2025, 1, 1, tzinfo=UTC)),
+        _make_entry(id="e2", created_at=datetime(2025, 1, 2, tzinfo=UTC)),
     ]
     page2 = [
-        _make_entry(id="e3", created_at=datetime(2025, 1, 3, tzinfo=timezone.utc)),
-        _make_entry(id="e4", created_at=datetime(2025, 1, 4, tzinfo=timezone.utc)),
+        _make_entry(id="e3", created_at=datetime(2025, 1, 3, tzinfo=UTC)),
+        _make_entry(id="e4", created_at=datetime(2025, 1, 4, tzinfo=UTC)),
     ]
     page3 = [
-        _make_entry(id="e5", created_at=datetime(2025, 1, 5, tzinfo=timezone.utc)),
+        _make_entry(id="e5", created_at=datetime(2025, 1, 5, tzinfo=UTC)),
     ]
     pages = [page1, page2, page3]
 
@@ -869,10 +923,12 @@ def test_iter_batches_respects_max_entries_cap():
     """When max_entries < total, iteration stops early and trims the final batch."""
     auditor = FreudAuditor(zone="live", batch_size=10, max_entries=3)
     db = MagicMock()
-    db.query.return_value = _mock_query_chain([
-        _make_entry(id=f"e{i}", created_at=datetime(2025, 1, i + 1, tzinfo=timezone.utc))
-        for i in range(10)
-    ])
+    db.query.return_value = _mock_query_chain(
+        [
+            _make_entry(id=f"e{i}", created_at=datetime(2025, 1, i + 1, tzinfo=UTC))
+            for i in range(10)
+        ]
+    )
     with ExitStack() as stack:
         _enter_all(stack, _patch_sqla())
         batches = list(auditor._iter_batches(db))
@@ -895,7 +951,7 @@ def test_iter_batches_stops_on_empty_first_page():
 
 def _fresh(now=None):
     """A created_at recent enough to never trip the staleness check."""
-    return now or datetime.now(timezone.utc)
+    return now or datetime.now(UTC)
 
 
 def test_run_streams_entries_and_calibrates_trust():
@@ -905,13 +961,19 @@ def test_run_streams_entries_and_calibrates_trust():
     # Two clean entries → no findings → trust gets boosted.
     entries = [
         _make_entry(
-            id="aaa", text="A perfectly normal entry with enough length.",
-            embedding=[0.1, 0.2], trust_score=0.5, zone="live",
+            id="aaa",
+            text="A perfectly normal entry with enough length.",
+            embedding=[0.1, 0.2],
+            trust_score=0.5,
+            zone="live",
             created_at=_fresh(),
         ),
         _make_entry(
-            id="bbb", text="Another perfectly normal entry that is long enough.",
-            embedding=[0.3, 0.4], trust_score=0.5, zone="live",
+            id="bbb",
+            text="Another perfectly normal entry that is long enough.",
+            embedding=[0.3, 0.4],
+            trust_score=0.5,
+            zone="live",
             created_at=_fresh(),
         ),
     ]
@@ -929,16 +991,21 @@ def test_run_streams_entries_and_calibrates_trust():
     ]
 
     with ExitStack() as stack:
-        _enter_all(stack, _patch_sqla(
-            patch.object(_freud_mod, "_ensure_tables"),
-            patch.object(_freud_mod, "SessionLocal", return_value=db),
-            patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
-            patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
-            patch.object(_freud_mod, "memory_flag"),
-            patch.object(
-                _freud_mod, "memory_update_trust", side_effect=fake_update_trust,
+        _enter_all(
+            stack,
+            _patch_sqla(
+                patch.object(_freud_mod, "_ensure_tables"),
+                patch.object(_freud_mod, "SessionLocal", return_value=db),
+                patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
+                patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
+                patch.object(_freud_mod, "memory_flag"),
+                patch.object(
+                    _freud_mod,
+                    "memory_update_trust",
+                    side_effect=fake_update_trust,
+                ),
             ),
-        ))
+        )
         report = auditor.run()
         mock_flag = _freud_mod.memory_flag
 
@@ -959,8 +1026,11 @@ def test_run_dry_run_does_not_take_actions():
 
     entries = [
         _make_entry(
-            id="bad", text="hi",  # too short → low_quality finding
-            embedding=[0.1, 0.2], trust_score=0.5, zone="live",
+            id="bad",
+            text="hi",  # too short → low_quality finding
+            embedding=[0.1, 0.2],
+            trust_score=0.5,
+            zone="live",
             created_at=_fresh(),
         ),
     ]
@@ -969,15 +1039,18 @@ def test_run_dry_run_does_not_take_actions():
     db.query.side_effect = [_mock_query_chain(entries), _mock_query_chain([])]
 
     with ExitStack() as stack:
-        _enter_all(stack, _patch_sqla(
-            patch.object(_freud_mod, "_ensure_tables"),
-            patch.object(_freud_mod, "SessionLocal", return_value=db),
-            patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
-            patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
-            patch.object(_freud_mod, "memory_flag"),
-            patch.object(_freud_mod, "memory_update_trust"),
-            patch.object(_freud_mod, "memory_promote"),
-        ))
+        _enter_all(
+            stack,
+            _patch_sqla(
+                patch.object(_freud_mod, "_ensure_tables"),
+                patch.object(_freud_mod, "SessionLocal", return_value=db),
+                patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
+                patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
+                patch.object(_freud_mod, "memory_flag"),
+                patch.object(_freud_mod, "memory_update_trust"),
+                patch.object(_freud_mod, "memory_promote"),
+            ),
+        )
         report = auditor.run()
         mock_flag = _freud_mod.memory_flag
         mock_trust = _freud_mod.memory_update_trust
@@ -997,8 +1070,11 @@ def test_run_flags_entry_with_warning_finding_and_penalizes_trust():
 
     entries = [
         _make_entry(
-            id="bad", text="hi",  # triggers low_quality
-            embedding=[0.1, 0.2], trust_score=0.6, zone="live",
+            id="bad",
+            text="hi",  # triggers low_quality
+            embedding=[0.1, 0.2],
+            trust_score=0.6,
+            zone="live",
             created_at=_fresh(),
         ),
     ]
@@ -1007,16 +1083,21 @@ def test_run_flags_entry_with_warning_finding_and_penalizes_trust():
     db.query.side_effect = [_mock_query_chain(entries), _mock_query_chain([])]
 
     with ExitStack() as stack:
-        _enter_all(stack, _patch_sqla(
-            patch.object(_freud_mod, "_ensure_tables"),
-            patch.object(_freud_mod, "SessionLocal", return_value=db),
-            patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
-            patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
-            patch.object(_freud_mod, "memory_flag", return_value={"status": "flagged"}),
-            patch.object(
-                _freud_mod, "memory_update_trust", return_value={"status": "updated"},
+        _enter_all(
+            stack,
+            _patch_sqla(
+                patch.object(_freud_mod, "_ensure_tables"),
+                patch.object(_freud_mod, "SessionLocal", return_value=db),
+                patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
+                patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
+                patch.object(_freud_mod, "memory_flag", return_value={"status": "flagged"}),
+                patch.object(
+                    _freud_mod,
+                    "memory_update_trust",
+                    return_value={"status": "updated"},
+                ),
             ),
-        ))
+        )
         report = auditor.run()
         mock_flag = _freud_mod.memory_flag
         mock_trust = _freud_mod.memory_update_trust
@@ -1032,7 +1113,10 @@ def test_run_flags_entry_with_warning_finding_and_penalizes_trust():
 
 def test_run_promotes_clean_high_trust_entries_when_promote_ready():
     auditor = FreudAuditor(
-        dry_run=False, zone="live", promote_ready=True, batch_size=5,
+        dry_run=False,
+        zone="live",
+        promote_ready=True,
+        batch_size=5,
     )
     entries = [
         _make_entry(
@@ -1049,15 +1133,18 @@ def test_run_promotes_clean_high_trust_entries_when_promote_ready():
     db.query.side_effect = [_mock_query_chain(entries), _mock_query_chain([])]
 
     with ExitStack() as stack:
-        _enter_all(stack, _patch_sqla(
-            patch.object(_freud_mod, "_ensure_tables"),
-            patch.object(_freud_mod, "SessionLocal", return_value=db),
-            patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
-            patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
-            patch.object(_freud_mod, "memory_flag"),
-            patch.object(_freud_mod, "memory_update_trust", return_value={"status": "updated"}),
-            patch.object(_freud_mod, "memory_promote", return_value={"status": "promoted"}),
-        ))
+        _enter_all(
+            stack,
+            _patch_sqla(
+                patch.object(_freud_mod, "_ensure_tables"),
+                patch.object(_freud_mod, "SessionLocal", return_value=db),
+                patch.object(_freud_mod, "check_near_duplicates_ann", return_value=[]),
+                patch.object(_freud_mod, "check_contradictions_ann", return_value=[]),
+                patch.object(_freud_mod, "memory_flag"),
+                patch.object(_freud_mod, "memory_update_trust", return_value={"status": "updated"}),
+                patch.object(_freud_mod, "memory_promote", return_value={"status": "promoted"}),
+            ),
+        )
         report = auditor.run()
         mock_flag = _freud_mod.memory_flag
         mock_promote = _freud_mod.memory_promote

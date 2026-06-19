@@ -36,15 +36,13 @@ class TestDatabaseOperations:
         added_message = mock_session.add.call_args[0][0]
         assert isinstance(added_message, Message)
         # Access attributes through getattr to avoid SQLAlchemy boolean issues
-        assert getattr(added_message, "session_id") == session_id
-        assert getattr(added_message, "role") == role
-        assert getattr(added_message, "content") == content
+        assert added_message.session_id == session_id
+        assert added_message.role == role
+        assert added_message.content == content
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_store_message_with_optional_fields(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_store_message_with_optional_fields(self, mock_session_local: MagicMock) -> None:
         """Test message storage with optional fields."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -64,14 +62,12 @@ class TestDatabaseOperations:
         )
 
         added_message = mock_session.add.call_args[0][0]
-        assert getattr(added_message, "embedding") == embedding
-        assert getattr(added_message, "token_count") == token_count
+        assert added_message.embedding == embedding
+        assert added_message.token_count == token_count
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_store_message_exception_handling(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_store_message_exception_handling(self, mock_session_local: MagicMock) -> None:
         """Test message storage exception handling."""
         mock_session = AsyncMock()
         mock_session.commit.side_effect = Exception("Database error")
@@ -81,26 +77,20 @@ class TestDatabaseOperations:
             mock_store.side_effect = Exception("Database error")
 
             with pytest.raises(Exception, match="Database error"):
-                await store_message(
-                    session_id="test-session", role="user", content="test message"
-                )
+                await store_message(session_id="test-session", role="user", content="test message")
 
         mock_session.rollback.assert_called_once()
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_get_recent_messages_success(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_get_recent_messages_success(self, mock_session_local: MagicMock) -> None:
         """Test successful message retrieval."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
 
         # Create mock messages in DB order (newest first, matching ORDER BY timestamp DESC)
         mock_messages = [
-            Message(
-                session_id="test-session", role="assistant", content="Hi there!", id=2
-            ),
+            Message(session_id="test-session", role="assistant", content="Hi there!", id=2),
             Message(session_id="test-session", role="user", content="Hello", id=1),
         ]
 
@@ -114,17 +104,15 @@ class TestDatabaseOperations:
 
         # Verify result
         assert len(result) == 2
-        assert getattr(result[0], "content") == "Hello"
-        assert getattr(result[1], "content") == "Hi there!"
+        assert result[0].content == "Hello"
+        assert result[1].content == "Hi there!"
 
         # Verify query was executed
         mock_session.execute.assert_called_once()
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_get_recent_messages_empty_result(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_get_recent_messages_empty_result(self, mock_session_local: MagicMock) -> None:
         """Test message retrieval with empty result."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -141,9 +129,7 @@ class TestDatabaseOperations:
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_get_recent_messages_with_limit(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_get_recent_messages_with_limit(self, mock_session_local: MagicMock) -> None:
         """Test message retrieval with custom limit."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -160,9 +146,7 @@ class TestDatabaseOperations:
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_get_recent_messages_reversed_order(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_get_recent_messages_reversed_order(self, mock_session_local: MagicMock) -> None:
         """Test that messages are returned in correct order (reversed from DB order)."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -175,12 +159,8 @@ class TestDatabaseOperations:
                 content="Latest message",
                 id=3,
             ),
-            Message(
-                session_id="test-session", role="user", content="Earlier message", id=2
-            ),
-            Message(
-                session_id="test-session", role="user", content="Oldest message", id=1
-            ),
+            Message(session_id="test-session", role="user", content="Earlier message", id=2),
+            Message(session_id="test-session", role="user", content="Oldest message", id=1),
         ]
 
         mock_result = MagicMock()
@@ -191,9 +171,9 @@ class TestDatabaseOperations:
 
         # Should be reversed to chronological order
         assert len(result) == 3
-        assert getattr(result[0], "content") == "Oldest message"
-        assert getattr(result[1], "content") == "Earlier message"
-        assert getattr(result[2], "content") == "Latest message"
+        assert result[0].content == "Oldest message"
+        assert result[1].content == "Earlier message"
+        assert result[2].content == "Latest message"
 
 
 class TestRetention:
@@ -256,9 +236,7 @@ class TestRetention:
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_prune_no_op_when_under_cap(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_prune_no_op_when_under_cap(self, mock_session_local: MagicMock) -> None:
         """If session has <= max_messages, no delete is issued."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -276,9 +254,7 @@ class TestRetention:
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_prune_deletes_excess_when_over_cap(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_prune_deletes_excess_when_over_cap(self, mock_session_local: MagicMock) -> None:
         """If session has > max_messages, the oldest rows are deleted."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session
@@ -301,9 +277,7 @@ class TestRetention:
 
     @patch("db.db_ops.AsyncSessionLocal")
     @pytest.mark.asyncio
-    async def test_prune_rolls_back_on_error(
-        self, mock_session_local: MagicMock
-    ) -> None:
+    async def test_prune_rolls_back_on_error(self, mock_session_local: MagicMock) -> None:
         """Errors during pruning trigger rollback and propagate."""
         mock_session = AsyncMock()
         mock_session_local.return_value.__aenter__.return_value = mock_session

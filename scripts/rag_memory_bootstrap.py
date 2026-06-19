@@ -37,7 +37,7 @@ from shared.vllm_llm import VLLM
 CONFIG_PATH = "config/shared_api_config.json"
 config: dict[str, Any] = {}
 if os.path.exists(CONFIG_PATH):
-    with open(CONFIG_PATH, "r") as f:
+    with open(CONFIG_PATH) as f:
         config = json.load(f)
 else:
     print(f"Config file {CONFIG_PATH} not found. Proceeding with default settings.")
@@ -76,7 +76,7 @@ def is_index_valid() -> bool:
         return False
     if os.path.isfile(meta_path):
         try:
-            with open(meta_path, "r") as f:
+            with open(meta_path) as f:
                 meta = json.load(f)
             if meta.get("embedding_model") != embed_model_name:
                 return False
@@ -120,23 +120,17 @@ def init_index() -> None:
         reader = SimpleDirectoryReader(docs_path)  # type: ignore
         docs = reader.load_data()
     elif os.path.isfile(docs_path):
-        with open(docs_path, "r", encoding="utf-8", errors="ignore") as f:
+        with open(docs_path, encoding="utf-8", errors="ignore") as f:
             text = f.read()
         docs = [Document(text)]  # type: ignore
     else:
-        print(
-            f"Warning: No valid document source found at '{docs_path}'. The index will be empty."
-        )
+        print(f"Warning: No valid document source found at '{docs_path}'. The index will be empty.")
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     if docs:
-        _index = VectorStoreIndex.from_documents(
-            docs, storage_context=storage_context, llm=llm
-        )
+        _index = VectorStoreIndex.from_documents(docs, storage_context=storage_context, llm=llm)
     else:
-        _index = VectorStoreIndex.from_documents(
-            [], storage_context=storage_context, llm=llm
-        )
+        _index = VectorStoreIndex.from_documents([], storage_context=storage_context, llm=llm)
     storage_context.save(persist_dir=persist_base_dir)  # type: ignore
     meta = {"embedding_model": embed_model_name}
     os.makedirs(persist_base_dir, exist_ok=True)

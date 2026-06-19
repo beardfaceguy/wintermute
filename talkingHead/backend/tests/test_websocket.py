@@ -17,6 +17,7 @@ class TestConnectionManager:
     def _fresh_manager(self):
         """Reset the singleton manager's connection list before each test."""
         from app.websocket.connection_manager import manager
+
         manager.active_connections.clear()
         yield
         manager.active_connections.clear()
@@ -75,7 +76,9 @@ class TestChatWebSocket:
 
     @pytest.mark.asyncio
     @patch("app.websocket.chat_ws.store_conversation", new_callable=AsyncMock)
-    @patch("app.websocket.chat_ws.search_relevant_memories", new_callable=AsyncMock, return_value=[])
+    @patch(
+        "app.websocket.chat_ws.search_relevant_memories", new_callable=AsyncMock, return_value=[]
+    )
     @patch("app.websocket.chat_ws.store_message", new_callable=AsyncMock)
     @patch("app.websocket.chat_ws.get_recent_messages", new_callable=AsyncMock, return_value=[])
     @patch("app.websocket.chat_ws.chat_processor")
@@ -92,9 +95,7 @@ class TestChatWebSocket:
         """Test successful chat message processing."""
         from app.websocket.chat_ws import chat_endpoint
 
-        mock_chat_processor.stream_response = AsyncMock(
-            return_value="Assistant response"
-        )
+        mock_chat_processor.stream_response = AsyncMock(return_value="Assistant response")
         mock_websocket.receive_text = AsyncMock(
             side_effect=[json.dumps(sample_message_data), WebSocketDisconnect()]
         )
@@ -130,9 +131,7 @@ class TestChatWebSocket:
         """Test chat endpoint with invalid JSON."""
         from app.websocket.chat_ws import chat_endpoint
 
-        mock_websocket.receive_text = AsyncMock(
-            side_effect=["invalid json", WebSocketDisconnect()]
-        )
+        mock_websocket.receive_text = AsyncMock(side_effect=["invalid json", WebSocketDisconnect()])
 
         with patch("app.websocket.chat_ws.manager") as mock_manager:
             mock_manager.connect = AsyncMock()
@@ -143,15 +142,11 @@ class TestChatWebSocket:
             mock_websocket.send_text.assert_called_with("Error: Invalid JSON format")
 
     @pytest.mark.asyncio
-    async def test_chat_endpoint_exception_handling(
-        self, mock_websocket: MagicMock
-    ) -> None:
+    async def test_chat_endpoint_exception_handling(self, mock_websocket: MagicMock) -> None:
         """Test chat endpoint exception handling."""
         from app.websocket.chat_ws import chat_endpoint
 
-        mock_websocket.receive_text = AsyncMock(
-            side_effect=Exception("Test exception")
-        )
+        mock_websocket.receive_text = AsyncMock(side_effect=Exception("Test exception"))
 
         with patch("app.websocket.chat_ws.manager") as mock_manager:
             mock_manager.connect = AsyncMock()
@@ -162,15 +157,11 @@ class TestChatWebSocket:
             mock_websocket.send_text.assert_called_with("Error: Test exception")
 
     @pytest.mark.asyncio
-    async def test_chat_endpoint_websocket_disconnect(
-        self, mock_websocket: MagicMock
-    ) -> None:
+    async def test_chat_endpoint_websocket_disconnect(self, mock_websocket: MagicMock) -> None:
         """Test WebSocket disconnect handling."""
         from app.websocket.chat_ws import chat_endpoint
 
-        mock_websocket.receive_text = AsyncMock(
-            side_effect=WebSocketDisconnect()
-        )
+        mock_websocket.receive_text = AsyncMock(side_effect=WebSocketDisconnect())
 
         with patch("app.websocket.chat_ws.manager") as mock_manager:
             mock_manager.connect = AsyncMock()

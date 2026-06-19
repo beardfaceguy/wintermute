@@ -7,26 +7,21 @@ Focuses on:
 """
 
 import json
-import types
-from pathlib import Path
-from typing import List
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 import torch
-from torch.utils.data import DataLoader
-
 from finetune_sft import (
     _forward_logits,
     _tokenize_with_chat_template,
     build_sft_dataloader,
-    MaskedSFTDataset,
 )
-
+from torch.utils.data import DataLoader
 
 # ---------------------------------------------------------------------------
 # Mock HF tokenizer for chat template tests
 # ---------------------------------------------------------------------------
+
 
 class FakeChatTokenizer:
     """Minimal tokenizer stub that supports apply_chat_template for testing."""
@@ -38,7 +33,7 @@ class FakeChatTokenizer:
         self.pad_token_id = 0
         self.name_or_path = "fake-chat-model"
 
-    def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:
+    def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
         return [ord(c) % 200 + 10 for c in text]
 
     def decode(self, ids, **kwargs) -> str:
@@ -46,7 +41,7 @@ class FakeChatTokenizer:
 
     def apply_chat_template(
         self, messages, *, tokenize=True, add_generation_prompt=False
-    ) -> List[int]:
+    ) -> list[int]:
         parts = []
         for msg in messages:
             role = msg["role"]
@@ -63,6 +58,7 @@ class FakeChatTokenizer:
 # ===========================================================================
 # _tokenize_with_chat_template
 # ===========================================================================
+
 
 class TestTokenizeWithChatTemplate:
     def test_basic_chat_sample(self):
@@ -166,12 +162,17 @@ class TestTokenizeWithChatTemplate:
 
     def test_jsonl_hf_messages_format(self):
         tok = FakeChatTokenizer()
-        sample = json.dumps({
-            "messages": [
-                {"role": "user", "content": "Hi"},
-                {"role": "assistant", "content": "Hello! How can I help you today? I am an AI assistant ready to answer your questions."},
-            ]
-        })
+        sample = json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": "Hi"},
+                    {
+                        "role": "assistant",
+                        "content": "Hello! How can I help you today? I am an AI assistant ready to answer your questions.",
+                    },
+                ]
+            }
+        )
         result = _tokenize_with_chat_template(tok, sample, seq_len=512)
         assert result is not None
         x_tokens, labels = result
@@ -179,11 +180,13 @@ class TestTokenizeWithChatTemplate:
 
     def test_jsonl_alpaca_format(self):
         tok = FakeChatTokenizer()
-        sample = json.dumps({
-            "instruction": "Summarize",
-            "input": "",
-            "response": "Summary here",
-        })
+        sample = json.dumps(
+            {
+                "instruction": "Summarize",
+                "input": "",
+                "response": "Summary here",
+            }
+        )
         result = _tokenize_with_chat_template(tok, sample, seq_len=512)
         assert result is not None
 
@@ -191,6 +194,7 @@ class TestTokenizeWithChatTemplate:
 # ===========================================================================
 # _forward_logits
 # ===========================================================================
+
 
 class TestForwardLogits:
     def test_titan_mode_returns_raw_tensor(self):
@@ -252,6 +256,7 @@ class TestForwardLogits:
 # build_sft_dataloader
 # ===========================================================================
 
+
 class TestBuildSFTDataloader:
     @pytest.fixture
     def sft_data_file(self, tmp_path):
@@ -268,9 +273,13 @@ class TestBuildSFTDataloader:
 
     def test_returns_dataloader_and_sampler(self, sft_data_file, dummy_tokenizer):
         loader, sampler = build_sft_dataloader(
-            sft_data_file, dummy_tokenizer,
-            seq_len=128, batch_size=2, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            sft_data_file,
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=2,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
         )
 
         assert isinstance(loader, DataLoader)
@@ -278,9 +287,13 @@ class TestBuildSFTDataloader:
 
     def test_batch_size_respected(self, sft_data_file, dummy_tokenizer):
         loader, _ = build_sft_dataloader(
-            sft_data_file, dummy_tokenizer,
-            seq_len=128, batch_size=2, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            sft_data_file,
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=2,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
         )
 
         batch_x, batch_y = next(iter(loader))
@@ -288,9 +301,13 @@ class TestBuildSFTDataloader:
 
     def test_batch_tensors_are_padded_to_same_length(self, sft_data_file, dummy_tokenizer):
         loader, _ = build_sft_dataloader(
-            sft_data_file, dummy_tokenizer,
-            seq_len=128, batch_size=3, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            sft_data_file,
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=3,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
         )
 
         batch_x, batch_y = next(iter(loader))
@@ -298,9 +315,13 @@ class TestBuildSFTDataloader:
 
     def test_labels_have_masked_and_real(self, sft_data_file, dummy_tokenizer):
         loader, _ = build_sft_dataloader(
-            sft_data_file, dummy_tokenizer,
-            seq_len=128, batch_size=1, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            sft_data_file,
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=1,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
         )
 
         _, batch_y = next(iter(loader))
@@ -311,9 +332,13 @@ class TestBuildSFTDataloader:
     def test_missing_data_file_raises(self, dummy_tokenizer):
         with pytest.raises((FileNotFoundError, OSError)):
             build_sft_dataloader(
-                "/nonexistent/path/data.txt", dummy_tokenizer,
-                seq_len=128, batch_size=1, shuffle=False,
-                log_fn=lambda m: None, progress_label="test",
+                "/nonexistent/path/data.txt",
+                dummy_tokenizer,
+                seq_len=128,
+                batch_size=1,
+                shuffle=False,
+                log_fn=lambda m: None,
+                progress_label="test",
             )
 
     def test_empty_data_file_raises(self, tmp_path, dummy_tokenizer):
@@ -322,17 +347,26 @@ class TestBuildSFTDataloader:
 
         with pytest.raises(ValueError, match="No usable SFT samples"):
             build_sft_dataloader(
-                str(empty_path), dummy_tokenizer,
-                seq_len=128, batch_size=1, shuffle=False,
-                log_fn=lambda m: None, progress_label="test",
+                str(empty_path),
+                dummy_tokenizer,
+                seq_len=128,
+                batch_size=1,
+                shuffle=False,
+                log_fn=lambda m: None,
+                progress_label="test",
             )
 
     def test_ddp_sampler_created_for_multi_gpu(self, sft_data_file, dummy_tokenizer):
         loader, sampler = build_sft_dataloader(
-            sft_data_file, dummy_tokenizer,
-            seq_len=128, batch_size=1, shuffle=True,
-            log_fn=lambda m: None, progress_label="test",
-            rank=0, world_size=2,
+            sft_data_file,
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=1,
+            shuffle=True,
+            log_fn=lambda m: None,
+            progress_label="test",
+            rank=0,
+            world_size=2,
         )
 
         assert sampler is not None
@@ -348,9 +382,13 @@ class TestBuildSFTDataloader:
         dummy_tok.pad_id = 0
 
         loader, _ = build_sft_dataloader(
-            sft_data_file, dummy_tok,
-            seq_len=128, batch_size=2, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            sft_data_file,
+            dummy_tok,
+            seq_len=128,
+            batch_size=2,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
             chat_template_tokenizer=tok,
         )
 
@@ -364,23 +402,29 @@ class TestBuildSFTDataloader:
 
         with pytest.raises(ValueError, match="No usable SFT samples"):
             build_sft_dataloader(
-                str(bad_path), dummy_tokenizer,
-                seq_len=128, batch_size=1, shuffle=False,
-                log_fn=lambda m: None, progress_label="test",
+                str(bad_path),
+                dummy_tokenizer,
+                seq_len=128,
+                batch_size=1,
+                shuffle=False,
+                log_fn=lambda m: None,
+                progress_label="test",
             )
 
     def test_mixed_valid_invalid_keeps_valid(self, tmp_path, dummy_tokenizer):
         path = tmp_path / "mixed.txt"
         path.write_text(
-            "garbage line\n"
-            "User: valid question Assistant: valid answer\n"
-            "more garbage\n"
+            "garbage line\nUser: valid question Assistant: valid answer\nmore garbage\n"
         )
 
         loader, _ = build_sft_dataloader(
-            str(path), dummy_tokenizer,
-            seq_len=128, batch_size=1, shuffle=False,
-            log_fn=lambda m: None, progress_label="test",
+            str(path),
+            dummy_tokenizer,
+            seq_len=128,
+            batch_size=1,
+            shuffle=False,
+            log_fn=lambda m: None,
+            progress_label="test",
         )
 
         assert len(loader.dataset) == 1

@@ -1,17 +1,15 @@
 """Tests for training utilities: LR schedules, path resolution, hashing, checkpoints."""
 
 import hashlib
-import math
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
 import torch.testing
+from model import build_model
 from torch.optim import AdamW
-
-from model import ModelConfig, build_model
-from train_utils import cosine_lr, resolve_path, sha256_file, TokenizerAdapter, get_tokenizer
+from train_utils import TokenizerAdapter, cosine_lr, get_tokenizer, resolve_path, sha256_file
 
 
 class TestCosineLR:
@@ -180,7 +178,9 @@ class TestCheckpointRoundTrip:
         ckpt = torch.load(ckpt_path, map_location="cpu")
         model2.load_state_dict(ckpt["model"])
 
-        for (n1, p1), (n2, p2) in zip(model.named_parameters(), model2.named_parameters()):
+        for (n1, p1), (n2, p2) in zip(
+            model.named_parameters(), model2.named_parameters(), strict=False
+        ):
             torch.testing.assert_close(p1, p2, msg=f"Mismatch in {n1}")
 
     def test_optimizer_state_survives_save_load(self, tiny_gpt_config, tmp_path):
@@ -270,8 +270,10 @@ class TestGetTokenizerS3PathCollision:
         mock_sp.decode.return_value = "abc"
 
         try:
-            with patch.object(train_utils, "boto3", mock_boto), \
-                 patch.object(train_utils, "spm") as mock_spm_mod:
+            with (
+                patch.object(train_utils, "boto3", mock_boto),
+                patch.object(train_utils, "spm") as mock_spm_mod,
+            ):
                 mock_spm_mod.SentencePieceProcessor.return_value = mock_sp
 
                 get_tokenizer(uri_a)

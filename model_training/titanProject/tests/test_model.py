@@ -3,8 +3,7 @@
 import pytest
 import torch
 import torch.testing
-
-from model import ModelConfig, build_model, GPTLM, TitansLM, HFGPT2LM
+from model import GPTLM, HFGPT2LM, ModelConfig, TitansLM, build_model
 
 
 class TestModelConfig:
@@ -81,9 +80,7 @@ class TestGPTLMForward:
         x = torch.randint(0, tiny_gpt_config.vocab_size, (2, 16))
         y = torch.randint(0, tiny_gpt_config.vocab_size, (2, 16))
         logits = model(x, return_loss=False)
-        loss = torch.nn.functional.cross_entropy(
-            logits.view(-1, logits.size(-1)), y.view(-1)
-        )
+        loss = torch.nn.functional.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
         loss.backward()
         has_grad = any(p.grad is not None and p.grad.abs().sum() > 0 for p in model.parameters())
         assert has_grad, "No gradients flowed through the model"
@@ -106,7 +103,9 @@ class TestHFGPT2LMForward:
     """HFGPT2LM forward pass shape checks."""
 
     def test_output_shape(self):
-        cfg = ModelConfig(variant="hf_gpt2", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=128)
+        cfg = ModelConfig(
+            variant="hf_gpt2", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=128
+        )
         model = build_model(cfg)
         x = torch.randint(0, 256, (2, 32))
         logits = model(x, return_loss=False)
@@ -117,15 +116,23 @@ class TestModelParameterCount:
     """Sanity check that model parameter counts scale as expected."""
 
     def test_deeper_model_has_more_params(self):
-        small = build_model(ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=64))
-        large = build_model(ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=6, heads=4, max_seq_len=64))
+        small = build_model(
+            ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=64)
+        )
+        large = build_model(
+            ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=6, heads=4, max_seq_len=64)
+        )
         small_params = sum(p.numel() for p in small.parameters())
         large_params = sum(p.numel() for p in large.parameters())
         assert large_params > small_params
 
     def test_wider_model_has_more_params(self):
-        narrow = build_model(ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=64))
-        wide = build_model(ModelConfig(variant="gpt", vocab_size=256, dim=128, depth=2, heads=4, max_seq_len=64))
+        narrow = build_model(
+            ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, max_seq_len=64)
+        )
+        wide = build_model(
+            ModelConfig(variant="gpt", vocab_size=256, dim=128, depth=2, heads=4, max_seq_len=64)
+        )
         narrow_params = sum(p.numel() for p in narrow.parameters())
         wide_params = sum(p.numel() for p in wide.parameters())
         assert wide_params > narrow_params

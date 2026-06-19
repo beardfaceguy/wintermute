@@ -6,10 +6,8 @@ This is a convenience interface for quick qualitative checks, not a production c
 
 import argparse
 from pathlib import Path
-from typing import List, Tuple
 
 import torch
-
 from generate import generate, load_config, load_tokenizer, resolve_path
 from model import ModelConfig, build_model, load_model_source
 from prompt_formats import default_stop_strings, extract_completion
@@ -29,7 +27,7 @@ def pick_device(device_arg: str) -> torch.device:
 
 
 def build_prompt(
-    history: List[Tuple[str, str]],
+    history: list[tuple[str, str]],
     user_text: str,
     tokenizer,
     user_prefix: str,
@@ -39,7 +37,7 @@ def build_prompt(
     # Keep recent turns that fit context budget.
     trimmed = list(history)
     while True:
-        lines: List[str] = []
+        lines: list[str] = []
         for user_msg, assistant_msg in trimmed:
             lines.append(f"{user_prefix} {user_msg}")
             lines.append(f"{assistant_prefix} {assistant_msg}")
@@ -63,20 +61,31 @@ def postprocess_completion(raw_completion: str, user_prefix: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Interactive chat REPL for Titans checkpoint.")
-    parser.add_argument("--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path")
+    parser.add_argument(
+        "--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path"
+    )
     parser.add_argument(
         "--ckpt",
         type=str,
         default="ckpt_step_4000.pt",
         help="Checkpoint path or Hugging Face ref like hf://gpt2",
     )
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument("--max-new", type=int, default=80, help="Max new tokens per assistant turn")
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
     parser.add_argument("--temperature", type=float, default=0.8, help="Sampling temperature")
-    parser.add_argument("--max-prompt-tokens", type=int, default=None, help="Prompt token budget; default uses train.seq_len")
+    parser.add_argument(
+        "--max-prompt-tokens",
+        type=int,
+        default=None,
+        help="Prompt token budget; default uses train.seq_len",
+    )
     parser.add_argument("--user-prefix", type=str, default="User:", help="User line prefix")
-    parser.add_argument("--assistant-prefix", type=str, default="Assistant:", help="Assistant line prefix")
+    parser.add_argument(
+        "--assistant-prefix", type=str, default="Assistant:", help="Assistant line prefix"
+    )
     args = parser.parse_args()
 
     cfg = load_config(resolve_path(args.config))
@@ -90,7 +99,7 @@ def main() -> int:
     model.eval()
 
     max_prompt_tokens = args.max_prompt_tokens or int(cfg["train"]["seq_len"])
-    history: List[Tuple[str, str]] = []
+    history: list[tuple[str, str]] = []
     stop_strings = default_stop_strings("chat")
 
     print("Titans chat REPL ready.")

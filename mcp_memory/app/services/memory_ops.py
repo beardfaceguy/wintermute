@@ -15,6 +15,4 @@ def add_memory_entry(
 
 
 def get_recent_entries(db: Session, limit: int = 10):
-    return (
-        db.query(MemoryEntry).order_by(MemoryEntry.created_at.desc()).limit(limit).all()
-    )
+    return db.query(MemoryEntry).order_by(MemoryEntry.created_at.desc()).limit(limit).all()

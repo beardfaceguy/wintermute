@@ -22,7 +22,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastmcp import FastMCP
@@ -108,6 +108,7 @@ def _ensure_tables():
         _ensure_hnsw_index()
         _tables_created = True
         logger.info("Database tables ensured")
+
 
 # ---------------------------------------------------------------------------
 # FastMCP server
@@ -237,7 +238,7 @@ def memory_recall_recent(
             if tag_value:
                 q = q.filter(MemoryEntry.tags[tag_key].astext == tag_value)
             else:
-                q = q.filter(MemoryEntry.tags.has_key(tag_key))  # noqa: W601
+                q = q.filter(MemoryEntry.tags.has_key(tag_key))  # noqa: SIM118
         q = q.order_by(MemoryEntry.created_at.desc()).limit(limit)
         return [_entry_to_dict(e) for e in q.all()]
     finally:
@@ -266,9 +267,7 @@ def memory_promote(
     _ensure_tables()
     db = SessionLocal()
     try:
-        entry = db.query(MemoryEntry).filter(
-            MemoryEntry.id == uuid.UUID(entry_id)
-        ).first()
+        entry = db.query(MemoryEntry).filter(MemoryEntry.id == uuid.UUID(entry_id)).first()
         if not entry:
             return {"error": f"Entry {entry_id} not found"}
         if entry.zone != "live":
@@ -303,9 +302,7 @@ def memory_flag(
     _ensure_tables()
     db = SessionLocal()
     try:
-        entry = db.query(MemoryEntry).filter(
-            MemoryEntry.id == uuid.UUID(entry_id)
-        ).first()
+        entry = db.query(MemoryEntry).filter(MemoryEntry.id == uuid.UUID(entry_id)).first()
         if not entry:
             return {"error": f"Entry {entry_id} not found"}
 
@@ -339,9 +336,7 @@ def memory_update_trust(
     trust_score = max(0.0, min(1.0, trust_score))
     db = SessionLocal()
     try:
-        entry = db.query(MemoryEntry).filter(
-            MemoryEntry.id == uuid.UUID(entry_id)
-        ).first()
+        entry = db.query(MemoryEntry).filter(MemoryEntry.id == uuid.UUID(entry_id)).first()
         if not entry:
             return {"error": f"Entry {entry_id} not found"}
 
@@ -411,22 +406,29 @@ def memory_stats() -> str:
         total = db.query(MemoryEntry).count()
         live = db.query(MemoryEntry).filter(MemoryEntry.zone == "live").count()
         cold = db.query(MemoryEntry).filter(MemoryEntry.zone == "cold").count()
-        flagged = db.query(MemoryEntry).filter(
-            MemoryEntry.audit_flagged == True  # noqa: E712
-        ).count()
+        flagged = (
+            db.query(MemoryEntry)
+            .filter(
+                MemoryEntry.audit_flagged == True  # noqa: E712
+            )
+            .count()
+        )
 
         from sqlalchemy import func as sqlfunc
+
         avg_trust_row = db.query(sqlfunc.avg(MemoryEntry.trust_score)).first()
         avg_trust = round(float(avg_trust_row[0]), 3) if avg_trust_row[0] else 0.0
 
-        return json.dumps({
-            "total_entries": total,
-            "live_entries": live,
-            "cold_entries": cold,
-            "flagged_for_audit": flagged,
-            "avg_trust_score": avg_trust,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        return json.dumps(
+            {
+                "total_entries": total,
+                "live_entries": live,
+                "cold_entries": cold,
+                "flagged_for_audit": flagged,
+                "avg_trust_score": avg_trust,
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+        )
     finally:
         db.close()
 

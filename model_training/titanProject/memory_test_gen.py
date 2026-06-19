@@ -9,7 +9,6 @@ import argparse
 import random
 from pathlib import Path
 
-
 ENTITIES = ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank", "Grace", "Heidi"]
 ATTRS = ["red", "blue", "green", "yellow", "purple", "orange", "silver", "gold"]
 OBJECTS = ["cat", "dog", "car", "bike", "book", "hat", "ball", "house"]
@@ -30,10 +29,19 @@ def make_sample(rng: random.Random, filler_len: int) -> tuple[str, str]:
 
 def main():
     parser = argparse.ArgumentParser(description="Generate synthetic memory-test samples.")
-    parser.add_argument("--out", type=str, default="memory_test.txt", help="Output text file (one sample per line)")
-    parser.add_argument("--answers", type=str, default="memory_test_answers.txt", help="Answers file (one per line)")
+    parser.add_argument(
+        "--out", type=str, default="memory_test.txt", help="Output text file (one sample per line)"
+    )
+    parser.add_argument(
+        "--answers", type=str, default="memory_test_answers.txt", help="Answers file (one per line)"
+    )
     parser.add_argument("--n", type=int, default=200, help="Number of samples")
-    parser.add_argument("--filler-len", type=int, default=120, help="Number of filler tokens between fact and question")
+    parser.add_argument(
+        "--filler-len",
+        type=int,
+        default=120,
+        help="Number of filler tokens between fact and question",
+    )
     parser.add_argument("--seed", type=int, default=1337, help="RNG seed")
     args = parser.parse_args()
 
@@ -56,4 +64,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

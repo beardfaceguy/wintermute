@@ -10,14 +10,13 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "model_training" / "titanProject"))
 
 from prompt_formats import (
-    render_instruction_prompt,
     _extract_instruction_parts,
-    extract_completion,
-    infer_prompt_family,
     default_prompts,
     default_stop_strings,
+    extract_completion,
+    infer_prompt_family,
+    render_instruction_prompt,
 )
-
 
 # ── render_instruction_prompt ────────────────────────────────────────────────
 
@@ -70,7 +69,7 @@ def test_extract_parts_missing_response_marker_does_not_crash():
     """If ### Response: is missing, the function should not raise ValueError."""
     malformed = "### Instruction:\nDo something\n\nThis text has no response marker"
     try:
-        result = _extract_instruction_parts(malformed)
+        _extract_instruction_parts(malformed)
     except ValueError:
         pytest.fail(
             "_extract_instruction_parts crashed on malformed prompt missing ### Response: marker"
@@ -80,12 +79,10 @@ def test_extract_parts_missing_response_marker_does_not_crash():
 def test_extract_parts_missing_response_after_input_does_not_crash():
     """If ### Input: is present but ### Response: is missing, should not crash."""
     malformed = (
-        "### Instruction:\nDo something\n\n"
-        "### Input:\nSome input text\n\n"
-        "No response marker here"
+        "### Instruction:\nDo something\n\n### Input:\nSome input text\n\nNo response marker here"
     )
     try:
-        result = _extract_instruction_parts(malformed)
+        _extract_instruction_parts(malformed)
     except ValueError:
         pytest.fail(
             "_extract_instruction_parts crashed on malformed prompt with input but no ### Response:"

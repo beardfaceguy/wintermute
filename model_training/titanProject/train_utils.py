@@ -11,18 +11,16 @@ import math
 import os
 import shutil
 import subprocess
-from contextlib import nullcontext
 from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
-import yaml
+import sentencepiece as spm
 import torch
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
+import yaml
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-import sentencepiece as spm
 
 try:
     import boto3  # type: ignore
@@ -32,19 +30,20 @@ except Exception:
 from data import TextWindowDataset
 from model import is_hf_source, normalize_hf_source
 
-
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
 
+
 def load_config(path: Path):
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
 # ---------------------------------------------------------------------------
 # Path resolution
 # ---------------------------------------------------------------------------
+
 
 def resolve_path(path_str: str) -> Path:
     if path_str.startswith("s3://") or path_str.startswith("hf://"):
@@ -67,6 +66,7 @@ def resolve_path(path_str: str) -> Path:
 # Hashing
 # ---------------------------------------------------------------------------
 
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as f:
@@ -78,6 +78,7 @@ def sha256_file(path: Path) -> str:
 # ---------------------------------------------------------------------------
 # Tokenizer
 # ---------------------------------------------------------------------------
+
 
 class TokenizerAdapter:
     def __init__(
@@ -113,7 +114,7 @@ def _hf_tokenizer_fingerprint(tokenizer) -> str:
         digest.update(tokenizer.backend_tokenizer.to_str().encode("utf-8"))
     else:
         for token, token_id in sorted(tokenizer.get_vocab().items(), key=lambda kv: kv[1]):
-            digest.update(f"{token_id}:{token}\n".encode("utf-8"))
+            digest.update(f"{token_id}:{token}\n".encode())
     return digest.hexdigest()
 
 
@@ -176,6 +177,7 @@ def get_tokenizer(tokenizer_path: str):
 # LR scheduling
 # ---------------------------------------------------------------------------
 
+
 def cosine_lr(step, warmup, max_steps, base_lr, min_lr=0.0):
     if step < warmup:
         return base_lr * step / max(warmup, 1)
@@ -187,6 +189,7 @@ def cosine_lr(step, warmup, max_steps, base_lr, min_lr=0.0):
 # ---------------------------------------------------------------------------
 # Device selection
 # ---------------------------------------------------------------------------
+
 
 def pick_device(device_arg: str) -> torch.device:
     if device_arg == "cuda" and torch.cuda.is_available():
@@ -204,6 +207,7 @@ def pick_device(device_arg: str) -> torch.device:
 # ---------------------------------------------------------------------------
 # Disk space
 # ---------------------------------------------------------------------------
+
 
 def has_min_free_space(path: Path, min_free_gb: float, log_fn) -> bool:
     try:
@@ -224,6 +228,7 @@ def has_min_free_space(path: Path, min_free_gb: float, log_fn) -> bool:
 # ---------------------------------------------------------------------------
 # Checkpoint I/O
 # ---------------------------------------------------------------------------
+
 
 def resolve_checkpoint_dir(args_checkpoint_dir: str | None, fallback_dir: Path) -> Path:
     if args_checkpoint_dir:
@@ -259,6 +264,7 @@ def save_checkpoint(
 # S3 sync
 # ---------------------------------------------------------------------------
 
+
 def sync_checkpoints_to_s3(
     checkpoint_dir: Path,
     s3_uri: str,
@@ -267,10 +273,15 @@ def sync_checkpoints_to_s3(
     glob_pattern: str = "ckpt_step_*.pt",
 ) -> None:
     cmd = [
-        aws_bin, "s3", "sync",
-        str(checkpoint_dir), s3_uri,
-        "--exclude", "*",
-        "--include", glob_pattern,
+        aws_bin,
+        "s3",
+        "sync",
+        str(checkpoint_dir),
+        s3_uri,
+        "--exclude",
+        "*",
+        "--include",
+        glob_pattern,
         "--only-show-errors",
     ]
     try:
@@ -291,6 +302,7 @@ def sync_checkpoints_to_s3(
 # ---------------------------------------------------------------------------
 # Distributed helpers
 # ---------------------------------------------------------------------------
+
 
 def setup_distributed():
     """Initialize the process group. Returns (rank, local_rank, world_size).
@@ -337,6 +349,7 @@ def reduce_scalar(value: float, world_size: int) -> float:
 # Distributed dataloader builder
 # ---------------------------------------------------------------------------
 
+
 def build_distributed_dataloader(
     path: str,
     tokenizer,
@@ -366,13 +379,21 @@ def build_distributed_dataloader(
     if world_size > 1:
         sampler = DistributedSampler(ds, num_replicas=world_size, rank=rank, shuffle=shuffle)
         loader = DataLoader(
-            ds, batch_size=batch_size, sampler=sampler,
-            num_workers=num_workers, pin_memory=True, drop_last=True,
+            ds,
+            batch_size=batch_size,
+            sampler=sampler,
+            num_workers=num_workers,
+            pin_memory=True,
+            drop_last=True,
         )
     else:
         sampler = None
         loader = DataLoader(
-            ds, batch_size=batch_size, shuffle=shuffle,
-            num_workers=num_workers, pin_memory=True, drop_last=True,
+            ds,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            pin_memory=True,
+            drop_last=True,
         )
     return loader, sampler

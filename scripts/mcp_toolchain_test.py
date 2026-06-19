@@ -54,9 +54,7 @@ for choice in choices:
     if tool_calls:
         for call in tool_calls:
             args = json.loads(call["function"]["arguments"])
-            print(
-                f"[vLLM ➜ MCP] Calling '{call['function']['name']}' with args: {args}"
-            )
+            print(f"[vLLM ➜ MCP] Calling '{call['function']['name']}' with args: {args}")
             mcp_response = requests.post(mcp_map[call["function"]["name"]], json=args)
             print(f"[MCP ➜ vLLM] Response:\n{mcp_response.text}")
     else:

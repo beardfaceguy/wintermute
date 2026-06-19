@@ -8,44 +8,46 @@ Covers all four supported input formats:
 """
 
 import json
-import textwrap
 from pathlib import Path
 
 import pytest
-
 from finetune_sft import (
     MaskedSFTDataset,
     _format_messages_as_chat,
     _split_sft_sample,
 )
 
-
 # ---------------------------------------------------------------------------
 # _split_sft_sample — HF messages format
 # ---------------------------------------------------------------------------
 
+
 class TestHFMessagesFormat:
     def test_single_turn(self):
-        line = json.dumps({
-            "messages": [
-                {"role": "user", "content": "What is 2+2?"},
-                {"role": "assistant", "content": "4"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": "What is 2+2?"},
+                    {"role": "assistant", "content": "4"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: What is 2+2?" in prompt
         assert prompt.endswith("Assistant:")
         assert response.strip() == "4"
 
     def test_multi_turn(self):
-        line = json.dumps({
-            "messages": [
-                {"role": "user", "content": "Hello"},
-                {"role": "assistant", "content": "Hi there!"},
-                {"role": "user", "content": "What is 2+2?"},
-                {"role": "assistant", "content": "4"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": "Hello"},
+                    {"role": "assistant", "content": "Hi there!"},
+                    {"role": "user", "content": "What is 2+2?"},
+                    {"role": "assistant", "content": "4"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: Hello" in prompt
         assert "Assistant: Hi there!" in prompt
@@ -54,22 +56,22 @@ class TestHFMessagesFormat:
         assert response.strip() == "4"
 
     def test_with_system_message(self):
-        line = json.dumps({
-            "messages": [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Hello"},
-                {"role": "assistant", "content": "Hi!"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": "Hello"},
+                    {"role": "assistant", "content": "Hi!"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "System: You are a helpful assistant." in prompt
         assert "User: Hello" in prompt
         assert response.strip() == "Hi!"
 
     def test_no_assistant_raises(self):
-        line = json.dumps({
-            "messages": [{"role": "user", "content": "Hello"}]
-        })
+        line = json.dumps({"messages": [{"role": "user", "content": "Hello"}]})
         with pytest.raises(ValueError, match="no assistant turn"):
             _split_sft_sample(line)
 
@@ -79,12 +81,14 @@ class TestHFMessagesFormat:
             _split_sft_sample(line)
 
     def test_empty_assistant_content_raises(self):
-        line = json.dumps({
-            "messages": [
-                {"role": "user", "content": "Hello"},
-                {"role": "assistant", "content": ""},
-            ]
-        })
+        line = json.dumps(
+            {
+                "messages": [
+                    {"role": "user", "content": "Hello"},
+                    {"role": "assistant", "content": ""},
+                ]
+            }
+        )
         with pytest.raises(ValueError, match="empty content"):
             _split_sft_sample(line)
 
@@ -93,28 +97,33 @@ class TestHFMessagesFormat:
 # _split_sft_sample — ShareGPT format
 # ---------------------------------------------------------------------------
 
+
 class TestShareGPTFormat:
     def test_basic_sharegpt(self):
-        line = json.dumps({
-            "conversations": [
-                {"from": "human", "value": "What color is the sky?"},
-                {"from": "gpt", "value": "Blue."},
-            ]
-        })
+        line = json.dumps(
+            {
+                "conversations": [
+                    {"from": "human", "value": "What color is the sky?"},
+                    {"from": "gpt", "value": "Blue."},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: What color is the sky?" in prompt
         assert prompt.endswith("Assistant:")
         assert response.strip() == "Blue."
 
     def test_multi_turn_sharegpt(self):
-        line = json.dumps({
-            "conversations": [
-                {"from": "human", "value": "Hello"},
-                {"from": "gpt", "value": "Hi!"},
-                {"from": "human", "value": "Tell me a joke"},
-                {"from": "gpt", "value": "Why did the chicken cross the road?"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "conversations": [
+                    {"from": "human", "value": "Hello"},
+                    {"from": "gpt", "value": "Hi!"},
+                    {"from": "human", "value": "Tell me a joke"},
+                    {"from": "gpt", "value": "Why did the chicken cross the road?"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: Hello" in prompt
         assert "Assistant: Hi!" in prompt
@@ -123,24 +132,28 @@ class TestShareGPTFormat:
 
     def test_conversation_key_variant(self):
         """Some datasets use 'conversation' (singular) instead of 'conversations'."""
-        line = json.dumps({
-            "conversation": [
-                {"from": "human", "value": "Hi"},
-                {"from": "gpt", "value": "Hello!"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "conversation": [
+                    {"from": "human", "value": "Hi"},
+                    {"from": "gpt", "value": "Hello!"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: Hi" in prompt
         assert response.strip() == "Hello!"
 
     def test_role_variants(self):
         """ShareGPT datasets use varying role names."""
-        line = json.dumps({
-            "conversations": [
-                {"from": "prompter", "value": "Question"},
-                {"from": "chatbot", "value": "Answer"},
-            ]
-        })
+        line = json.dumps(
+            {
+                "conversations": [
+                    {"from": "prompter", "value": "Question"},
+                    {"from": "chatbot", "value": "Answer"},
+                ]
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "User: Question" in prompt
         assert response.strip() == "Answer"
@@ -150,13 +163,16 @@ class TestShareGPTFormat:
 # _split_sft_sample — Alpaca / instruction format
 # ---------------------------------------------------------------------------
 
+
 class TestAlpacaFormat:
     def test_instruction_response(self):
-        line = json.dumps({
-            "instruction": "Summarize this text.",
-            "input": "",
-            "response": "Here is the summary.",
-        })
+        line = json.dumps(
+            {
+                "instruction": "Summarize this text.",
+                "input": "",
+                "response": "Here is the summary.",
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "### Instruction:" in prompt
         assert "Summarize this text." in prompt
@@ -164,11 +180,13 @@ class TestAlpacaFormat:
         assert response == "Here is the summary."
 
     def test_instruction_with_input(self):
-        line = json.dumps({
-            "instruction": "Translate to French.",
-            "input": "Hello world",
-            "response": "Bonjour le monde",
-        })
+        line = json.dumps(
+            {
+                "instruction": "Translate to French.",
+                "input": "Hello world",
+                "response": "Bonjour le monde",
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "### Input:" in prompt
         assert "Hello world" in prompt
@@ -176,23 +194,27 @@ class TestAlpacaFormat:
 
     def test_output_alias(self):
         """'output' should work as alias for 'response' (standard Alpaca key)."""
-        line = json.dumps({
-            "instruction": "What is 1+1?",
-            "input": "",
-            "output": "2",
-        })
+        line = json.dumps(
+            {
+                "instruction": "What is 1+1?",
+                "input": "",
+                "output": "2",
+            }
+        )
         prompt, response = _split_sft_sample(line)
         assert "### Instruction:" in prompt
         assert response == "2"
 
     def test_response_takes_precedence_over_output(self):
         """If both 'response' and 'output' exist, 'response' wins."""
-        line = json.dumps({
-            "instruction": "Test",
-            "input": "",
-            "response": "from_response",
-            "output": "from_output",
-        })
+        line = json.dumps(
+            {
+                "instruction": "Test",
+                "input": "",
+                "response": "from_response",
+                "output": "from_output",
+            }
+        )
         _, response = _split_sft_sample(line)
         assert response == "from_response"
 
@@ -211,11 +233,10 @@ class TestAlpacaFormat:
 # _split_sft_sample — Chat text format
 # ---------------------------------------------------------------------------
 
+
 class TestChatTextFormat:
     def test_basic_chat(self):
-        prompt, response = _split_sft_sample(
-            "User: Hello there Assistant: Hi!"
-        )
+        prompt, response = _split_sft_sample("User: Hello there Assistant: Hi!")
         assert prompt == "User: Hello there Assistant:"
         assert response == " Hi!"
 
@@ -240,6 +261,7 @@ class TestChatTextFormat:
 # _split_sft_sample — edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     def test_empty_string_raises(self):
         with pytest.raises(ValueError, match="non-empty"):
@@ -262,23 +284,28 @@ class TestEdgeCases:
 # _format_messages_as_chat — unit tests
 # ---------------------------------------------------------------------------
 
+
 class TestFormatMessagesAsChat:
     def test_skips_non_dict_entries(self):
-        prompt, response = _format_messages_as_chat([
-            "not a dict",
-            {"role": "user", "content": "Hi"},
-            42,
-            {"role": "assistant", "content": "Hello!"},
-        ])
+        prompt, response = _format_messages_as_chat(
+            [
+                "not a dict",
+                {"role": "user", "content": "Hi"},
+                42,
+                {"role": "assistant", "content": "Hello!"},
+            ]
+        )
         assert "User: Hi" in prompt
         assert response.strip() == "Hello!"
 
     def test_content_key_variants(self):
         """Should accept 'content', 'value', and 'text' keys."""
-        prompt, response = _format_messages_as_chat([
-            {"role": "user", "text": "From text key"},
-            {"role": "assistant", "value": "From value key"},
-        ])
+        prompt, response = _format_messages_as_chat(
+            [
+                {"role": "user", "text": "From text key"},
+                {"role": "assistant", "value": "From value key"},
+            ]
+        )
         assert "From text key" in prompt
         assert response.strip() == "From value key"
 
@@ -287,32 +314,41 @@ class TestFormatMessagesAsChat:
 # MaskedSFTDataset — integration with all formats mixed
 # ---------------------------------------------------------------------------
 
+
 class TestMaskedSFTDatasetFormats:
     def _write_mixed_data(self, tmp_path: Path) -> Path:
         lines = [
             "User: Chat format question Assistant: Chat format answer",
-            json.dumps({
-                "messages": [
-                    {"role": "user", "content": "HF messages question"},
-                    {"role": "assistant", "content": "HF messages answer"},
-                ]
-            }),
-            json.dumps({
-                "conversations": [
-                    {"from": "human", "value": "ShareGPT question"},
-                    {"from": "gpt", "value": "ShareGPT answer"},
-                ]
-            }),
-            json.dumps({
-                "instruction": "Alpaca instruction",
-                "input": "",
-                "response": "Alpaca response",
-            }),
-            json.dumps({
-                "instruction": "Alpaca output",
-                "input": "",
-                "output": "Output alias response",
-            }),
+            json.dumps(
+                {
+                    "messages": [
+                        {"role": "user", "content": "HF messages question"},
+                        {"role": "assistant", "content": "HF messages answer"},
+                    ]
+                }
+            ),
+            json.dumps(
+                {
+                    "conversations": [
+                        {"from": "human", "value": "ShareGPT question"},
+                        {"from": "gpt", "value": "ShareGPT answer"},
+                    ]
+                }
+            ),
+            json.dumps(
+                {
+                    "instruction": "Alpaca instruction",
+                    "input": "",
+                    "response": "Alpaca response",
+                }
+            ),
+            json.dumps(
+                {
+                    "instruction": "Alpaca output",
+                    "input": "",
+                    "output": "Output alias response",
+                }
+            ),
         ]
         path = tmp_path / "mixed_sft.txt"
         path.write_text("\n".join(lines) + "\n")

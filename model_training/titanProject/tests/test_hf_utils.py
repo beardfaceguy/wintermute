@@ -4,26 +4,23 @@ All heavy dependencies (transformers, peft, bitsandbytes) are mocked so tests
 run on CPU without downloading real models.
 """
 
-import types
-from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import torch
-
 from hf_utils import (
+    HFModelWrapper,
     apply_lora,
     get_hf_tokenizer,
-    HFModelWrapper,
     load_hf_checkpoint,
     load_hf_model,
     save_hf_checkpoint,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_tokenizer(*, has_chat_template=False, has_pad_token=True):
     """Build a MagicMock that behaves like an HF AutoTokenizer."""
@@ -52,6 +49,7 @@ def _make_mock_model(*, is_4bit=False):
 # ===========================================================================
 # get_hf_tokenizer
 # ===========================================================================
+
 
 class TestGetHFTokenizer:
     @patch("hf_utils.AutoTokenizer", create=True)
@@ -124,8 +122,10 @@ class TestGetHFTokenizer:
     def test_skips_special_tokens_when_already_in_vocab(self, _mock_cls):
         tok = _make_mock_tokenizer(has_chat_template=False)
         tok.get_vocab.return_value = {
-            "<s>": 0, "</s>": 2,
-            "<|im_start|>": 100, "<|im_end|>": 101,
+            "<s>": 0,
+            "</s>": 2,
+            "<|im_start|>": 100,
+            "<|im_end|>": 101,
         }
         _mock_cls.from_pretrained.return_value = tok
 
@@ -149,6 +149,7 @@ class TestGetHFTokenizer:
 # ===========================================================================
 # HFModelWrapper
 # ===========================================================================
+
 
 class TestHFModelWrapper:
     def test_wraps_model_and_tokenizer(self):
@@ -182,6 +183,7 @@ class TestHFModelWrapper:
 # ===========================================================================
 # load_hf_model
 # ===========================================================================
+
 
 class TestLoadHFModel:
     @patch("hf_utils.BitsAndBytesConfig", create=True)
@@ -227,10 +229,13 @@ class TestLoadHFModel:
 
         bnb_mod = MagicMock()
 
-        with patch.dict("sys.modules", {
-            "transformers": transformers_mod,
-            "bitsandbytes": bnb_mod,
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "transformers": transformers_mod,
+                "bitsandbytes": bnb_mod,
+            },
+        ):
             load_hf_model("mock-id", load_in_4bit=True)
 
         mock_bnb_config.assert_called_once()
@@ -247,10 +252,13 @@ class TestLoadHFModel:
         transformers_mod.AutoModelForCausalLM = mock_auto
         transformers_mod.BitsAndBytesConfig = mock_bnb_config
 
-        with patch.dict("sys.modules", {
-            "transformers": transformers_mod,
-            "bitsandbytes": MagicMock(),
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "transformers": transformers_mod,
+                "bitsandbytes": MagicMock(),
+            },
+        ):
             load_hf_model("mock-id", load_in_4bit=True, bnb_4bit_compute_dtype="bfloat16")
 
         bnb_call_kwargs = mock_bnb_config.call_args[1]
@@ -263,10 +271,13 @@ class TestLoadHFModel:
         transformers_mod.AutoModelForCausalLM = mock_auto
         transformers_mod.BitsAndBytesConfig = mock_bnb_config
 
-        with patch.dict("sys.modules", {
-            "transformers": transformers_mod,
-            "bitsandbytes": None,
-        }):
+        with patch.dict(
+            "sys.modules",
+            {
+                "transformers": transformers_mod,
+                "bitsandbytes": None,
+            },
+        ):
             with pytest.raises(ImportError, match="bitsandbytes"):
                 load_hf_model("mock-id", load_in_4bit=True)
 
@@ -304,6 +315,7 @@ class TestLoadHFModel:
 # ===========================================================================
 # apply_lora
 # ===========================================================================
+
 
 class TestApplyLoRA:
     def test_applies_lora_config(self):
@@ -436,6 +448,7 @@ class TestApplyLoRA:
 # save_hf_checkpoint / load_hf_checkpoint
 # ===========================================================================
 
+
 class TestSaveHFCheckpoint:
     def test_creates_directory(self, tmp_path):
         ckpt_dir = tmp_path / "new_ckpt" / "step_100"
@@ -531,9 +544,7 @@ class TestLoadHFCheckpoint:
         with patch.dict("sys.modules", {"peft": peft_mod}):
             result = load_hf_checkpoint("mock-id", adapter_path="/tmp/adapter")
 
-        peft_mod.PeftModel.from_pretrained.assert_called_once_with(
-            mock_base, "/tmp/adapter"
-        )
+        peft_mod.PeftModel.from_pretrained.assert_called_once_with(mock_base, "/tmp/adapter")
         assert result is mock_peft_model
 
     @patch("hf_utils.load_hf_model")
@@ -549,9 +560,7 @@ class TestLoadHFCheckpoint:
         peft_mod.PeftModel.from_pretrained.return_value = mock_peft_model
 
         with patch.dict("sys.modules", {"peft": peft_mod}):
-            result = load_hf_checkpoint(
-                "mock-id", adapter_path="/tmp/adapter", merge=True
-            )
+            result = load_hf_checkpoint("mock-id", adapter_path="/tmp/adapter", merge=True)
 
         mock_peft_model.merge_and_unload.assert_called_once()
         assert result is mock_merged
@@ -568,9 +577,7 @@ class TestLoadHFCheckpoint:
     def test_passes_dtype_and_device_map(self, mock_load):
         mock_load.return_value = _make_mock_model()
 
-        load_hf_checkpoint(
-            "mock-id", torch_dtype=torch.bfloat16, device_map=None
-        )
+        load_hf_checkpoint("mock-id", torch_dtype=torch.bfloat16, device_map=None)
 
         call_kwargs = mock_load.call_args[1]
         assert call_kwargs["torch_dtype"] == torch.bfloat16

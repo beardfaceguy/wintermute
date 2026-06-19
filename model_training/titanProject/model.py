@@ -7,7 +7,6 @@ This is a minimal scaffold to instantiate a tiny MAC transformer with an LM head
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
 
 import torch
 import torch.nn as nn
@@ -40,7 +39,7 @@ class ModelConfig:
     num_persist_mem_tokens: int = 4
     num_longterm_mem_tokens: int = 16
     max_seq_len: int = 2048  # used for GPT variant positional embeddings
-    hf_model_name: Optional[str] = None
+    hf_model_name: str | None = None
 
     # --- MAC neural memory options (passed via neural_memory_kwargs) ---
     store_with_lookahead_value: bool = False
@@ -106,7 +105,9 @@ class GPTLM(nn.Module):
         # x: (batch, seq)
         b, n = x.shape
         if n > self.pos_emb.num_embeddings:
-            raise ValueError(f"Sequence length {n} exceeds max_seq_len {self.pos_emb.num_embeddings}")
+            raise ValueError(
+                f"Sequence length {n} exceeds max_seq_len {self.pos_emb.num_embeddings}"
+            )
         tok = self.token_emb(x)
         pos = self.pos_emb(torch.arange(n, device=x.device))[None, :, :]
         h = tok + pos
@@ -157,14 +158,16 @@ class HFGPT2LM(nn.Module):
 HF_SOURCE_PREFIX = "hf://"
 
 
-def is_hf_source(source: Optional[Union[str, Path]]) -> bool:
+def is_hf_source(source: str | Path | None) -> bool:
     return isinstance(source, (str, Path)) and str(source).startswith(HF_SOURCE_PREFIX)
 
 
-def normalize_hf_source(source: Union[str, Path]) -> str:
+def normalize_hf_source(source: str | Path) -> str:
     source_str = str(source)
     if not source_str.startswith(HF_SOURCE_PREFIX):
-        raise ValueError(f"Expected Hugging Face source with prefix {HF_SOURCE_PREFIX}, got {source_str}")
+        raise ValueError(
+            f"Expected Hugging Face source with prefix {HF_SOURCE_PREFIX}, got {source_str}"
+        )
     return source_str[len(HF_SOURCE_PREFIX) :]
 
 
@@ -218,19 +221,33 @@ def _load_gpt2_weights_into_gptlm(model: GPTLM, hf_name: str) -> None:
 
         c_attn_weight = hf_state[f"{prefix}.attn.c_attn.weight"]
         dim = model.token_emb.embedding_dim
-        mapped_state[f"decoder.layers.{attn_layer_idx}.0.0.gamma"] = hf_state[f"{prefix}.ln_1.weight"]
+        mapped_state[f"decoder.layers.{attn_layer_idx}.0.0.gamma"] = hf_state[
+            f"{prefix}.ln_1.weight"
+        ]
         mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_q.weight"] = c_attn_weight[:, :dim].T
-        mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_k.weight"] = c_attn_weight[:, dim : 2 * dim].T
-        mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_v.weight"] = c_attn_weight[:, 2 * dim :].T
+        mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_k.weight"] = c_attn_weight[
+            :, dim : 2 * dim
+        ].T
+        mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_v.weight"] = c_attn_weight[
+            :, 2 * dim :
+        ].T
         mapped_state[f"decoder.layers.{attn_layer_idx}.1.to_out.weight"] = hf_state[
             f"{prefix}.attn.c_proj.weight"
         ].T
 
         mapped_state[f"decoder.layers.{ff_layer_idx}.0.0.gamma"] = hf_state[f"{prefix}.ln_2.weight"]
-        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.0.0.weight"] = hf_state[f"{prefix}.mlp.c_fc.weight"].T
-        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.0.0.bias"] = hf_state[f"{prefix}.mlp.c_fc.bias"]
-        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.2.weight"] = hf_state[f"{prefix}.mlp.c_proj.weight"].T
-        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.2.bias"] = hf_state[f"{prefix}.mlp.c_proj.bias"]
+        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.0.0.weight"] = hf_state[
+            f"{prefix}.mlp.c_fc.weight"
+        ].T
+        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.0.0.bias"] = hf_state[
+            f"{prefix}.mlp.c_fc.bias"
+        ]
+        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.2.weight"] = hf_state[
+            f"{prefix}.mlp.c_proj.weight"
+        ].T
+        mapped_state[f"decoder.layers.{ff_layer_idx}.1.ff.2.bias"] = hf_state[
+            f"{prefix}.mlp.c_proj.bias"
+        ]
 
     missing, unexpected = model.load_state_dict(mapped_state, strict=False)
     if missing or unexpected:
@@ -239,7 +256,7 @@ def _load_gpt2_weights_into_gptlm(model: GPTLM, hf_name: str) -> None:
 
 def load_model_source(
     model: nn.Module,
-    source: Union[str, Path],
+    source: str | Path,
     *,
     map_location=None,
     strict: bool = True,
@@ -268,4 +285,3 @@ def build_model(cfg: ModelConfig) -> TitansLM:
     if cfg.variant.lower() == "hf_gpt2":
         return HFGPT2LM(cfg)
     raise ValueError(f"Unsupported variant {cfg.variant}; choose 'mac', 'gpt', or 'hf_gpt2'")
-

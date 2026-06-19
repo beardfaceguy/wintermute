@@ -21,7 +21,9 @@ def write_jsonl(path: Path, rows):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build a deterministic local instruction-smoke variant.")
+    parser = argparse.ArgumentParser(
+        description="Build a deterministic local instruction-smoke variant."
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -37,12 +39,16 @@ def main():
     parser.add_argument(
         "--base-train",
         type=Path,
-        default=Path("model_training/LLM/data/sft_smoke_instruction_curated/train_sft_instruction.jsonl"),
+        default=Path(
+            "model_training/LLM/data/sft_smoke_instruction_curated/train_sft_instruction.jsonl"
+        ),
     )
     parser.add_argument(
         "--base-val",
         type=Path,
-        default=Path("model_training/LLM/data/sft_smoke_instruction_story_curated/val_sft_instruction.jsonl"),
+        default=Path(
+            "model_training/LLM/data/sft_smoke_instruction_story_curated/val_sft_instruction.jsonl"
+        ),
     )
     parser.add_argument(
         "--intro-boosters",
@@ -98,7 +104,12 @@ def main():
     }
     meta_path.write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
 
-    print(json.dumps({"train_path": str(train_path), "val_path": str(val_path), "meta_path": str(meta_path)}, indent=2))
+    print(
+        json.dumps(
+            {"train_path": str(train_path), "val_path": str(val_path), "meta_path": str(meta_path)},
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ checkpoint saving/loading, and adapter merging for deployment.
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union
 
 import torch
 
@@ -20,9 +19,9 @@ def load_hf_model(
     load_in_4bit: bool = False,
     bnb_4bit_compute_dtype: str = "float16",
     bnb_4bit_quant_type: str = "nf4",
-    torch_dtype: Optional[torch.dtype] = None,
-    device_map: Optional[str] = "auto",
-    attn_implementation: Optional[str] = None,
+    torch_dtype: torch.dtype | None = None,
+    device_map: str | None = "auto",
+    attn_implementation: str | None = None,
     trust_remote_code: bool = False,
 ):
     """Load a HuggingFace causal LM, optionally quantized to 4-bit for QLoRA.
@@ -38,7 +37,7 @@ def load_hf_model(
             "Install with: pip install transformers accelerate"
         ) from e
 
-    kwargs: Dict = {
+    kwargs: dict = {
         "trust_remote_code": trust_remote_code,
     }
 
@@ -83,7 +82,7 @@ def apply_lora(
     rank: int = 16,
     alpha: int = 32,
     dropout: float = 0.05,
-    target_modules: Optional[List[str]] = None,
+    target_modules: list[str] | None = None,
     task_type: str = "CAUSAL_LM",
     log_fn=None,
 ):
@@ -93,11 +92,10 @@ def apply_lora(
     default when ``target_modules="all-linear"``).
     """
     try:
-        from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
+        from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
     except ImportError as e:
         raise ImportError(
-            "peft is required for LoRA fine-tuning. "
-            "Install with: pip install peft"
+            "peft is required for LoRA fine-tuning. Install with: pip install peft"
         ) from e
 
     task_map = {"CAUSAL_LM": TaskType.CAUSAL_LM}
@@ -130,7 +128,7 @@ def apply_lora(
 
 def save_hf_checkpoint(
     model,
-    path: Union[str, Path],
+    path: str | Path,
     *,
     tokenizer=None,
     step: int = 0,
@@ -161,10 +159,10 @@ def save_hf_checkpoint(
 def load_hf_checkpoint(
     model_id: str,
     *,
-    adapter_path: Optional[str] = None,
+    adapter_path: str | None = None,
     merge: bool = False,
-    torch_dtype: Optional[torch.dtype] = None,
-    device_map: Optional[str] = "auto",
+    torch_dtype: torch.dtype | None = None,
+    device_map: str | None = "auto",
     trust_remote_code: bool = False,
 ):
     """Load a HuggingFace model, optionally with a LoRA adapter.
@@ -197,9 +195,7 @@ def get_hf_tokenizer(model_id: str, *, trust_remote_code: bool = False):
     except ImportError as e:
         raise ImportError("transformers is required for HF tokenizer loading") from e
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_id, trust_remote_code=trust_remote_code
-    )
+    tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=trust_remote_code)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -207,9 +203,7 @@ def get_hf_tokenizer(model_id: str, *, trust_remote_code: bool = False):
         _CHATML_SPECIAL = ["<|im_start|>", "<|im_end|>"]
         for tok in _CHATML_SPECIAL:
             if tok not in tokenizer.get_vocab():
-                tokenizer.add_special_tokens(
-                    {"additional_special_tokens": [tok]}
-                )
+                tokenizer.add_special_tokens({"additional_special_tokens": [tok]})
         tokenizer.chat_template = (
             "{% for message in messages %}"
             "{% if message['role'] == 'system' %}<|im_start|>system\n"

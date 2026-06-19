@@ -41,18 +41,14 @@ class TestTTSHealth:
         assert body["enabled"] is False
         assert "missing" in (body["error"] or "").lower()
 
-    def test_health_disabled_when_flag_off(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_health_disabled_when_flag_off(self, client: TestClient, reset_tts_module) -> None:
         with patch.object(reset_tts_module, "_ENABLED_FLAG", False):
             resp = client.get("/api/chat/speak/health")
         body = resp.json()
         assert body["enabled"] is False
         assert "PIPER_ENABLED" in (body["error"] or "")
 
-    def test_health_enabled_when_voice_loaded(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_health_enabled_when_voice_loaded(self, client: TestClient, reset_tts_module) -> None:
         reset_tts_module._voice = MagicMock()
         resp = client.get("/api/chat/speak/health")
         body = resp.json()
@@ -61,9 +57,7 @@ class TestTTSHealth:
 
 
 class TestTTSSynthesize:
-    def test_synthesize_returns_wav(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_synthesize_returns_wav(self, client: TestClient, reset_tts_module) -> None:
         fake_voice = MagicMock()
         fake_voice.synthesize.side_effect = _writes_minimal_wav
         reset_tts_module._voice = fake_voice
@@ -84,28 +78,20 @@ class TestTTSSynthesize:
         assert "noise_scale" in called_kwargs
         assert "noise_w" in called_kwargs
 
-    def test_synthesize_rejects_empty_text(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_synthesize_rejects_empty_text(self, client: TestClient, reset_tts_module) -> None:
         # Pydantic validation should fire before lazy load.
         resp = client.post("/api/chat/speak", json={"text": ""})
         assert resp.status_code == 422
 
-    def test_synthesize_rejects_whitespace_text(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_synthesize_rejects_whitespace_text(self, client: TestClient, reset_tts_module) -> None:
         reset_tts_module._voice = MagicMock()
         resp = client.post("/api/chat/speak", json={"text": "   "})
         assert resp.status_code == 400
 
-    def test_synthesize_rejects_oversize_text(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_synthesize_rejects_oversize_text(self, client: TestClient, reset_tts_module) -> None:
         reset_tts_module._voice = MagicMock()
         with patch.object(reset_tts_module, "_MAX_INPUT_CHARS", 10):
-            resp = client.post(
-                "/api/chat/speak", json={"text": "this string is far too long"}
-            )
+            resp = client.post("/api/chat/speak", json={"text": "this string is far too long"})
         assert resp.status_code == 413
 
     def test_synthesize_503_when_voice_unavailable(
@@ -117,9 +103,7 @@ class TestTTSSynthesize:
         assert resp.status_code == 503
         assert "TTS unavailable" in resp.json()["detail"]
 
-    def test_synthesize_500_on_piper_error(
-        self, client: TestClient, reset_tts_module
-    ) -> None:
+    def test_synthesize_500_on_piper_error(self, client: TestClient, reset_tts_module) -> None:
         fake_voice = MagicMock()
         fake_voice.synthesize.side_effect = RuntimeError("boom")
         reset_tts_module._voice = fake_voice

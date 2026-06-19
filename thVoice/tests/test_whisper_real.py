@@ -103,9 +103,7 @@ class TestWhisperRealSamples:
         ]
 
         for phrase in key_phrases:
-            assert (
-                phrase.lower() in normalized_result.lower()
-            ), f"Missing key phrase: {phrase}"
+            assert phrase.lower() in normalized_result.lower(), f"Missing key phrase: {phrase}"
 
         # Log the actual transcription for debugging
         print(f"\nActual transcription: '{full_text}'")
@@ -152,9 +150,7 @@ class TestWhisperRealSamples:
         ]
 
         for phrase in key_phrases:
-            assert (
-                phrase.lower() in normalized_result.lower()
-            ), f"Missing key phrase: {phrase}"
+            assert phrase.lower() in normalized_result.lower(), f"Missing key phrase: {phrase}"
 
         # Log the actual transcription for debugging
         print(f"\nActual transcription: '{full_text}'")
@@ -194,13 +190,9 @@ class TestWhisperRealSamples:
             # Check optional attributes if they exist
             # Note: These attributes may not be available on all Whisper segment objects
             if hasattr(segment, "t0"):
-                assert isinstance(
-                    segment.t0, (int, float)
-                ), "Segment start time is not numeric"
+                assert isinstance(segment.t0, (int, float)), "Segment start time is not numeric"
             if hasattr(segment, "t1"):
-                assert isinstance(
-                    segment.t1, (int, float)
-                ), "Segment end time is not numeric"
+                assert isinstance(segment.t1, (int, float)), "Segment end time is not numeric"
 
     def test_jfk_transcription_performance(self, jfk_wav_path: Path) -> None:
         """Test transcription performance on JFK sample."""
@@ -233,9 +225,7 @@ class TestWhisperRealSamples:
         transcription_time = end_time - start_time
 
         # Verify reasonable performance (should complete in reasonable time)
-        assert (
-            transcription_time < 30.0
-        ), f"Transcription took too long: {transcription_time:.2f}s"
+        assert transcription_time < 30.0, f"Transcription took too long: {transcription_time:.2f}s"
         assert len(result) > 0, "No transcription results returned"
 
         print(f"\nTranscription completed in {transcription_time:.2f} seconds")
@@ -266,9 +256,7 @@ class TestWhisperRealSamples:
         results: list[str] = []
         for i in range(3):
             transcription_result: list[Segment] = model.transcribe(str(jfk_wav_path))
-            full_text: str = " ".join(
-                [segment.text for segment in transcription_result]
-            )
+            full_text: str = " ".join([segment.text for segment in transcription_result])
             normalized_text: str = self._normalize_text(full_text)
             results.append(normalized_text)
 
@@ -276,12 +264,10 @@ class TestWhisperRealSamples:
         first_result: str = results[0]
         for i, result_text in enumerate(results[1:], 1):
             # Check if results are similar (at least 80% similarity)
-            similarity: float = self._calculate_text_similarity(
-                first_result, result_text
+            similarity: float = self._calculate_text_similarity(first_result, result_text)
+            assert similarity > 0.8, (
+                f"Transcription results too different (similarity: {similarity:.2f})"
             )
-            assert (
-                similarity > 0.8
-            ), f"Transcription results too different (similarity: {similarity:.2f})"
             print(f"Run {i} similarity: {similarity:.2f}")
 
     def test_jfk_transcription_with_different_models(self, jfk_wav_path: Path) -> None:
@@ -292,9 +278,7 @@ class TestWhisperRealSamples:
             "models/ggml-medium.en.bin",
         ]
 
-        available_models: list[str] = [
-            path for path in model_paths if Path(path).exists()
-        ]
+        available_models: list[str] = [path for path in model_paths if Path(path).exists()]
 
         if len(available_models) < 2:
             pytest.skip("Need at least 2 different models for comparison")
@@ -311,16 +295,14 @@ class TestWhisperRealSamples:
 
             # Verify basic transcription quality
             assert len(result) > 0, f"No transcription results for {model_path}"
-            assert (
-                len(normalized_text) > 50
-            ), f"Transcription too short for {model_path}"
+            assert len(normalized_text) > 50, f"Transcription too short for {model_path}"
 
             # Check for key phrases
             key_phrases = ["fellow Americans", "country", "ask"]
             for phrase in key_phrases:
-                assert (
-                    phrase.lower() in normalized_text.lower()
-                ), f"Missing '{phrase}' in {model_path}"
+                assert phrase.lower() in normalized_text.lower(), (
+                    f"Missing '{phrase}' in {model_path}"
+                )
 
         # Compare results across models
         model_names: list[str] = list(results.keys())
@@ -329,13 +311,11 @@ class TestWhisperRealSamples:
                 similarity: float = self._calculate_text_similarity(
                     results[model_names[i]], results[model_names[j]]
                 )
-                print(
-                    f"Similarity between {model_names[i]} and {model_names[j]}: {similarity:.2f}"
-                )
+                print(f"Similarity between {model_names[i]} and {model_names[j]}: {similarity:.2f}")
                 # Models should produce reasonably similar results
-                assert (
-                    similarity > 0.6
-                ), f"Models produce too different results (similarity: {similarity:.2f})"
+                assert similarity > 0.6, (
+                    f"Models produce too different results (similarity: {similarity:.2f})"
+                )
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text for comparison by removing extra spaces and punctuation variations."""

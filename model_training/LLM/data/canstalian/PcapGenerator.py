@@ -64,6 +64,7 @@ try:
     pcap_generator = PcapGenerator('test.pcap')
     pcap_generator.generate_pcap(10)  # Generate a PCAP file with 10 dummy packets
 except ValueError as error:
+    pass  # placeholder — original file had no handler body
     print(f"Error generating PCAP file: {error}")
 
 # Example 2: Generating a larger PCAP file for performance testing
@@ -71,6 +72,7 @@ try:
     large_pcap_generator = PcapGenerator('large_test.pcap')
     large_pcap_generator.generate_pcap(1000)  # Generate a PCAP file with 1000 dummy packets
 except ValueError as error:
+    pass  # placeholder — original file had no handler body
     print(f"Error generating large PCAP file: {error}")
 
 # Example 3: Generating a PCAP file for packet capture
@@ -78,11 +80,12 @@ try:
     capture_pcap_generator = PcapGenerator('capture.pcap')
     capture_pcap_generator.generate_pcap(100)  # Generate a PCAP file with 100 dummy packets
 except ValueError as error:
-    print(f"Error generating PCAP file for packet capture: {error}")   
+    pass  # placeholder — original file had no handler body
+    print(f"Error generating PCAP file for packet capture: {error}")
 
 # Example 4: Generating a PCAP file for packet capture with a specific interface
 try:
     capture_pcap_generator = PcapGenerator('capture.pcap')
     capture_pcap_generator.generate_pcap(100, interface='eth0')  # Generate a PCAP file with 100 dummy packets on the specified interface
-except ValueError as error;
-
+except ValueError as error:
+    pass  # placeholder — original file had no handler body

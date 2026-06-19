@@ -1,23 +1,19 @@
 """Tests for data.py: TokenCache, TextWindowDataset, cache utilities."""
 
 import json
-import os
-from array import array
 from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
-
 from data import (
-    TokenCache,
+    DEFAULT_SHARD_SIZE_TOKENS,
     TextWindowDataset,
+    TokenCache,
     build_cache_key,
     build_dataloader,
     get_cache_root,
     get_shard_size_tokens,
-    DEFAULT_CACHE_VERSION,
-    DEFAULT_SHARD_SIZE_TOKENS,
 )
 
 

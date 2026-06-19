@@ -155,10 +155,10 @@ class TestMyComponent:
         """Test async function."""
         # Setup
         mock_dependency.return_value = "expected_result"
-        
+
         # Execute
         result = await my_async_function()
-        
+
         # Assert
         assert result == "expected_result"
 ```
@@ -237,4 +237,4 @@ pytest tests/ --cov=app --cov-report=html --cov-report=term
 
 # View HTML report
 open htmlcov/index.html
-``` 
+```

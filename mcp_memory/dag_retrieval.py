@@ -20,7 +20,7 @@ import json
 import logging
 import os
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import httpx
@@ -37,6 +37,7 @@ def _load_dag_config() -> dict:
     try:
         import json
         from pathlib import Path
+
         config_path = Path(__file__).resolve().parent.parent / "config" / "shared_api_config.json"
         with open(config_path) as f:
             return json.load(f).get("dag_retrieval", {})
@@ -60,6 +61,7 @@ def _get_llm_config() -> tuple[str, str]:
 
     try:
         from shared.config_loader import load_vllm_config
+
         url, cfg_model = load_vllm_config()
         base_url = base_url or url.rsplit("/", 1)[0].replace("/completions", "")
         if not base_url.endswith("/v1"):
@@ -181,9 +183,7 @@ def _parse_json_response(text: str) -> dict | None:
 # ---------------------------------------------------------------------------
 
 
-async def _decompose_query(
-    query: str, base_url: str, model: str
-) -> list[str]:
+async def _decompose_query(query: str, base_url: str, model: str) -> list[str]:
     """LLM decomposes a complex query into atomic subqueries."""
     prompt = f"""Decompose this question into the minimum set of independent sub-questions that must be answered to fully address it. Each sub-question should target a single fact or relationship.
 
@@ -240,20 +240,21 @@ If no dependencies exist (all sub-questions are independent), return:
         # Validate indices
         valid = []
         for pair in pairs:
-            if (isinstance(pair, (list, tuple)) and len(pair) == 2
-                    and all(isinstance(x, int) for x in pair)
-                    and 0 <= pair[0] < len(subqueries)
-                    and 0 <= pair[1] < len(subqueries)
-                    and pair[0] != pair[1]):
+            if (
+                isinstance(pair, list | tuple)
+                and len(pair) == 2
+                and all(isinstance(x, int) for x in pair)
+                and 0 <= pair[0] < len(subqueries)
+                and 0 <= pair[1] < len(subqueries)
+                and pair[0] != pair[1]
+            ):
                 valid.append((pair[0], pair[1]))
         return valid
 
     return []
 
 
-def _topological_sort(
-    num_nodes: int, edges: list[tuple[int, int]]
-) -> list[int]:
+def _topological_sort(num_nodes: int, edges: list[tuple[int, int]]) -> list[int]:
     """Kahn's algorithm. Returns node indices in dependency order.
 
     If the graph has a cycle, returns all nodes in arbitrary order
@@ -325,9 +326,7 @@ Updated summary:"""
     return await _llm_call(prompt, base_url, model)
 
 
-async def _check_can_answer(
-    query: str, summary: str, base_url: str, model: str
-) -> bool:
+async def _check_can_answer(query: str, summary: str, base_url: str, model: str) -> bool:
     """Early termination check: can the query be answered with current info?"""
     prompt = f"""Given this question and the information gathered so far, can the question be fully answered?
 
@@ -433,14 +432,14 @@ async def dag_search(
         sq = subqueries[idx]
 
         results = _memory_search(sq, limit=limit_per_hop, zone=zone, min_trust=min_trust)
-        rolling_summary = await _summarize_context(
-            query, results, rolling_summary, base_url, model
+        rolling_summary = await _summarize_context(query, results, rolling_summary, base_url, model)
+        subquery_results.append(
+            SubqueryResult(
+                subquery=sq,
+                results=results,
+                summary=rolling_summary,
+            )
         )
-        subquery_results.append(SubqueryResult(
-            subquery=sq,
-            results=results,
-            summary=rolling_summary,
-        ))
 
         # Early termination
         if rounds < len(execution_order) and await _check_can_answer(
@@ -468,7 +467,6 @@ def dag_search_sync(
 ) -> dict[str, Any]:
     """Synchronous wrapper for dag_search. Returns a plain dict."""
     import asyncio
-    result = asyncio.run(dag_search(
-        query, limit_per_hop, max_hops, zone, min_trust, force_dag
-    ))
+
+    result = asyncio.run(dag_search(query, limit_per_hop, max_hops, zone, min_trust, force_dag))
     return asdict(result)

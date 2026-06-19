@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-from typing import Optional
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
@@ -45,9 +44,7 @@ class RAGService:
         self.embedding_model = HuggingFaceEmbedding(
             model_name=self.embed_model_name, device=self.device
         )
-        Settings.embed_model = (
-            self.embedding_model
-        )  # Critical: prevents fallback to OpenAI
+        Settings.embed_model = self.embedding_model  # Critical: prevents fallback to OpenAI
         # Set LLM to avoid OpenAI fallback
         try:
             base_url = get_vllm_url()
@@ -98,7 +95,7 @@ class RAGService:
         if os.path.isdir(self.docs_path):
             docs = SimpleDirectoryReader(self.docs_path).load_data()  # type: ignore
         elif os.path.isfile(self.docs_path):
-            with open(self.docs_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(self.docs_path, encoding="utf-8", errors="ignore") as f:
                 text = f.read()
                 docs = [Document(text=text)]
 
@@ -124,7 +121,8 @@ class RAGService:
         collection = client.get_collection(self.collection_name)
         vector_store = ChromaVectorStore(chroma_collection=collection)
         storage_context = StorageContext.from_defaults(
-            vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
+            vector_store=vector_store,
+            persist_dir=self.storage_dir,  # type: ignore
         )
         try:
             index = load_index_from_storage(storage_context)
@@ -137,7 +135,8 @@ class RAGService:
             collection = client.get_collection(self.collection_name)
             vector_store = ChromaVectorStore(chroma_collection=collection)
             storage_context = StorageContext.from_defaults(
-                vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
+                vector_store=vector_store,
+                persist_dir=self.storage_dir,  # type: ignore
             )
             index = load_index_from_storage(storage_context)
 
@@ -151,11 +150,12 @@ class RAGService:
         collection = client.get_collection(self.collection_name)
         vector_store = ChromaVectorStore(chroma_collection=collection)
         storage_context = StorageContext.from_defaults(
-            vector_store=vector_store, persist_dir=self.storage_dir  # type: ignore
+            vector_store=vector_store,
+            persist_dir=self.storage_dir,  # type: ignore
         )
         return load_index_from_storage(storage_context)
 
-    def get_chat_engine(self, memory: Optional[BaseMemory] = None) -> BaseChatEngine:
+    def get_chat_engine(self, memory: BaseMemory | None = None) -> BaseChatEngine:
         if not self.is_valid():
             self.init()
 

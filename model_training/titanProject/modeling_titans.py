@@ -12,16 +12,11 @@ Notes:
   are no-ops or ignored. It is sufficient for loading/saving and basic generation.
 """
 
-from typing import Optional, Tuple, Union
-
 import torch
 import torch.nn.functional as F
-from torch import nn
-
-from transformers import PreTrainedModel, PretrainedConfig
-from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-
 from model import ModelConfig, build_model
+from transformers import PretrainedConfig, PreTrainedModel
+from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 
 class TitansConfig(PretrainedConfig):
@@ -81,7 +76,9 @@ class TitansForCausalLM(PreTrainedModel):
             num_persist_mem_tokens=config.num_persist_mem_tokens,
             num_longterm_mem_tokens=config.num_longterm_mem_tokens,
             store_with_lookahead_value=getattr(config, "store_with_lookahead_value", False),
-            neural_memory_add_value_residual=getattr(config, "neural_memory_add_value_residual", False),
+            neural_memory_add_value_residual=getattr(
+                config, "neural_memory_add_value_residual", False
+            ),
             neural_mem_gate_attn_output=getattr(config, "neural_mem_gate_attn_output", False),
             neural_mem_weight_residual=getattr(config, "neural_mem_weight_residual", False),
             sliding_window_attn=getattr(config, "sliding_window_attn", False),
@@ -100,8 +97,8 @@ class TitansForCausalLM(PreTrainedModel):
     def forward(
         self,
         input_ids: torch.LongTensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        labels: Optional[torch.LongTensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        labels: torch.LongTensor | None = None,
         **kwargs,
     ) -> CausalLMOutputWithCrossAttentions:
         # titans-pytorch ignores attention_mask; segment handling is internal.

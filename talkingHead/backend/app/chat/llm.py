@@ -1,11 +1,11 @@
 import json
 import logging
 import os
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 import httpx
 
-from shared.config_loader import load_vllm_config, load_inference_config
+from shared.config_loader import load_inference_config, load_vllm_config
 
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 logger = logging.getLogger("chat.llm")
@@ -36,8 +36,10 @@ class ChatProcessor:
             self._inference = load_inference_config()
         except Exception:
             self._inference = {
-                "max_tokens": 512, "temperature": 0.7,
-                "top_p": 0.9, "frequency_penalty": 0.5,
+                "max_tokens": 512,
+                "temperature": 0.7,
+                "top_p": 0.9,
+                "frequency_penalty": 0.5,
             }
 
     def _build_messages(self, prompt: str) -> list[dict[str, str]]:

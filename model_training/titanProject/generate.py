@@ -16,11 +16,9 @@ Usage:
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
 
 import torch
 import yaml
-
 from model import ModelConfig, build_model, load_model_source
 from prompt_formats import default_stop_strings, infer_prompt_family
 from train_utils import get_tokenizer
@@ -44,7 +42,7 @@ def resolve_path(path_str: str) -> Path:
 
 
 def load_config(path: Path):
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
@@ -61,7 +59,7 @@ def generate(
     max_new_tokens: int,
     top_k: int = 20,
     temperature: float = 0.8,
-    stop_strings: Optional[List[str]] = None,
+    stop_strings: list[str] | None = None,
     hf_mode: bool = False,
 ):
     ids = tokenizer.encode(prompt)
@@ -91,20 +89,37 @@ def generate(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate text from a Titans checkpoint or HuggingFace model.")
-    parser.add_argument("--config", type=str, default=None, help="YAML config path (required for Titan models)")
+    parser = argparse.ArgumentParser(
+        description="Generate text from a Titans checkpoint or HuggingFace model."
+    )
+    parser.add_argument(
+        "--config", type=str, default=None, help="YAML config path (required for Titan models)"
+    )
     parser.add_argument("--ckpt", type=str, default=None, help="Titan checkpoint path")
-    parser.add_argument("--hf-model", type=str, default=None,
-                        help="HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B)")
-    parser.add_argument("--adapter", type=str, default=None,
-                        help="Path to LoRA adapter directory (used with --hf-model)")
-    parser.add_argument("--merge-adapter", action="store_true",
-                        help="Merge LoRA adapter into base weights before generation")
+    parser.add_argument(
+        "--hf-model",
+        type=str,
+        default=None,
+        help="HuggingFace model ID (e.g. meta-llama/Meta-Llama-3-8B)",
+    )
+    parser.add_argument(
+        "--adapter",
+        type=str,
+        default=None,
+        help="Path to LoRA adapter directory (used with --hf-model)",
+    )
+    parser.add_argument(
+        "--merge-adapter",
+        action="store_true",
+        help="Merge LoRA adapter into base weights before generation",
+    )
     parser.add_argument("--prompt", type=str, default="Once upon a time", help="Prompt text")
     parser.add_argument("--max-new", type=int, default=64, help="Max new tokens to generate")
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
     parser.add_argument("--temperature", type=float, default=0.8, help="Sampling temperature")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument(
         "--prompt-family",
         type=str,
@@ -112,8 +127,11 @@ def main():
         choices=["none", "auto", "chat", "instruction"],
         help="Optional prompt family for stop handling; 'auto' infers from config data paths",
     )
-    parser.add_argument("--chat-template", action="store_true",
-                        help="Format the prompt using the model's chat template (HF only)")
+    parser.add_argument(
+        "--chat-template",
+        action="store_true",
+        help="Format the prompt using the model's chat template (HF only)",
+    )
     args = parser.parse_args()
 
     hf_mode = args.hf_model is not None
@@ -140,7 +158,7 @@ def main():
         device = torch.device("cpu")
 
     if hf_mode:
-        from hf_utils import load_hf_checkpoint, get_hf_tokenizer
+        from hf_utils import get_hf_tokenizer, load_hf_checkpoint
 
         model = load_hf_checkpoint(
             args.hf_model,
@@ -160,10 +178,13 @@ def main():
             )
 
         from train_utils import TokenizerAdapter, _hf_tokenizer_fingerprint
+
         tokenizer = TokenizerAdapter(
             encode_fn=lambda text: hf_tokenizer.encode(text, add_special_tokens=False),
             decode_fn=lambda ids: hf_tokenizer.decode(
-                ids, clean_up_tokenization_spaces=False, skip_special_tokens=True,
+                ids,
+                clean_up_tokenization_spaces=False,
+                skip_special_tokens=True,
             ),
             tokenizer_fingerprint=_hf_tokenizer_fingerprint(hf_tokenizer),
             tokenizer_source_path=hf_tokenizer.name_or_path,
@@ -186,7 +207,9 @@ def main():
         if hf_mode:
             stop_strings = default_stop_strings(args.prompt_family)
         else:
-            prompt_family = infer_prompt_family(cfg) if args.prompt_family == "auto" else args.prompt_family
+            prompt_family = (
+                infer_prompt_family(cfg) if args.prompt_family == "auto" else args.prompt_family
+            )
             stop_strings = default_stop_strings(prompt_family)
 
     out = generate(
@@ -205,4 +228,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

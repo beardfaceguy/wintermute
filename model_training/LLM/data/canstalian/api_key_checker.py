@@ -1,5 +1,6 @@
 import requests
 
+
 class APIKeyChecker:
     def __init__(self, api_key: str, endpoint: str):
         if not api_key:
@@ -10,9 +11,7 @@ class APIKeyChecker:
         self.endpoint = endpoint
 
     def check_api_key(self) -> bool:
-        headers = {
-            'Authorization': f'Bearer {self.api_key}'
-        }
+        headers = {"Authorization": f"Bearer {self.api_key}"}
         try:
             response = requests.get(self.endpoint, headers=headers)
             if response.status_code == 200:

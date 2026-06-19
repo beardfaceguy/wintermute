@@ -6,7 +6,7 @@ All database access is mocked; no real PostgreSQL connection is required.
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -25,30 +25,52 @@ class TestIsReadOnly:
     def _import_server(self):
         with patch("psycopg2.connect"):
             from mcp_servers.mcp_postgres.server import _is_read_only
+
             self._is_read_only = _is_read_only
 
-    @pytest.mark.parametrize("sql", [
-        "SELECT * FROM users",
-        "select count(*) from entries",
-        "WITH cte AS (SELECT 1) SELECT * FROM cte",
-        "EXPLAIN SELECT 1",
-        "explain analyze select 1",
-    ])
+    @pytest.mark.parametrize(
+        "sql",
+        [
+            "SELECT * FROM users",
+            "select count(*) from entries",
+            "WITH cte AS (SELECT 1) SELECT * FROM cte",
+            "EXPLAIN SELECT 1",
+            "explain analyze select 1",
+        ],
+    )
     def test_accepts_read_statements(self, sql):
         """SELECT, WITH, and EXPLAIN statements are allowed."""
         assert self._is_read_only(sql) is True
 
-    @pytest.mark.parametrize("keyword", [
-        "INSERT", "UPDATE", "DELETE", "DROP", "TRUNCATE",
-        "ALTER", "CREATE", "GRANT", "REVOKE", "COPY",
-    ])
+    @pytest.mark.parametrize(
+        "keyword",
+        [
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "DROP",
+            "TRUNCATE",
+            "ALTER",
+            "CREATE",
+            "GRANT",
+            "REVOKE",
+            "COPY",
+        ],
+    )
     def test_rejects_dangerous_keywords(self, keyword):
         """All mutating keywords are blocked."""
         assert self._is_read_only(f"{keyword} INTO foo VALUES (1)") is False
 
-    @pytest.mark.parametrize("keyword", [
-        "insert", "update", "Delete", "dRoP", "TRUNCATE",
-    ])
+    @pytest.mark.parametrize(
+        "keyword",
+        [
+            "insert",
+            "update",
+            "Delete",
+            "dRoP",
+            "TRUNCATE",
+        ],
+    )
     def test_case_insensitive_rejection(self, keyword):
         """Dangerous keywords are rejected regardless of case."""
         assert self._is_read_only(f"{keyword} something") is False
@@ -64,21 +86,20 @@ class TestIsReadOnly:
 
     def test_rejects_with_delete_cte(self):
         """WITH ... DELETE is a CTE-based mutation — must be blocked."""
-        assert self._is_read_only(
-            "WITH deleted AS (DELETE FROM users RETURNING *) SELECT * FROM deleted"
-        ) is False
+        assert (
+            self._is_read_only(
+                "WITH deleted AS (DELETE FROM users RETURNING *) SELECT * FROM deleted"
+            )
+            is False
+        )
 
     def test_rejects_select_into(self):
         """SELECT INTO creates a new table in PostgreSQL — must be blocked."""
-        assert self._is_read_only(
-            "SELECT * INTO new_table FROM users"
-        ) is False
+        assert self._is_read_only("SELECT * INTO new_table FROM users") is False
 
     def test_rejects_semicolon_chained_mutation(self):
         """Multi-statement payloads with a trailing mutating statement must be blocked."""
-        assert self._is_read_only(
-            "SELECT 1; DELETE FROM users"
-        ) is False
+        assert self._is_read_only("SELECT 1; DELETE FROM users") is False
 
 
 # ---------------------------------------------------------------------------
@@ -93,6 +114,7 @@ class TestSqlQuery:
     def _import_and_patch(self):
         with patch("psycopg2.connect"):
             import mcp_servers.mcp_postgres.server as mod
+
             self.mod = mod
 
     def test_rejects_non_read_only_sql(self):
@@ -154,6 +176,7 @@ class TestSqlListTables:
     def _import_and_patch(self):
         with patch("psycopg2.connect"):
             import mcp_servers.mcp_postgres.server as mod
+
             self.mod = mod
 
     def test_calls_information_schema(self):
@@ -179,17 +202,27 @@ class TestSqlDescribeTable:
     def _import_and_patch(self):
         with patch("psycopg2.connect"):
             import mcp_servers.mcp_postgres.server as mod
+
             self.mod = mod
 
     def test_returns_proper_structure(self):
         """sql_describe_table returns schema, table, row_count, columns, pk, fk."""
-        col_rows = [{"column_name": "id", "data_type": "uuid", "udt_name": "uuid",
-                      "is_nullable": "NO", "column_default": None, "character_maximum_length": None}]
+        col_rows = [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": None,
+                "character_maximum_length": None,
+            }
+        ]
         pk_rows = [{"column_name": "id"}]
         fk_rows = []
         count_rows = [{"count": 42}]
 
         call_count = [0]
+
         def fake_run_query(sql, params=None, max_rows=200):
             call_count[0] += 1
             if call_count[0] == 1:
@@ -223,6 +256,7 @@ class TestSqlSampleRows:
     def _import_and_patch(self):
         with patch("psycopg2.connect"):
             import mcp_servers.mcp_postgres.server as mod
+
             self.mod = mod
 
     def test_clamps_limit_low(self):
@@ -266,6 +300,7 @@ class TestSqlExplain:
     def _import_and_patch(self):
         with patch("psycopg2.connect"):
             import mcp_servers.mcp_postgres.server as mod
+
             self.mod = mod
 
     def test_rejects_non_read_only_sql(self):

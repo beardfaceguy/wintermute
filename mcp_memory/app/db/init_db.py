@@ -1,5 +1,5 @@
-from app.models.memory_entry import Base
 from app.db.session import engine
+from app.models.memory_entry import Base
 
 
 def init_db():

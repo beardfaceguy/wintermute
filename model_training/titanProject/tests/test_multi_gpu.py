@@ -7,28 +7,20 @@ tests (marked @pytest.mark.slow) spawn real processes to validate gradient
 synchronization and rank coordination.
 """
 
-import io
-import json
-import math
 import os
-import sys
-import tempfile
 from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import patch
 
-import numpy as np
 import pytest
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
 import torch.nn.functional as F
+from model import ModelConfig, build_model
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.optim import AdamW
-from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
-
-from model import ModelConfig, build_model
 from train_utils import (
     build_distributed_dataloader,
     cleanup_distributed,
@@ -38,10 +30,10 @@ from train_utils import (
     setup_distributed,
 )
 
-
 # ---------------------------------------------------------------------------
 # Distributed helper functions
 # ---------------------------------------------------------------------------
+
 
 class TestSetupDistributed:
     """setup_distributed() fallback behavior without torchrun."""
@@ -86,14 +78,19 @@ class TestReduceScalar:
 # Distributed dataloader
 # ---------------------------------------------------------------------------
 
+
 class TestBuildDistributedDataloader:
     """build_distributed_dataloader with world_size=1 and simulated multi-rank."""
 
     def test_single_process_returns_none_sampler(self, small_text_file, dummy_tokenizer):
         loader, sampler = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=1,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=1,
             num_workers=0,
         )
         assert sampler is None
@@ -102,9 +99,13 @@ class TestBuildDistributedDataloader:
 
     def test_multi_rank_returns_distributed_sampler(self, small_text_file, dummy_tokenizer):
         loader, sampler = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=4,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=4,
             num_workers=0,
         )
         assert isinstance(sampler, DistributedSampler)
@@ -120,10 +121,15 @@ class TestBuildDistributedDataloader:
         all_indices = []
         for rank in range(world_size):
             _, sampler = build_distributed_dataloader(
-                str(small_text_file), dummy_tokenizer,
+                str(small_text_file),
+                dummy_tokenizer,
                 dummy_tokenizer.tokenizer_fingerprint,
-                seq_len=32, batch_size=2, rank=rank, world_size=world_size,
-                shuffle=False, num_workers=0,
+                seq_len=32,
+                batch_size=2,
+                rank=rank,
+                world_size=world_size,
+                shuffle=False,
+                num_workers=0,
             )
             indices = list(sampler)
             all_indices.append(indices)
@@ -136,8 +142,9 @@ class TestBuildDistributedDataloader:
         # The index lists themselves should differ between ranks
         for i in range(world_size):
             for j in range(i + 1, world_size):
-                assert all_indices[i] != all_indices[j], \
+                assert all_indices[i] != all_indices[j], (
                     f"Rank {i} and {j} got identical index lists"
+                )
 
     def test_all_ranks_cover_full_dataset(self, small_text_file, dummy_tokenizer):
         """Union of all rank indices should cover the full dataset (with possible padding)."""
@@ -145,18 +152,28 @@ class TestBuildDistributedDataloader:
         combined = set()
         for rank in range(world_size):
             _, sampler = build_distributed_dataloader(
-                str(small_text_file), dummy_tokenizer,
+                str(small_text_file),
+                dummy_tokenizer,
                 dummy_tokenizer.tokenizer_fingerprint,
-                seq_len=32, batch_size=2, rank=rank, world_size=world_size,
-                shuffle=False, num_workers=0,
+                seq_len=32,
+                batch_size=2,
+                rank=rank,
+                world_size=world_size,
+                shuffle=False,
+                num_workers=0,
             )
             combined.update(list(sampler))
 
         loader, _ = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=1,
-            shuffle=False, num_workers=0,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=1,
+            shuffle=False,
+            num_workers=0,
         )
         full_size = len(loader.dataset)
         # DistributedSampler may pad to make even splits
@@ -168,10 +185,15 @@ class TestDistributedSamplerEpoch:
 
     def test_set_epoch_changes_order(self, small_text_file, dummy_tokenizer):
         _, sampler = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=2,
-            shuffle=True, num_workers=0,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=2,
+            shuffle=True,
+            num_workers=0,
         )
         sampler.set_epoch(0)
         order_epoch_0 = list(sampler)
@@ -185,10 +207,15 @@ class TestDistributedSamplerEpoch:
 
     def test_same_epoch_gives_same_order(self, small_text_file, dummy_tokenizer):
         _, sampler = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=2,
-            shuffle=True, num_workers=0,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=2,
+            shuffle=True,
+            num_workers=0,
         )
         sampler.set_epoch(42)
         order_a = list(sampler)
@@ -202,6 +229,7 @@ class TestDistributedSamplerEpoch:
 # ---------------------------------------------------------------------------
 # Gradient accumulation auto-scaling
 # ---------------------------------------------------------------------------
+
 
 class TestGradAccumScaling:
     """The auto-scaling math: grad_accum_steps // world_size."""
@@ -247,11 +275,13 @@ class TestGradAccumScaling:
 # Rank-guarded logging
 # ---------------------------------------------------------------------------
 
+
 class TestRankGuardedLogging:
     """Only rank 0 should produce log output."""
 
     def test_rank_0_logs(self, capsys):
         import time
+
         start_time = time.time()
 
         def log_fn(msg, rank=0):
@@ -266,6 +296,7 @@ class TestRankGuardedLogging:
 
     def test_non_rank_0_silent(self, capsys):
         import time
+
         start_time = time.time()
 
         def log_fn(msg, rank=1):
@@ -284,6 +315,7 @@ class TestRankGuardedLogging:
 # ---------------------------------------------------------------------------
 # Effective tokens per step across world sizes
 # ---------------------------------------------------------------------------
+
 
 class TestEffectiveTokenCounting:
     """total_tokens_seen should account for all GPUs."""
@@ -308,6 +340,7 @@ class TestEffectiveTokenCounting:
 # DDP checkpoint save/load: raw_model.state_dict() portability
 # ---------------------------------------------------------------------------
 
+
 class TestDDPCheckpointPortability:
     """Checkpoints saved from DDP (model.module) should load into bare models."""
 
@@ -319,19 +352,24 @@ class TestDDPCheckpointPortability:
         # Simulate a training step
         x = torch.randint(0, tiny_gpt_config.vocab_size, (2, 16))
         logits = model(x, return_loss=False)
-        loss = F.cross_entropy(logits.view(-1, logits.size(-1)),
-                               torch.randint(0, tiny_gpt_config.vocab_size, (2, 16)).view(-1))
+        loss = F.cross_entropy(
+            logits.view(-1, logits.size(-1)),
+            torch.randint(0, tiny_gpt_config.vocab_size, (2, 16)).view(-1),
+        )
         loss.backward()
         opt.step()
 
         # In DDP, raw_model = model.module; here we simulate by saving model directly
         # (since without actual DDP wrapping, model IS the raw model)
         ckpt_path = tmp_path / "ddp_ckpt.pt"
-        torch.save({
-            "model": model.state_dict(),
-            "opt": opt.state_dict(),
-            "step": 1,
-        }, ckpt_path)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "opt": opt.state_dict(),
+                "step": 1,
+            },
+            ckpt_path,
+        )
 
         # Load into a fresh bare model
         model2 = build_model(tiny_gpt_config)
@@ -359,6 +397,7 @@ class TestDDPCheckpointPortability:
 # no_sync context manager compatibility
 # ---------------------------------------------------------------------------
 
+
 class TestNoSyncContext:
     """Verify the sync_context logic produces correct context managers."""
 
@@ -368,8 +407,9 @@ class TestNoSyncContext:
         for accum_in_step in range(grad_accum_steps):
             is_last = (accum_in_step + 1) == grad_accum_steps
             ctx = nullcontext() if (world_size <= 1 or is_last) else "no_sync"
-            assert type(ctx) is nullcontext, \
+            assert type(ctx) is nullcontext, (
                 f"Single GPU should always use nullcontext, got {type(ctx)} at step {accum_in_step}"
+            )
 
     def test_multi_gpu_last_step_syncs(self):
         """On the last accumulation micro-batch, gradients should sync (nullcontext)."""
@@ -377,7 +417,7 @@ class TestNoSyncContext:
         grad_accum_steps = 4
         accum_in_step = grad_accum_steps - 1
         is_last = (accum_in_step + 1) == grad_accum_steps
-        should_sync = (world_size <= 1 or is_last)
+        should_sync = world_size <= 1 or is_last
         assert should_sync is True
 
     def test_multi_gpu_non_last_step_skips_sync(self):
@@ -386,9 +426,10 @@ class TestNoSyncContext:
         grad_accum_steps = 4
         for accum_in_step in range(grad_accum_steps - 1):
             is_last = (accum_in_step + 1) == grad_accum_steps
-            should_sync = (world_size <= 1 or is_last)
-            assert should_sync is False, \
+            should_sync = world_size <= 1 or is_last
+            assert should_sync is False, (
                 f"Expected no_sync at micro-batch {accum_in_step}/{grad_accum_steps}"
+            )
 
     def test_accum_1_always_syncs(self):
         """With grad_accum=1, every step is the last step → always sync."""
@@ -396,7 +437,7 @@ class TestNoSyncContext:
         grad_accum_steps = 1
         accum_in_step = 0
         is_last = (accum_in_step + 1) == grad_accum_steps
-        should_sync = (world_size <= 1 or is_last)
+        should_sync = world_size <= 1 or is_last
         assert should_sync is True
 
 
@@ -404,22 +445,34 @@ class TestNoSyncContext:
 # Single-process end-to-end mini training (CPU, no DDP)
 # ---------------------------------------------------------------------------
 
+
 class TestSingleProcessEndToEnd:
     """Run a few training steps on CPU via the multi-GPU code path (world_size=1).
     Validates that the training loop logic works end-to-end."""
 
-    def _run_mini_train(self, tiny_gpt_config, small_text_file, dummy_tokenizer,
-                        tmp_path, max_steps=10, grad_accum_steps=2):
+    def _run_mini_train(
+        self,
+        tiny_gpt_config,
+        small_text_file,
+        dummy_tokenizer,
+        tmp_path,
+        max_steps=10,
+        grad_accum_steps=2,
+    ):
         """Helper: run a short training loop and return (losses, checkpoint_path)."""
         model = build_model(tiny_gpt_config)
-        opt = AdamW(model.parameters(), lr=0.001, weight_decay=0.01,
-                    betas=(0.9, 0.98), eps=1e-8)
+        opt = AdamW(model.parameters(), lr=0.001, weight_decay=0.01, betas=(0.9, 0.98), eps=1e-8)
 
         loader, sampler = build_distributed_dataloader(
-            str(small_text_file), dummy_tokenizer,
+            str(small_text_file),
+            dummy_tokenizer,
             dummy_tokenizer.tokenizer_fingerprint,
-            seq_len=32, batch_size=2, rank=0, world_size=1,
-            shuffle=True, num_workers=0,
+            seq_len=32,
+            batch_size=2,
+            rank=0,
+            world_size=1,
+            shuffle=True,
+            num_workers=0,
         )
 
         model.train()
@@ -456,18 +509,25 @@ class TestSingleProcessEndToEnd:
 
         ckpt_path = tmp_path / "mini_ckpt.pt"
         tmp_path.mkdir(parents=True, exist_ok=True)
-        torch.save({
-            "model": model.state_dict(),
-            "opt": opt.state_dict(),
-            "step": global_step,
-        }, ckpt_path)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "opt": opt.state_dict(),
+                "step": global_step,
+            },
+            ckpt_path,
+        )
 
         return losses, ckpt_path, model
 
     def test_loss_decreases(self, tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path):
         losses, _, _ = self._run_mini_train(
-            tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path,
-            max_steps=20, grad_accum_steps=1,
+            tiny_gpt_config,
+            small_text_file,
+            dummy_tokenizer,
+            tmp_path,
+            max_steps=20,
+            grad_accum_steps=1,
         )
         assert len(losses) == 20
         # Average of first 5 should be higher than average of last 5
@@ -475,18 +535,27 @@ class TestSingleProcessEndToEnd:
         late = sum(losses[-5:]) / 5
         assert late < early, f"Loss should decrease: early={early:.4f} late={late:.4f}"
 
-    def test_grad_accum_produces_same_step_count(self, tiny_gpt_config, small_text_file,
-                                                   dummy_tokenizer, tmp_path):
+    def test_grad_accum_produces_same_step_count(
+        self, tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path
+    ):
         losses, _, _ = self._run_mini_train(
-            tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path,
-            max_steps=5, grad_accum_steps=4,
+            tiny_gpt_config,
+            small_text_file,
+            dummy_tokenizer,
+            tmp_path,
+            max_steps=5,
+            grad_accum_steps=4,
         )
         assert len(losses) == 5
 
-    def test_checkpoint_is_resumable(self, tiny_gpt_config, small_text_file,
-                                     dummy_tokenizer, tmp_path):
+    def test_checkpoint_is_resumable(
+        self, tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path
+    ):
         _, ckpt_path, _ = self._run_mini_train(
-            tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path,
+            tiny_gpt_config,
+            small_text_file,
+            dummy_tokenizer,
+            tmp_path,
             max_steps=5,
         )
         ckpt = torch.load(ckpt_path, map_location="cpu")
@@ -501,24 +570,33 @@ class TestSingleProcessEndToEnd:
         opt2 = AdamW(model2.parameters(), lr=0.001)
         opt2.load_state_dict(ckpt["opt"])
 
-    def test_single_vs_accum_produces_different_weights(self, tiny_gpt_config, small_text_file,
-                                                        dummy_tokenizer, tmp_path):
+    def test_single_vs_accum_produces_different_weights(
+        self, tiny_gpt_config, small_text_file, dummy_tokenizer, tmp_path
+    ):
         """Different grad_accum should produce different final weights
         (sanity: the accum path actually changes optimizer behavior)."""
         torch.manual_seed(42)
         _, _, model_accum1 = self._run_mini_train(
-            tiny_gpt_config, small_text_file, dummy_tokenizer,
-            tmp_path / "a1", max_steps=10, grad_accum_steps=1,
+            tiny_gpt_config,
+            small_text_file,
+            dummy_tokenizer,
+            tmp_path / "a1",
+            max_steps=10,
+            grad_accum_steps=1,
         )
         torch.manual_seed(42)
         _, _, model_accum4 = self._run_mini_train(
-            tiny_gpt_config, small_text_file, dummy_tokenizer,
-            tmp_path / "a4", max_steps=10, grad_accum_steps=4,
+            tiny_gpt_config,
+            small_text_file,
+            dummy_tokenizer,
+            tmp_path / "a4",
+            max_steps=10,
+            grad_accum_steps=4,
         )
         # Weights should differ because accum changes effective batch composition
         all_same = all(
             torch.equal(p1, p2)
-            for p1, p2 in zip(model_accum1.parameters(), model_accum4.parameters())
+            for p1, p2 in zip(model_accum1.parameters(), model_accum4.parameters(), strict=False)
         )
         assert not all_same, "Different grad_accum should produce different weights"
 
@@ -527,17 +605,21 @@ class TestSingleProcessEndToEnd:
 # Config-driven effective batch size calculations
 # ---------------------------------------------------------------------------
 
+
 class TestEffectiveBatchConfig:
     """Verify effective_tokens_per_step = batch_size * seq_len * grad_accum * world_size."""
 
-    @pytest.mark.parametrize("batch_size,seq_len,accum,world_size,expected", [
-        (2, 1024, 32, 1, 65536),
-        (2, 1024, 4, 8, 65536),
-        (2, 1024, 16, 2, 65536),
-        (2, 1024, 8, 4, 65536),
-        (4, 512, 16, 2, 65536),
-        (1, 1024, 32, 1, 32768),
-    ])
+    @pytest.mark.parametrize(
+        "batch_size,seq_len,accum,world_size,expected",
+        [
+            (2, 1024, 32, 1, 65536),
+            (2, 1024, 4, 8, 65536),
+            (2, 1024, 16, 2, 65536),
+            (2, 1024, 8, 4, 65536),
+            (4, 512, 16, 2, 65536),
+            (1, 1024, 32, 1, 32768),
+        ],
+    )
     def test_effective_tokens(self, batch_size, seq_len, accum, world_size, expected):
         effective = batch_size * seq_len * accum * world_size
         assert effective == expected
@@ -551,7 +633,9 @@ class TestEffectiveBatchConfig:
 # ===========================================================================
 
 WORLD_SIZE_GLOO = 2
-TINY_CFG = ModelConfig(variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, ff_mult=2, max_seq_len=64)
+TINY_CFG = ModelConfig(
+    variant="gpt", vocab_size=256, dim=64, depth=2, heads=4, ff_mult=2, max_seq_len=64
+)
 
 
 def _init_gloo(rank, world_size, tmp_dir):
@@ -567,6 +651,7 @@ def _cleanup():
 
 
 # --- Worker functions (must be top-level for mp.spawn) ---
+
 
 def _worker_gradient_sync(rank, world_size, tmp_dir, results_dir):
     """Each rank trains the same model on different data; DDP should sync gradients."""
@@ -607,8 +692,9 @@ def _worker_reduce_scalar(rank, world_size, tmp_dir, results_dir):
         dist.all_reduce(t, op=dist.ReduceOp.SUM)
         result = t.item() / world_size
 
-        torch.save({"rank": rank, "result": result},
-                    os.path.join(results_dir, f"reduce_rank{rank}.pt"))
+        torch.save(
+            {"rank": rank, "result": result}, os.path.join(results_dir, f"reduce_rank{rank}.pt")
+        )
     finally:
         _cleanup()
 
@@ -645,8 +731,9 @@ def _worker_barrier_coordination(rank, world_size, tmp_dir, results_dir):
 
         if rank == 1:
             exists = Path(signal_path).exists()
-            torch.save({"signal_found": exists},
-                        os.path.join(results_dir, f"barrier_rank{rank}.pt"))
+            torch.save(
+                {"signal_found": exists}, os.path.join(results_dir, f"barrier_rank{rank}.pt")
+            )
     finally:
         _cleanup()
 
@@ -660,8 +747,7 @@ def _worker_ddp_training_loop(rank, world_size, tmp_dir, results_dir):
         model = build_model(TINY_CFG)
         model = DDP(model)
 
-        opt = AdamW(model.parameters(), lr=0.01, weight_decay=0.01,
-                    betas=(0.9, 0.98), eps=1e-8)
+        opt = AdamW(model.parameters(), lr=0.01, weight_decay=0.01, betas=(0.9, 0.98), eps=1e-8)
 
         grad_accum_steps = 2
         max_steps = 5
@@ -675,8 +761,8 @@ def _worker_ddp_training_loop(rank, world_size, tmp_dir, results_dir):
         dataset_y = torch.randint(0, TINY_CFG.vocab_size, (40, 16))
 
         for i in range(len(dataset_x)):
-            x = dataset_x[i:i+1]
-            y = dataset_y[i:i+1]
+            x = dataset_x[i : i + 1]
+            y = dataset_y[i : i + 1]
 
             is_last_accum = (accum_in_step + 1) == grad_accum_steps
             sync_ctx = nullcontext() if is_last_accum else model.no_sync()
@@ -706,16 +792,20 @@ def _worker_ddp_training_loop(rank, world_size, tmp_dir, results_dir):
             if global_step >= max_steps:
                 break
 
-        torch.save({
-            "losses": losses,
-            "weights": {k: v.clone() for k, v in model.module.state_dict().items()},
-            "step": global_step,
-        }, os.path.join(results_dir, f"loop_rank{rank}.pt"))
+        torch.save(
+            {
+                "losses": losses,
+                "weights": {k: v.clone() for k, v in model.module.state_dict().items()},
+                "step": global_step,
+            },
+            os.path.join(results_dir, f"loop_rank{rank}.pt"),
+        )
     finally:
         _cleanup()
 
 
 # --- Actual test class ---
+
 
 @pytest.mark.slow
 class TestGlooDDP:
@@ -731,8 +821,7 @@ class TestGlooDDP:
         results_dir = str(tmp_path / "results")
         os.makedirs(tmp_dir, exist_ok=True)
         os.makedirs(results_dir, exist_ok=True)
-        mp.spawn(worker_fn, args=(world_size, tmp_dir, results_dir),
-                 nprocs=world_size, join=True)
+        mp.spawn(worker_fn, args=(world_size, tmp_dir, results_dir), nprocs=world_size, join=True)
         return results_dir
 
     def test_gradients_synchronized_across_ranks(self, tmp_path):
@@ -744,7 +833,8 @@ class TestGlooDDP:
 
         for key in w0:
             torch.testing.assert_close(
-                w0[key], w1[key],
+                w0[key],
+                w1[key],
                 msg=f"Weight mismatch after DDP step for key '{key}'",
             )
 
@@ -774,7 +864,9 @@ class TestGlooDDP:
         results_dir = self._run_workers(_worker_barrier_coordination, tmp_path)
 
         r1 = torch.load(os.path.join(results_dir, "barrier_rank1.pt"), map_location="cpu")
-        assert r1["signal_found"] is True, "Barrier should ensure rank 0's write is visible to rank 1"
+        assert r1["signal_found"] is True, (
+            "Barrier should ensure rank 0's write is visible to rank 1"
+        )
 
     def test_full_ddp_training_loop(self, tmp_path):
         """Multi-step training with DDP, grad accum, and no_sync.
@@ -791,7 +883,8 @@ class TestGlooDDP:
         # Weights must be identical after DDP training
         for key in r0["weights"]:
             torch.testing.assert_close(
-                r0["weights"][key], r1["weights"][key],
+                r0["weights"][key],
+                r1["weights"][key],
                 msg=f"Weight divergence after DDP training for key '{key}'",
             )
 

@@ -29,12 +29,14 @@ _mcp_memory_available = False
 _dag_retrieval_available = False
 try:
     from mcp_memory.server import memory_add, memory_search
+
     _mcp_memory_available = True
 except ImportError as exc:
     logger.warning("mcp-memory not importable (%s) — strategic memory disabled", exc)
 
 try:
     from mcp_memory.dag_retrieval import dag_search
+
     _dag_retrieval_available = True
 except ImportError:
     pass
@@ -79,7 +81,10 @@ async def search_relevant_memories(
             if DEBUG:
                 logger.info(
                     "DAG search for %r: %d results across %d hops (routed=%s)",
-                    query[:60], len(flat_results), result.rounds, result.routed_as,
+                    query[:60],
+                    len(flat_results),
+                    result.rounds,
+                    result.routed_as,
                 )
             return flat_results
         except Exception:

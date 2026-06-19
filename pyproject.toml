@@ -2,8 +2,10 @@
 line-length = 100
 target-version = "py311"
 exclude = [
-    "thVoice/piper", "openclaw", "mcp_aws", "titans-pytorch",
+    "thVoice",                               # voice subsystem, pre-existing issues
+    "openclaw", "mcp_aws", "titans-pytorch",
     "aws-doc-sdk-examples", ".venv", "venv",
+    "model_training",                        # training scripts, not production code
 ]
 
 [tool.ruff.lint]

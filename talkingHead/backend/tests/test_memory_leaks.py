@@ -57,7 +57,9 @@ def _net_app_allocation_bytes(before: tracemalloc.Snapshot, after: tracemalloc.S
     return _net_allocation_bytes_under(before, after, str(BACKEND_ROOT / "app"))
 
 
-def _net_memory_pkg_allocation_bytes(before: tracemalloc.Snapshot, after: tracemalloc.Snapshot) -> int:
+def _net_memory_pkg_allocation_bytes(
+    before: tracemalloc.Snapshot, after: tracemalloc.Snapshot
+) -> int:
     return _net_allocation_bytes_under(before, after, str(BACKEND_ROOT / "memory"))
 
 
@@ -228,9 +230,7 @@ def test_openapi_fetch_burst_net_app_allocation_bounded():
 
             net = _net_app_allocation_bytes(snap_before, snap_after)
             # OpenAPI parses are heavy; tighter bound catches real leaks inside our handlers.
-            assert net < 2_097_152, (
-                f"OpenAPI polling net growth in app/ was {net} bytes (> 2MiB)."
-            )
+            assert net < 2_097_152, f"OpenAPI polling net growth in app/ was {net} bytes (> 2MiB)."
         finally:
             tracemalloc.stop()
             gc.enable()
@@ -298,9 +298,7 @@ def test_chat_ws_stubbed_turns_net_app_bounded():
         snap_after = tracemalloc.take_snapshot()
 
         net = _net_app_allocation_bytes(snap_before, snap_after)
-        assert net < 3_145_728, (
-            f"chat_ws mocked turns net growth in app/ was {net} bytes (> 3MiB)."
-        )
+        assert net < 3_145_728, f"chat_ws mocked turns net growth in app/ was {net} bytes (> 3MiB)."
     finally:
         tracemalloc.stop()
         gc.enable()
@@ -363,9 +361,7 @@ def test_docs_html_burst_net_app_bounded():
             snap_after = tracemalloc.take_snapshot()
 
             net = _net_app_allocation_bytes(snap_before, snap_after)
-            assert net < 6_291_456, (
-                f"/docs burst net growth in app/ was {net} bytes (> 6MiB)."
-            )
+            assert net < 6_291_456, f"/docs burst net growth in app/ was {net} bytes (> 6MiB)."
         finally:
             tracemalloc.stop()
             gc.enable()
@@ -375,9 +371,11 @@ def test_docs_html_burst_net_app_bounded():
 def test_health_dual_routes_burst_net_app_bounded():
     """Alternating lightweight health probes (loaders stubbed — no ONNX / GGML)."""
 
-    with TestClient(app) as client, patch(
-        "app.api.tts._try_load_voice", return_value=MagicMock()
-    ), patch("app.api.voice_chat._try_load_whisper_model", return_value=None):
+    with (
+        TestClient(app) as client,
+        patch("app.api.tts._try_load_voice", return_value=MagicMock()),
+        patch("app.api.voice_chat._try_load_whisper_model", return_value=None),
+    ):
         for _ in range(40):
             assert client.get("/api/chat/speak/health").status_code == 200
             assert client.get("/api/chat/voice/health").status_code == 200
@@ -517,9 +515,11 @@ def test_rss_mixed_hot_routes_growth_cap():
         _warm_gc()
         return proc.memory_info().rss
 
-    with TestClient(app) as client, patch(
-        "app.api.tts._try_load_voice", return_value=MagicMock()
-    ), patch("app.api.voice_chat._try_load_whisper_model", return_value=None):
+    with (
+        TestClient(app) as client,
+        patch("app.api.tts._try_load_voice", return_value=MagicMock()),
+        patch("app.api.voice_chat._try_load_whisper_model", return_value=None),
+    ):
         for _ in range(60):
             assert client.get("/openapi.json").status_code == 200
             assert client.get("/docs").status_code == 200
@@ -603,4 +603,3 @@ def test_rss_connection_manager_burst_growth_cap():
     assert growth <= soft_cap, (
         f"RSS grew ~{growth // 1048576} MiB across ConnectionManager burst (threshold {soft_cap // 1048576} MiB)."
     )
-

@@ -9,11 +9,9 @@ Provides shared fixtures used across all test directories:
 """
 
 import json
-import os
 import sys
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -26,6 +24,7 @@ if str(REPO_ROOT) not in sys.path:
 def isolate_config_cache():
     """Reset the shared config cache between tests so mutations don't leak."""
     import shared.config_loader as cl
+
     original = cl._config_cache
     cl._config_cache = None
     yield
@@ -60,6 +59,7 @@ def tmp_config(tmp_path):
     cfg_path = tmp_path / "shared_api_config.json"
     cfg_path.write_text(json.dumps(cfg))
     import shared.config_loader as cl
+
     cl._config_cache = None
     with patch.object(cl, "config_path", cfg_path):
         yield cfg_path, cfg
@@ -68,8 +68,10 @@ def tmp_config(tmp_path):
 @pytest.fixture()
 def mock_embed():
     """Return a deterministic fake embedding function (384-dim zeros)."""
+
     def _embed(text: str) -> list[float]:
         return [0.0] * 384
+
     return _embed
 
 
@@ -86,4 +88,5 @@ def mock_embed_unique():
             _cache[text] = vec
             _counter[0] += 1
         return _cache[text]
+
     return _embed

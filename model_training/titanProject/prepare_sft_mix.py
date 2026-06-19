@@ -16,13 +16,12 @@ import argparse
 import json
 import random
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
 
 from datasets import load_dataset
 
-
-SamplePair = Tuple[str, str]
+SamplePair = tuple[str, str]
 
 
 def normalize_text(value: str) -> str:
@@ -40,7 +39,7 @@ def normalize_block_text(value: str) -> str:
     while raw_lines and not raw_lines[-1]:
         raw_lines.pop()
 
-    lines: List[str] = []
+    lines: list[str] = []
     prev_blank = False
     for line in raw_lines:
         if not line:
@@ -53,7 +52,7 @@ def normalize_block_text(value: str) -> str:
     return "\n".join(lines).strip()
 
 
-def make_pair(user_text: str, assistant_text: str) -> Optional[SamplePair]:
+def make_pair(user_text: str, assistant_text: str) -> SamplePair | None:
     user_clean = normalize_block_text(user_text)
     assistant_clean = normalize_block_text(assistant_text)
     if not user_clean or not assistant_clean:
@@ -112,7 +111,7 @@ def _digit_ratio(text: str) -> float:
     return digits / max(1, len(text))
 
 
-def _label_value(row: Dict[str, object], label_name: str) -> Optional[float]:
+def _label_value(row: dict[str, object], label_name: str) -> float | None:
     labels = row.get("labels")
     if not isinstance(labels, dict):
         return None
@@ -120,7 +119,7 @@ def _label_value(row: Dict[str, object], label_name: str) -> Optional[float]:
     values = labels.get("value")
     if not isinstance(names, list) or not isinstance(values, list):
         return None
-    for name, value in zip(names, values):
+    for name, value in zip(names, values, strict=False):
         if name == label_name:
             try:
                 return float(value)
@@ -158,7 +157,12 @@ def filter_pair(
             return False
     if len(user_part) > max_user_chars or len(assistant_part) > max_assistant_chars:
         return False
-    if not allow_http and ("http://" in user_part or "https://" in user_part or "http://" in assistant_part or "https://" in assistant_part):
+    if not allow_http and (
+        "http://" in user_part
+        or "https://" in user_part
+        or "http://" in assistant_part
+        or "https://" in assistant_part
+    ):
         return False
     if _digit_ratio(assistant_part) > max_digit_ratio and len(assistant_part) > 50:
         return False
@@ -176,20 +180,20 @@ def collect_oasst_pairs(
     split: str,
     *,
     best_only: bool = False,
-    min_quality: Optional[float] = None,
-    min_helpfulness: Optional[float] = None,
-    max_fails_task: Optional[float] = None,
-    max_spam: Optional[float] = None,
-) -> List[SamplePair]:
+    min_quality: float | None = None,
+    min_helpfulness: float | None = None,
+    max_fails_task: float | None = None,
+    max_spam: float | None = None,
+) -> list[SamplePair]:
     ds = load_dataset("OpenAssistant/oasst1", split=split)
     rows = [dict(row) for row in ds]
-    by_id: Dict[str, Dict[str, object]] = {}
+    by_id: dict[str, dict[str, object]] = {}
     for row in rows:
         mid = str(row.get("message_id", "")).strip()
         if mid:
             by_id[mid] = row
 
-    pairs: List[SamplePair] = []
+    pairs: list[SamplePair] = []
     seen = set()
     for row in rows:
         role = str(row.get("role", "")).lower()
@@ -236,22 +240,22 @@ def collect_oasst_pairs(
 
 
 def _iter_sharegpt_pairs(
-    rows: Iterable[Dict[str, object]],
+    rows: Iterable[dict[str, object]],
     *,
     conv_key: str = "conversations",
-) -> List[SamplePair]:
+) -> list[SamplePair]:
     """
     Extract user->assistant pairs from ShareGPT-style conversation lists.
     Each conversation item is expected to have keys like {"from": "human"/"assistant", "value": "..."}.
     """
-    pairs: List[SamplePair] = []
+    pairs: list[SamplePair] = []
     seen = set()
 
     for row in rows:
         convs = row.get(conv_key) or row.get("conversation") or row.get("messages")
         if not convs:
             continue
-        last_user: Optional[str] = None
+        last_user: str | None = None
         for msg in convs:
             if not isinstance(msg, dict):
                 continue
@@ -273,22 +277,22 @@ def _iter_sharegpt_pairs(
     return pairs
 
 
-def collect_openhermes_pairs() -> List[SamplePair]:
+def collect_openhermes_pairs() -> list[SamplePair]:
     ds = load_dataset("teknium/OpenHermes-2.5", split="train")
     return _iter_sharegpt_pairs(ds)
 
 
-def collect_slimorca_pairs() -> List[SamplePair]:
+def collect_slimorca_pairs() -> list[SamplePair]:
     ds = load_dataset("Open-Orca/SlimOrca", split="train")
     return _iter_sharegpt_pairs(ds)
 
 
-def collect_logic_pairs(split: str, max_len: int = 0) -> List[SamplePair]:
+def collect_logic_pairs(split: str, max_len: int = 0) -> list[SamplePair]:
     """
     Logic/math booster from GSM8K. Uses question/answer pairs directly.
     """
     ds = load_dataset("gsm8k", "main", split=split)
-    items: List[SamplePair] = []
+    items: list[SamplePair] = []
     for row in ds:
         pair = make_pair(row.get("question", ""), row.get("answer", ""))
         if pair:
@@ -298,7 +302,7 @@ def collect_logic_pairs(split: str, max_len: int = 0) -> List[SamplePair]:
     return items
 
 
-def sample_up_to(items: List[SamplePair], n: int, rng: random.Random) -> List[SamplePair]:
+def sample_up_to(items: list[SamplePair], n: int, rng: random.Random) -> list[SamplePair]:
     if n <= 0:
         return []
     if n >= len(items):
@@ -307,15 +311,15 @@ def sample_up_to(items: List[SamplePair], n: int, rng: random.Random) -> List[Sa
 
 
 def filter_pairs(
-    items: List[SamplePair],
+    items: list[SamplePair],
     *,
     max_user_chars: int,
     max_assistant_chars: int,
     max_digit_ratio: float,
     allow_http: bool,
     reject_role_markers: bool,
-) -> List[SamplePair]:
-    keep: List[SamplePair] = []
+) -> list[SamplePair]:
+    keep: list[SamplePair] = []
     for pair in items:
         if filter_pair(
             pair,
@@ -329,7 +333,7 @@ def filter_pairs(
     return keep
 
 
-def write_lines(path: Path, lines: List[str]) -> None:
+def write_lines(path: Path, lines: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for line in lines:
@@ -364,7 +368,9 @@ def main() -> int:
     parser.add_argument("--max-user-chars", type=int, default=512)
     parser.add_argument("--max-assistant-chars", type=int, default=512)
     parser.add_argument("--max-digit-ratio", type=float, default=0.25)
-    parser.add_argument("--allow-http", action="store_true", help="Allow samples containing http/https")
+    parser.add_argument(
+        "--allow-http", action="store_true", help="Allow samples containing http/https"
+    )
     parser.add_argument(
         "--reject-role-markers",
         action="store_true",
@@ -404,8 +410,8 @@ def main() -> int:
     rng = random.Random(args.seed)
     out_dir = Path(args.output_dir)
 
-    oasst_train_all: List[SamplePair] = []
-    oasst_val_all: List[SamplePair] = []
+    oasst_train_all: list[SamplePair] = []
+    oasst_val_all: list[SamplePair] = []
     if args.oasst_train_pairs > 0 or args.oasst_val_pairs > 0:
         print("[prep] loading OASST1 train/validation ...")
         oasst_train_all = collect_oasst_pairs(
@@ -424,23 +430,25 @@ def main() -> int:
             max_fails_task=args.oasst_max_fails_task,
             max_spam=args.oasst_max_spam,
         )
-        print(f"[prep] OASST1 pairs available: train={len(oasst_train_all)}, val={len(oasst_val_all)}")
+        print(
+            f"[prep] OASST1 pairs available: train={len(oasst_train_all)}, val={len(oasst_val_all)}"
+        )
 
-    openhermes_all: List[SamplePair] = []
+    openhermes_all: list[SamplePair] = []
     if args.openhermes_train_pairs > 0 or args.openhermes_val_pairs > 0:
         print("[prep] loading OpenHermes ...")
         openhermes_all = collect_openhermes_pairs()
         rng.shuffle(openhermes_all)
         print(f"[prep] OpenHermes pairs available: {len(openhermes_all)}")
 
-    slimorca_all: List[SamplePair] = []
+    slimorca_all: list[SamplePair] = []
     if args.slimorca_train_pairs > 0 or args.slimorca_val_pairs > 0:
         print("[prep] loading SlimOrca ...")
         slimorca_all = collect_slimorca_pairs()
         rng.shuffle(slimorca_all)
         print(f"[prep] SlimOrca pairs available: {len(slimorca_all)}")
 
-    logic_all: List[SamplePair] = []
+    logic_all: list[SamplePair] = []
     if args.logic_train_pairs > 0 or args.logic_val_pairs > 0:
         print("[prep] loading GSM8K ...")
         # max_len here is just a mild guard; sampling happens later.
@@ -512,10 +520,18 @@ def main() -> int:
     logic_train_pool = logic_filtered[logic_val_n:]
     logic_train = sample_up_to(logic_train_pool, args.logic_train_pairs, rng)
 
-    train_pairs = list(oasst_train) + list(openhermes_train) + list(slimorca_train) + list(logic_train)
+    train_pairs = (
+        list(oasst_train) + list(openhermes_train) + list(slimorca_train) + list(logic_train)
+    )
     val_pairs = list(oasst_val) + list(openhermes_val) + list(slimorca_val) + list(logic_val)
-    train_lines = [serialize_pair(user, assistant, output_format=args.output_format) for user, assistant in train_pairs]
-    val_lines = [serialize_pair(user, assistant, output_format=args.output_format) for user, assistant in val_pairs]
+    train_lines = [
+        serialize_pair(user, assistant, output_format=args.output_format)
+        for user, assistant in train_pairs
+    ]
+    val_lines = [
+        serialize_pair(user, assistant, output_format=args.output_format)
+        for user, assistant in val_pairs
+    ]
     train_lines = [line for line in train_lines if line]
     val_lines = [line for line in val_lines if line]
     rng.shuffle(train_lines)

@@ -1,11 +1,13 @@
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import os
 
 
 def _default_db_url() -> str:
     try:
         from shared.config_loader import load_mcp_memory_config
+
         return load_mcp_memory_config().get(
             "default_db_url",
             "postgresql://postgres:postgres@localhost:5432/wintermute",

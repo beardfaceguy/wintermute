@@ -2,7 +2,6 @@
 
 import json
 import sys
-from array import array
 from pathlib import Path
 
 import numpy as np
@@ -16,10 +15,10 @@ if str(TITAN_ROOT) not in sys.path:
 
 from model import ModelConfig
 
-
 # ---------------------------------------------------------------------------
 # Markers
 # ---------------------------------------------------------------------------
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "gpu: requires CUDA GPU")
@@ -37,6 +36,7 @@ def pytest_collection_modifyitems(config, items):
 # ---------------------------------------------------------------------------
 # Tiny model config (fits on CPU, runs in milliseconds)
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def tiny_gpt_config():
@@ -70,6 +70,7 @@ def tiny_mac_config():
 # Dummy tokenizer (simple char-level, no external files needed)
 # ---------------------------------------------------------------------------
 
+
 class DummyTokenizer:
     """Trivial tokenizer that maps each character to its ordinal."""
 
@@ -99,6 +100,7 @@ def dummy_tokenizer():
 # Token cache fixtures (small on-disk shards for testing)
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def token_cache_dir(tmp_path):
     """Create a small on-disk token cache with 3 shards for testing."""
@@ -110,17 +112,17 @@ def token_cache_dir(tmp_path):
     tokens_written = 0
 
     for i in range(3):
-        shard_data = np.arange(
-            tokens_written, tokens_written + shard_size, dtype=np.uint32
-        )
+        shard_data = np.arange(tokens_written, tokens_written + shard_size, dtype=np.uint32)
         shard_name = f"tokens-{i:05d}.uint32.bin"
         shard_path = cache_dir / shard_name
         shard_data.tofile(shard_path)
-        shards.append({
-            "filename": shard_name,
-            "num_tokens": shard_size,
-            "start_token": tokens_written,
-        })
+        shards.append(
+            {
+                "filename": shard_name,
+                "num_tokens": shard_size,
+                "start_token": tokens_written,
+            }
+        )
         tokens_written += shard_size
 
     manifest = {

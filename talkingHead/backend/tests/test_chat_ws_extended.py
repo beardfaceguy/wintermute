@@ -24,7 +24,9 @@ class TestDeepSearchIntegration:
 
     @pytest.mark.asyncio
     @patch("app.websocket.chat_ws.store_conversation", new_callable=AsyncMock)
-    @patch("app.websocket.chat_ws.search_relevant_memories", new_callable=AsyncMock, return_value=[])
+    @patch(
+        "app.websocket.chat_ws.search_relevant_memories", new_callable=AsyncMock, return_value=[]
+    )
     @patch("app.websocket.chat_ws.store_message", new_callable=AsyncMock)
     @patch("app.websocket.chat_ws.get_recent_messages", new_callable=AsyncMock, return_value=[])
     @patch("app.websocket.chat_ws.chat_processor")
@@ -41,7 +43,10 @@ class TestDeepSearchIntegration:
         mock_processor.stream_response = AsyncMock(return_value="response")
         ws = _make_mock_ws()
         ws.receive_text = AsyncMock(
-            side_effect=[json.dumps({"message": "complex multi-hop question"}), WebSocketDisconnect()]
+            side_effect=[
+                json.dumps({"message": "complex multi-hop question"}),
+                WebSocketDisconnect(),
+            ]
         )
 
         with patch("app.websocket.chat_ws.manager") as mock_mgr:
@@ -92,16 +97,13 @@ class TestDeepSearchIntegration:
 
 
 class TestMessageSizeLimit:
-
     @pytest.mark.asyncio
     async def test_oversized_message_rejected(self):
         from app.websocket.chat_ws import chat_endpoint
 
         ws = _make_mock_ws()
         huge_payload = "x" * (17 * 1024)
-        ws.receive_text = AsyncMock(
-            side_effect=[huge_payload, WebSocketDisconnect()]
-        )
+        ws.receive_text = AsyncMock(side_effect=[huge_payload, WebSocketDisconnect()])
 
         with patch("app.websocket.chat_ws.manager") as mock_mgr:
             mock_mgr.connect = AsyncMock(return_value=True)
@@ -122,8 +124,14 @@ class TestMessageSizeLimit:
         with (
             patch("app.websocket.chat_ws.manager") as mock_mgr,
             patch("app.websocket.chat_ws.store_message", new_callable=AsyncMock),
-            patch("app.websocket.chat_ws.search_relevant_memories", new_callable=AsyncMock, return_value=[]),
-            patch("app.websocket.chat_ws.get_recent_messages", new_callable=AsyncMock, return_value=[]),
+            patch(
+                "app.websocket.chat_ws.search_relevant_memories",
+                new_callable=AsyncMock,
+                return_value=[],
+            ),
+            patch(
+                "app.websocket.chat_ws.get_recent_messages", new_callable=AsyncMock, return_value=[]
+            ),
             patch("app.websocket.chat_ws.chat_processor") as mock_proc,
             patch("app.websocket.chat_ws.store_conversation", new_callable=AsyncMock),
         ):
@@ -166,9 +174,7 @@ class TestEndOfStreamSentinel:
                 return_value=[],
             ),
             patch("app.websocket.chat_ws.chat_processor") as mock_proc,
-            patch(
-                "app.websocket.chat_ws.store_conversation", new_callable=AsyncMock
-            ),
+            patch("app.websocket.chat_ws.store_conversation", new_callable=AsyncMock),
         ):
             mock_mgr.connect = AsyncMock(return_value=True)
             mock_mgr.disconnect = MagicMock()
@@ -182,7 +188,6 @@ class TestEndOfStreamSentinel:
 
 
 class TestConnectionCapacity:
-
     @pytest.mark.asyncio
     async def test_connect_rejected_at_capacity(self):
         from app.websocket.connection_manager import ConnectionManager

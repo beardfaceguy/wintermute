@@ -16,14 +16,14 @@ import argparse
 import json
 import random
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List
 
 import pyarrow.parquet as pq
 import sentencepiece as spm
 
 
-def run(cmd: List[str]) -> None:
+def run(cmd: list[str]) -> None:
     proc = subprocess.run(cmd, check=True)
 
 
@@ -58,7 +58,7 @@ def iter_stack_smol_json(data_dir: Path, content_field: str = "content") -> Iter
         jf = lang_dir / "data.json"
         if not jf.exists():
             continue
-        with open(jf, "r", encoding="utf-8") as f:
+        with open(jf, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -89,10 +89,13 @@ def split_and_sample(
     random.seed(seed)
     train_path.parent.mkdir(parents=True, exist_ok=True)
     val_path.parent.mkdir(parents=True, exist_ok=True)
-    spm_sample: List[str] = []
+    spm_sample: list[str] = []
     seen = 0
 
-    with open(train_path, "w", encoding="utf-8") as f_train, open(val_path, "w", encoding="utf-8") as f_val:
+    with (
+        open(train_path, "w", encoding="utf-8") as f_train,
+        open(val_path, "w", encoding="utf-8") as f_val,
+    ):
         for raw in sources:
             line = raw.replace("\n", " ").strip()
             if not line:
@@ -132,13 +135,24 @@ def train_spm(input_path: Path, model_prefix: Path, vocab_size: int) -> None:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--fineweb-s3", required=True, help="S3 prefix with parquet shards (e.g., s3://.../sample/100BT/)")
+    ap.add_argument(
+        "--fineweb-s3",
+        required=True,
+        help="S3 prefix with parquet shards (e.g., s3://.../sample/100BT/)",
+    )
     ap.add_argument("--stack-smol-s3", required=True, help="S3 prefix with stack-smol data/ folder")
     ap.add_argument("--aws-bin", default="aws", help="AWS CLI binary")
     ap.add_argument("--work-dir", default="/mnt/data/preproc", help="Local working dir")
     ap.add_argument("--text-out-s3", required=True, help="S3 prefix to upload text outputs")
-    ap.add_argument("--tokenizer-out-s3", required=True, help="S3 prefix to upload tokenizer artifacts")
-    ap.add_argument("--spm-sample-lines", type=int, default=2_000_000, help="Lines to sample for tokenizer training")
+    ap.add_argument(
+        "--tokenizer-out-s3", required=True, help="S3 prefix to upload tokenizer artifacts"
+    )
+    ap.add_argument(
+        "--spm-sample-lines",
+        type=int,
+        default=2_000_000,
+        help="Lines to sample for tokenizer training",
+    )
     ap.add_argument("--vocab-size", type=int, default=50_000, help="SentencePiece vocab size")
     ap.add_argument("--val-ratio", type=float, default=0.05, help="Validation split ratio")
     args = ap.parse_args()
@@ -158,6 +172,7 @@ def main():
     val_path = text_dir / "val.txt"
 
     print("Streaming convert + split + sample...")
+
     def sources():
         yield from iter_fineweb_parquet(fineweb_dir)
         yield from iter_stack_smol_json(stack_dir / "data")

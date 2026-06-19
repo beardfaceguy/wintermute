@@ -55,7 +55,9 @@ def _run_probe_paths(env: dict[str, str], config_path: Path | None = None) -> di
         text=True,
         check=False,
     )
-    assert proc.returncode == 0, f"bash failed rc={proc.returncode}\nstdout={proc.stdout}\nstderr={proc.stderr}"
+    assert proc.returncode == 0, (
+        f"bash failed rc={proc.returncode}\nstdout={proc.stdout}\nstderr={proc.stderr}"
+    )
     out: dict[str, str] = {}
     for line in proc.stdout.strip().splitlines():
         if "=" in line:
@@ -122,7 +124,9 @@ def test_probe_paths_custom_layout(probe_config: dict) -> None:
     assert got["RUN_WORK_DIR"] == "/opt/acme/train_job42"
     assert got["TRAIN_LOG"] == "/opt/acme/train_job42/log/train.log"
     assert got["RUNNER_LOG"] == "/opt/acme/train_job42/log/runner.log"
-    assert got["PROBE_CHECK_PID"] == str(probe_config["layouts"]["custom"]["default_probe_check_pid"])
+    assert got["PROBE_CHECK_PID"] == str(
+        probe_config["layouts"]["custom"]["default_probe_check_pid"]
+    )
 
 
 def test_probe_paths_unknown_layout_exits_nonzero() -> None:

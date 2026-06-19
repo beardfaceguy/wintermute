@@ -32,9 +32,7 @@ class TestPiperVoice:
         # Verify phonemize was called
         mock_piper_voice.phonemize.assert_called_once_with(text)
 
-    def test_piper_voice_phonemize_empty_text(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_phonemize_empty_text(self, mock_piper_voice: MagicMock) -> None:
         """Test phonemization with empty text."""
         mock_piper_voice.phonemize.return_value = []
 
@@ -43,9 +41,7 @@ class TestPiperVoice:
         assert result == []
         assert len(result) == 0
 
-    def test_piper_voice_phonemize_multiple_sentences(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_phonemize_multiple_sentences(self, mock_piper_voice: MagicMock) -> None:
         """Test phonemization with multiple sentences."""
         mock_piper_voice.phonemize.return_value = [
             ["h", "ə", "l", "oʊ"],
@@ -71,9 +67,7 @@ class TestPiperVoice:
         # Verify method was called
         mock_piper_voice.phonemes_to_ids.assert_called_once_with(phonemes)
 
-    def test_piper_voice_phonemes_to_ids_empty(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_phonemes_to_ids_empty(self, mock_piper_voice: MagicMock) -> None:
         """Test phoneme to ID conversion with empty input."""
         mock_piper_voice.phonemes_to_ids.return_value = [1, 2]  # Just BOS and EOS
 
@@ -81,9 +75,7 @@ class TestPiperVoice:
 
         assert result == [1, 2]
 
-    def test_piper_voice_synthesize_ids_to_raw(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_synthesize_ids_to_raw(self, mock_piper_voice: MagicMock) -> None:
         """Test raw audio synthesis from phoneme IDs."""
         phoneme_ids = [1, 4, 5, 6, 2]
         result = mock_piper_voice.synthesize_ids_to_raw(phoneme_ids)
@@ -95,9 +87,7 @@ class TestPiperVoice:
         # Verify method was called
         mock_piper_voice.synthesize_ids_to_raw.assert_called_once_with(phoneme_ids)
 
-    def test_piper_voice_synthesize_stream_raw(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_synthesize_stream_raw(self, mock_piper_voice: MagicMock) -> None:
         """Test streaming raw audio synthesis."""
         text = "Hello world"
         result = list(mock_piper_voice.synthesize_stream_raw(text))
@@ -154,9 +144,7 @@ class TestPiperVoice:
         assert config.noise_scale == 0.667
         assert config.noise_w == 0.8
 
-    def test_piper_voice_synthesis_parameters(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_synthesis_parameters(self, mock_piper_voice: MagicMock) -> None:
         """Test synthesis with different parameters."""
         text = "Hello world"
         speaker_id = 0
@@ -180,9 +168,7 @@ class TestPiperVoice:
         assert len(result) == 1
         assert isinstance(result[0], bytes)
 
-    def test_piper_voice_error_handling_invalid_text(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_error_handling_invalid_text(self, mock_piper_voice: MagicMock) -> None:
         """Test error handling with invalid text."""
         mock_piper_voice.phonemize.side_effect = ValueError("Invalid text")
 
@@ -193,16 +179,12 @@ class TestPiperVoice:
         self, mock_piper_voice: MagicMock
     ) -> None:
         """Test error handling when synthesis fails."""
-        mock_piper_voice.synthesize_ids_to_raw.side_effect = Exception(
-            "Synthesis failed"
-        )
+        mock_piper_voice.synthesize_ids_to_raw.side_effect = Exception("Synthesis failed")
 
         with pytest.raises(Exception, match="Synthesis failed"):
             list(mock_piper_voice.synthesize_stream_raw("test text"))
 
-    def test_piper_voice_multilingual_support(
-        self, mock_piper_voice: MagicMock
-    ) -> None:
+    def test_piper_voice_multilingual_support(self, mock_piper_voice: MagicMock) -> None:
         """Test multilingual text support."""
         test_texts = [
             "Hello world",  # English
@@ -236,25 +218,19 @@ class TestPiperConfig:
         assert "phoneme_type" in sample_piper_config
         assert "inference" in sample_piper_config
 
-    def test_piper_config_audio_settings(
-        self, sample_piper_config: dict[str, Any]
-    ) -> None:
+    def test_piper_config_audio_settings(self, sample_piper_config: dict[str, Any]) -> None:
         """Test audio configuration settings."""
         audio_config = sample_piper_config["audio"]
         assert "sample_rate" in audio_config
         assert audio_config["sample_rate"] == 22050
 
-    def test_piper_config_espeak_settings(
-        self, sample_piper_config: dict[str, Any]
-    ) -> None:
+    def test_piper_config_espeak_settings(self, sample_piper_config: dict[str, Any]) -> None:
         """Test espeak configuration settings."""
         espeak_config = sample_piper_config["espeak"]
         assert "voice" in espeak_config
         assert espeak_config["voice"] == "en-us"
 
-    def test_piper_config_phoneme_mapping(
-        self, sample_piper_config: dict[str, Any]
-    ) -> None:
+    def test_piper_config_phoneme_mapping(self, sample_piper_config: dict[str, Any]) -> None:
         """Test phoneme ID mapping."""
         phoneme_map = sample_piper_config["phoneme_id_map"]
         assert "BOS" in phoneme_map
@@ -264,9 +240,7 @@ class TestPiperConfig:
         assert "b" in phoneme_map
         assert "c" in phoneme_map
 
-    def test_piper_config_inference_settings(
-        self, sample_piper_config: dict[str, Any]
-    ) -> None:
+    def test_piper_config_inference_settings(self, sample_piper_config: dict[str, Any]) -> None:
         """Test inference configuration settings."""
         inference_config = sample_piper_config["inference"]
         assert "noise_scale" in inference_config

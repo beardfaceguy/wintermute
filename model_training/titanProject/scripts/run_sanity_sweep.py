@@ -17,8 +17,8 @@ Expected usage:
 
 from __future__ import annotations
 
-import csv
 import copy
+import csv
 import datetime as dt
 import os
 import re
@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-
 
 SCRIPT_PATH = Path(__file__).resolve()
 TITAN_DIR = SCRIPT_PATH.parents[1]
@@ -103,7 +102,7 @@ VARIANTS = [
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -126,7 +125,7 @@ def deep_update(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]
 def read_existing_run_ids() -> set[str]:
     if not CSV_PATH.exists():
         return set()
-    with open(CSV_PATH, "r", encoding="utf-8", newline="") as f:
+    with open(CSV_PATH, encoding="utf-8", newline="") as f:
         rows = csv.DictReader(f)
         return {row["run_id"] for row in rows if row.get("run_id")}
 
@@ -286,7 +285,9 @@ def run_variant(base_cfg: dict[str, Any], variant: dict[str, Any], stop_before: 
         "best_eval_loss": metrics["best_eval_loss"],
         "best_eval_ppl": metrics["best_eval_ppl"],
         "best_eval_step": metrics["best_eval_step"],
-        "notes": variant["notes"] if exit_code == 0 else f"Run failed with exit code {exit_code}. {variant['notes']}",
+        "notes": variant["notes"]
+        if exit_code == 0
+        else f"Run failed with exit code {exit_code}. {variant['notes']}",
     }
     append_row(row)
 
@@ -310,7 +311,9 @@ def main() -> int:
     for variant in VARIANTS:
         prefix = f"sanity_sweep_{variant['name']}_"
         if any(run_id.startswith(prefix) for run_id in existing_ids):
-            print(f"[sweep] skipping {variant['name']} because a prior row already exists", flush=True)
+            print(
+                f"[sweep] skipping {variant['name']} because a prior row already exists", flush=True
+            )
             continue
         run_variant(base_cfg, variant, stop_before)
 

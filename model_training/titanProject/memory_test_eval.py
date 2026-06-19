@@ -6,13 +6,12 @@ for the answer; compare exact match vs. the provided answers file.
 """
 
 import argparse
-from pathlib import Path
 import re
+from pathlib import Path
 
+import sentencepiece as spm
 import torch
 import yaml
-import sentencepiece as spm
-
 from model import ModelConfig, build_model
 from train_utils import resolve_path
 
@@ -49,10 +48,12 @@ def generate_answer(model, tokenizer, device, ids, max_new_tokens: int = 3):
 
 
 @torch.no_grad()
-def evaluate(model, tokenizer, device, texts, answers, max_len: int = 512, max_answer_tokens: int = 3):
+def evaluate(
+    model, tokenizer, device, texts, answers, max_len: int = 512, max_answer_tokens: int = 3
+):
     correct = 0
     total = 0
-    for text, gold in zip(texts, answers):
+    for text, gold in zip(texts, answers, strict=False):
         ids = tokenizer.encode(text)
         # leave room for answer tokens
         if len(ids) > max_len - max_answer_tokens:
@@ -67,13 +68,25 @@ def evaluate(model, tokenizer, device, texts, answers, max_len: int = 512, max_a
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate Titans checkpoint on memory test.")
-    parser.add_argument("--config", type=str, default="configs/config_combo_all.yaml", help="YAML config path")
+    parser.add_argument(
+        "--config", type=str, default="configs/config_combo_all.yaml", help="YAML config path"
+    )
     parser.add_argument("--ckpt", type=str, default="ckpt_step_4000.pt", help="Checkpoint path")
     parser.add_argument("--data", type=str, default="memory_test.txt", help="Memory test text file")
-    parser.add_argument("--answers", type=str, default="memory_test_answers.txt", help="Answers file")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
-    parser.add_argument("--max-answer-tokens", type=int, default=3, help="Greedy answer decode length")
-    parser.add_argument("--strict-load", action="store_true", help="Enforce strict checkpoint loading (default: tolerant)")
+    parser.add_argument(
+        "--answers", type=str, default="memory_test_answers.txt", help="Answers file"
+    )
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
+    parser.add_argument(
+        "--max-answer-tokens", type=int, default=3, help="Greedy answer decode length"
+    )
+    parser.add_argument(
+        "--strict-load",
+        action="store_true",
+        help="Enforce strict checkpoint loading (default: tolerant)",
+    )
     args = parser.parse_args()
 
     cfg = yaml.safe_load(resolve_path(args.config).open("r"))
@@ -125,9 +138,8 @@ def main():
         max_answer_tokens=args.max_answer_tokens,
     )
     acc = correct / max(total, 1)
-    print(f"Accuracy: {correct}/{total} = {acc*100:.2f}%")
+    print(f"Accuracy: {correct}/{total} = {acc * 100:.2f}%")
 
 
 if __name__ == "__main__":
     main()
-

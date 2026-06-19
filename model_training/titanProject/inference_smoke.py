@@ -11,14 +11,16 @@ import argparse
 import json
 import re
 import time
-from pathlib import Path
-from typing import Dict, List
 
 import torch
-
 from generate import generate, load_config, load_tokenizer, resolve_path
 from model import ModelConfig, build_model, load_model_source
-from prompt_formats import default_prompts, default_stop_strings, extract_completion, infer_prompt_family
+from prompt_formats import (
+    default_prompts,
+    default_stop_strings,
+    extract_completion,
+    infer_prompt_family,
+)
 
 
 def pick_device(device_arg: str) -> torch.device:
@@ -60,7 +62,10 @@ def _story_task_ok(completion: str) -> bool:
     if not has_action:
         return False
     sentence_count = len(re.findall(r"[.!?]", text))
-    has_connector = any(token in lowered for token in (" when ", " while ", " after ", " then ", " until ", " before "))
+    has_connector = any(
+        token in lowered
+        for token in (" when ", " while ", " after ", " then ", " until ", " before ")
+    )
     return sentence_count >= 2 or has_connector
 
 
@@ -90,7 +95,7 @@ def evaluate_completion(
     prompt_id: int,
     completion: str,
     min_completion_chars: int,
-) -> Dict[str, bool]:
+) -> dict[str, bool]:
     format_ok = not _has_format_leakage(completion)
     if prompt_family == "instruction":
         length_ok = len(completion.strip()) >= 3
@@ -107,7 +112,7 @@ def evaluate_completion(
     }
 
 
-def overall_smoke_ok(prompt_family: str, results: List[Dict[str, object]]) -> bool:
+def overall_smoke_ok(prompt_family: str, results: list[dict[str, object]]) -> bool:
     if not results:
         return False
     if prompt_family != "instruction":
@@ -123,14 +128,18 @@ def overall_smoke_ok(prompt_family: str, results: List[Dict[str, object]]) -> bo
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run a quick inference smoke suite.")
-    parser.add_argument("--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path")
+    parser.add_argument(
+        "--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path"
+    )
     parser.add_argument(
         "--ckpt",
         type=str,
         default="ckpt_step_4000.pt",
         help="Checkpoint path or Hugging Face ref like hf://gpt2",
     )
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument("--max-new", type=int, default=80, help="Max new tokens per prompt")
     parser.add_argument("--top-k", type=int, default=20, help="Top-k sampling")
     parser.add_argument("--temperature", type=float, default=0.8, help="Sampling temperature")

@@ -8,14 +8,16 @@ Args:
   --out: output directory
   --epochs: number of epochs (default 1)
 """
+
 import argparse
+
 from datasets import load_dataset
 from transformers import (
-    AutoTokenizer,
     AutoModelForCausalLM,
+    AutoTokenizer,
+    DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
-    DataCollatorForLanguageModeling,
 )
 
 

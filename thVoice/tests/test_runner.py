@@ -2,6 +2,7 @@
 """
 Test runner for thVoice unit tests.
 """
+
 import subprocess
 import sys
 from pathlib import Path

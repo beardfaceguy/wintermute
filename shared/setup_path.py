@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 
+
 def extend_path():
     shared_path = Path(__file__).resolve().parents[1]
     if str(shared_path) not in sys.path:

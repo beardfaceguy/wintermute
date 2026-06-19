@@ -25,10 +25,8 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import torch
-
 from generate import generate, load_config, load_tokenizer, resolve_path
 from model import ModelConfig, build_model, load_model_source
 
@@ -59,7 +57,7 @@ def build_review_prompt(
     diff: str = "",
     code: str = "",
     pr_title: str = "",
-    line: Optional[int] = None,
+    line: int | None = None,
 ) -> str:
     parts = ["Review the following code change."]
     if pr_title:
@@ -79,7 +77,7 @@ def build_review_prompt(
 
 
 def extract_review(raw_output: str, prompt: str) -> str:
-    completion = raw_output[len(prompt):] if raw_output.startswith(prompt) else raw_output
+    completion = raw_output[len(prompt) :] if raw_output.startswith(prompt) else raw_output
     completion = completion.strip()
     for stop in ("\nUser:", "\nAssistant:"):
         if stop in completion:
@@ -116,7 +114,7 @@ class CodeReviewService:
         self._request_count = 0
         self._start_time = time.time()
 
-    def health(self) -> Dict[str, object]:
+    def health(self) -> dict[str, object]:
         return {
             "ok": True,
             "model": "codereview-407m",
@@ -133,11 +131,11 @@ class CodeReviewService:
         diff: str = "",
         code: str = "",
         pr_title: str = "",
-        line: Optional[int] = None,
-        max_new: Optional[int] = None,
-        top_k: Optional[int] = None,
-        temperature: Optional[float] = None,
-    ) -> Dict[str, object]:
+        line: int | None = None,
+        max_new: int | None = None,
+        top_k: int | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, object]:
         if not diff and not code:
             raise ValueError("Either `diff` or `code` must be provided.")
 
@@ -169,7 +167,7 @@ class CodeReviewService:
         type_match = re.match(r"^\[(\w+)\]\s*", comment)
         if type_match:
             comment_type = type_match.group(1).lower()
-            comment = comment[type_match.end():].strip()
+            comment = comment[type_match.end() :].strip()
 
         return {
             "ok": True,
@@ -181,11 +179,11 @@ class CodeReviewService:
 
     def review_batch(
         self,
-        items: List[Dict[str, object]],
-        max_new: Optional[int] = None,
-        top_k: Optional[int] = None,
-        temperature: Optional[float] = None,
-    ) -> Dict[str, object]:
+        items: list[dict[str, object]],
+        max_new: int | None = None,
+        top_k: int | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, object]:
         results = []
         for item in items:
             try:
@@ -202,15 +200,17 @@ class CodeReviewService:
                 )
                 results.append(result)
             except Exception as exc:
-                results.append({
-                    "ok": False,
-                    "error": str(exc),
-                    "file_path": str(item.get("file_path", "")),
-                })
+                results.append(
+                    {
+                        "ok": False,
+                        "error": str(exc),
+                        "file_path": str(item.get("file_path", "")),
+                    }
+                )
         return {"ok": True, "reviews": results, "count": len(results)}
 
 
-def make_handler(service: CodeReviewService, api_key: Optional[str]):
+def make_handler(service: CodeReviewService, api_key: str | None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
             pass
@@ -224,7 +224,7 @@ def make_handler(service: CodeReviewService, api_key: Optional[str]):
             self._send_json(401, {"ok": False, "error": "unauthorized"})
             return False
 
-        def _send_json(self, status: int, payload: Dict[str, object]) -> None:
+        def _send_json(self, status: int, payload: dict[str, object]) -> None:
             body = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -232,7 +232,7 @@ def make_handler(service: CodeReviewService, api_key: Optional[str]):
             self.end_headers()
             self.wfile.write(body)
 
-        def _read_json(self) -> Dict[str, object]:
+        def _read_json(self) -> dict[str, object]:
             length = int(self.headers.get("Content-Length", "0"))
             body = self.rfile.read(length) if length > 0 else b"{}"
             return json.loads(body.decode("utf-8")) if body else {}
@@ -275,7 +275,9 @@ def make_handler(service: CodeReviewService, api_key: Optional[str]):
             if self.path == "/v1/review/batch":
                 items = payload.get("items", [])
                 if not isinstance(items, list) or not items:
-                    self._send_json(400, {"ok": False, "error": "`items` must be a non-empty array"})
+                    self._send_json(
+                        400, {"ok": False, "error": "`items` must be a non-empty array"}
+                    )
                     return
                 try:
                     result = service.review_batch(
@@ -300,7 +302,9 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=8020)
     parser.add_argument("--config", type=str, required=True, help="Model YAML config path")
     parser.add_argument("--ckpt", type=str, required=True, help="Checkpoint path")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument("--max-new", type=int, default=200)
     parser.add_argument("--top-k", type=int, default=40)
     parser.add_argument("--temperature", type=float, default=0.7)
@@ -321,9 +325,9 @@ def main() -> int:
     server = ThreadingHTTPServer((args.host, args.port), handler_cls)
 
     print(f"Code Review API listening on http://{args.host}:{args.port}")
-    print(f"  POST /v1/review       — single file review")
-    print(f"  POST /v1/review/batch — batch review")
-    print(f"  GET  /health          — health check")
+    print("  POST /v1/review       — single file review")
+    print("  POST /v1/review/batch — batch review")
+    print("  GET  /health          — health check")
     print(f"  device={service.device} | ckpt={service.ckpt_name}")
     print(f"  auth={'enabled' if api_key else 'disabled'}")
     try:

@@ -1,6 +1,6 @@
 import os
 
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 CHAT_DB_URL = os.environ.get(
     "CHAT_DB_URL",

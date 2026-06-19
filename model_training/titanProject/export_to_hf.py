@@ -16,13 +16,12 @@ from pathlib import Path
 
 import torch
 import yaml
-
 from model import ModelConfig, build_model
 from train_utils import resolve_path
 
 
 def load_config(path: Path):
-    with open(path, "r") as f:
+    with open(path) as f:
         return yaml.safe_load(f)
 
 
@@ -109,7 +108,9 @@ Loading:
     if modeling_src.exists():
         shutil.copy(modeling_src, out_dir / "modeling_titans.py")
     else:
-        print(f"Warning: modeling_titans.py not found at {modeling_src}; trust_remote_code loads may fail.")
+        print(
+            f"Warning: modeling_titans.py not found at {modeling_src}; trust_remote_code loads may fail."
+        )
 
     print(f"Export complete to {out_dir}")
 

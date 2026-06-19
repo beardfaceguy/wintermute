@@ -8,7 +8,7 @@ the module level to avoid needing pgvector/postgres at test time.
 import sys
 from pathlib import Path
 from types import ModuleType
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -16,9 +16,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # Stub out pgvector + SQLAlchemy model imports so memory_ops can be imported
 _mcp_keys = [
-    "app", "app.models", "app.models.memory_entry",
-    "app.services", "app.services.memory_ops",
-    "pgvector", "pgvector.sqlalchemy",
+    "app",
+    "app.models",
+    "app.models.memory_entry",
+    "app.services",
+    "app.services.memory_ops",
+    "pgvector",
+    "pgvector.sqlalchemy",
 ]
 _saved = {}
 for _k in _mcp_keys:
@@ -27,6 +31,7 @@ for _k in _mcp_keys:
 
 class _FakeMemoryEntry:
     """Captures constructor kwargs so tests can inspect them."""
+
     _instances: list = []
 
     def __init__(self, **kw):
@@ -46,7 +51,7 @@ sys.modules["app.models"] = _models_mod
 sys.modules["app.models.memory_entry"] = _me_mod
 sys.modules["app.services"] = _services_mod
 
-from mcp_memory.app.services.memory_ops import add_memory_entry, get_recent_entries  # noqa: E402
+from mcp_memory.app.services.memory_ops import add_memory_entry  # noqa: E402
 
 # Restore originals
 for _k in _mcp_keys:

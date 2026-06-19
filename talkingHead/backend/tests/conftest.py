@@ -8,21 +8,22 @@ import os
 # Add the backend directory to the path
 import sys
 import tempfile
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
-from typing import Any, AsyncGenerator, Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.main import app
 from db.db_models import Base
-from db.session_async import AsyncSessionLocal
 
 
 @pytest.fixture(scope="session")
@@ -56,11 +57,27 @@ def test_db() -> Generator[str, None, None]:
 
 @pytest_asyncio.fixture
 async def async_session(test_db: str) -> AsyncGenerator[Any, None]:
-    """Create an async database session for testing."""
-    # Mock the database URL
-    with patch("db.session_async.DATABASE_URL", test_db):
-        async with AsyncSessionLocal() as session:
+    """Create an async database session bound to the temp test DB.
+
+    The module-level engine in db.session_async is built at import time from
+    CHAT_DB_URL, so patching that string is a no-op. Instead we stand up a
+    dedicated async engine on the same temp database file and yield a session
+    from it.
+    """
+    async_url = test_db.replace("sqlite://", "sqlite+aiosqlite://", 1)
+    engine = create_async_engine(
+        async_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    session_factory = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
+    try:
+        async with session_factory() as session:
             yield session
+    finally:
+        await engine.dispose()
 
 
 @pytest.fixture

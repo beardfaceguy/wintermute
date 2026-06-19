@@ -4,7 +4,7 @@ Tests for mcp_servers/map_list.py — directory listing Flask endpoint.
 
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 

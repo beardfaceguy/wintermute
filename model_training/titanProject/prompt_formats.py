@@ -1,14 +1,11 @@
-from typing import Dict, List, Optional
-
-
-CHAT_PROMPTS: List[str] = [
+CHAT_PROMPTS: list[str] = [
     "User: Hello there. Can you introduce yourself in one sentence? Assistant:",
     "User: Tell me a short story about a blue cat and a red kite. Assistant:",
     "User: What is 2 plus 2? Assistant:",
 ]
 
 
-INSTRUCTION_CASES: List[Dict[str, str]] = [
+INSTRUCTION_CASES: list[dict[str, str]] = [
     {"instruction": "Introduce yourself in one sentence.", "input": ""},
     {"instruction": "Tell me a short story about a blue cat and a red kite.", "input": ""},
     {"instruction": "What is 2 plus 2?", "input": ""},
@@ -41,7 +38,7 @@ def infer_prompt_family(cfg: dict) -> str:
     return "chat"
 
 
-def default_prompts(prompt_family: str) -> List[str]:
+def default_prompts(prompt_family: str) -> list[str]:
     if prompt_family == "chat":
         return list(CHAT_PROMPTS)
     if prompt_family == "instruction":
@@ -52,7 +49,7 @@ def default_prompts(prompt_family: str) -> List[str]:
     raise ValueError(f"Unsupported prompt family: {prompt_family}")
 
 
-def default_stop_strings(prompt_family: str) -> List[str]:
+def default_stop_strings(prompt_family: str) -> list[str]:
     if prompt_family == "chat":
         return ["\nUser:", "\nAssistant:"]
     if prompt_family == "instruction":
@@ -66,7 +63,7 @@ def _strip_once(text: str, prefix: str) -> str:
     return text
 
 
-def _extract_instruction_parts(prompt: str) -> Dict[str, str]:
+def _extract_instruction_parts(prompt: str) -> dict[str, str]:
     marker = "### Instruction:\n"
     if marker not in prompt:
         return {"instruction": "", "input": ""}

@@ -7,14 +7,13 @@ that one failing case doesn't abort the rest of the batch.
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agents.sql_agent import TestCase, TestResult, validate_result
-
 
 # ── validate_result ──────────────────────────────────────────────────────────
 
@@ -41,7 +40,9 @@ def test_validate_columns_present_pass():
 
 def test_validate_columns_present_fail():
     result_data = {"rows": [{}], "columns": ["id"]}
-    passed, reason = validate_result(result_data, {"type": "columns_present", "columns": ["id", "zone"]})
+    passed, reason = validate_result(
+        result_data, {"type": "columns_present", "columns": ["id", "zone"]}
+    )
     assert not passed
     assert "zone" in reason
 

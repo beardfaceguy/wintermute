@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import List, Optional
 
 from sqlalchemy import delete, func
 from sqlalchemy.future import select
@@ -21,8 +20,8 @@ async def store_message(
     session_id: str,
     role: str,
     content: str,
-    embedding: Optional[List[float]] = None,
-    token_count: Optional[int] = None,
+    embedding: list[float] | None = None,
+    token_count: int | None = None,
 ) -> None:
     async with AsyncSessionLocal() as session:
         try:
@@ -61,9 +60,7 @@ async def prune_session_messages(session_id: str, max_messages: int) -> int:
     async with AsyncSessionLocal() as session:
         try:
             count_result = await session.execute(
-                select(func.count())
-                .select_from(Message)
-                .where(Message.session_id == session_id)
+                select(func.count()).select_from(Message).where(Message.session_id == session_id)
             )
             total = count_result.scalar() or 0
             excess = total - max_messages
@@ -80,9 +77,7 @@ async def prune_session_messages(session_id: str, max_messages: int) -> int:
             if not old_ids:
                 return 0
 
-            await session.execute(
-                delete(Message).where(Message.id.in_(old_ids))
-            )
+            await session.execute(delete(Message).where(Message.id.in_(old_ids)))
             await session.commit()
             return len(old_ids)
         except Exception:
@@ -90,7 +85,9 @@ async def prune_session_messages(session_id: str, max_messages: int) -> int:
             raise
 
 
-async def get_recent_messages(session_id: str, limit: int = _DEFAULT_HISTORY_LIMIT) -> List[Message]:
+async def get_recent_messages(
+    session_id: str, limit: int = _DEFAULT_HISTORY_LIMIT
+) -> list[Message]:
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(Message)

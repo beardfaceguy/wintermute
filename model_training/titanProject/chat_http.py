@@ -12,9 +12,6 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Dict, List, Tuple
-
-import torch
 
 from chat_repl import build_prompt, pick_device, postprocess_completion
 from generate import generate, load_config, load_tokenizer, resolve_path
@@ -150,11 +147,11 @@ class ChatService:
 
         self.ckpt_name = Path(ckpt_resolved).name
         self.config_path = str(resolve_path(config_path))
-        self._sessions: Dict[str, List[Tuple[str, str]]] = {}
+        self._sessions: dict[str, list[tuple[str, str]]] = {}
         self._sessions_lock = threading.Lock()
         self._gen_lock = threading.Lock()
 
-    def health(self) -> Dict[str, object]:
+    def health(self) -> dict[str, object]:
         return {
             "ok": True,
             "device": str(self.device),
@@ -163,7 +160,7 @@ class ChatService:
             "session_count": len(self._sessions),
         }
 
-    def reset(self, session_id: str) -> Dict[str, object]:
+    def reset(self, session_id: str) -> dict[str, object]:
         sid = session_id.strip() or "default"
         with self._sessions_lock:
             self._sessions[sid] = []
@@ -177,7 +174,7 @@ class ChatService:
         max_new: int,
         top_k: int,
         temperature: float,
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         sid = session_id.strip() or "default"
         msg = message.strip()
         if not msg:
@@ -244,7 +241,7 @@ def make_handler(service: ChatService):
             self.end_headers()
             self.wfile.write(payload)
 
-        def _send_json(self, status: int, payload: Dict[str, object]) -> None:
+        def _send_json(self, status: int, payload: dict[str, object]) -> None:
             body = json.dumps(payload).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -255,7 +252,7 @@ def make_handler(service: ChatService):
             self.end_headers()
             self.wfile.write(body)
 
-        def _read_json(self) -> Dict[str, object]:
+        def _read_json(self) -> dict[str, object]:
             length_raw = self.headers.get("Content-Length", "0")
             length = int(length_raw)
             body = self.rfile.read(length) if length > 0 else b"{}"
@@ -324,15 +321,25 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="HTTP chat endpoint for Titans checkpoint.")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Bind host")
     parser.add_argument("--port", type=int, default=8000, help="Bind port")
-    parser.add_argument("--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path")
+    parser.add_argument(
+        "--config", type=str, default="configs/config_baseline_nomem.yaml", help="YAML config path"
+    )
     parser.add_argument("--ckpt", type=str, default="ckpt_step_4000.pt", help="Checkpoint path")
-    parser.add_argument("--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"])
+    parser.add_argument(
+        "--device", type=str, default="auto", choices=["auto", "cpu", "mps", "cuda"]
+    )
     parser.add_argument("--max-new", type=int, default=80, help="Default max new tokens per reply")
     parser.add_argument("--top-k", type=int, default=20, help="Default top-k sampling")
-    parser.add_argument("--temperature", type=float, default=0.8, help="Default sampling temperature")
-    parser.add_argument("--max-prompt-tokens", type=int, default=512, help="Prompt token budget for each session")
+    parser.add_argument(
+        "--temperature", type=float, default=0.8, help="Default sampling temperature"
+    )
+    parser.add_argument(
+        "--max-prompt-tokens", type=int, default=512, help="Prompt token budget for each session"
+    )
     parser.add_argument("--user-prefix", type=str, default="User:", help="User line prefix")
-    parser.add_argument("--assistant-prefix", type=str, default="Assistant:", help="Assistant line prefix")
+    parser.add_argument(
+        "--assistant-prefix", type=str, default="Assistant:", help="Assistant line prefix"
+    )
     args = parser.parse_args()
 
     service = ChatService(

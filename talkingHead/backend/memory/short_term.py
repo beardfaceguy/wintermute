@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from db import db_ops
 
 
@@ -7,8 +5,8 @@ async def remember_message(
     session_id: str,
     role: str,
     content: str,
-    embedding: Optional[List[float]],
-    token_count: Optional[int],
+    embedding: list[float] | None,
+    token_count: int | None,
 ):
     await db_ops.store_message(session_id, role, content, embedding, token_count)
 

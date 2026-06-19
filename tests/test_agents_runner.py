@@ -11,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from agents.runner import AgentResult, AgentRunner, ToolRef, _mcp_tool_to_openai
 
-
 # ── Dataclass construction ───────────────────────────────────────────────────
 
 
@@ -100,12 +99,16 @@ def test_mcp_tool_to_openai_partial_schema():
 def test_runner_init_defaults(monkeypatch):
     """AgentRunner should have sensible defaults from config."""
     monkeypatch.setattr(
-        AgentRunner, "_load_defaults", staticmethod(lambda: {
-            "llm_base_url": "http://localhost:8001/v1",
-            "model": "wizard-vicuna-7b-awq",
-            "max_iterations": 10,
-            "temperature": 0.1,
-        })
+        AgentRunner,
+        "_load_defaults",
+        staticmethod(
+            lambda: {
+                "llm_base_url": "http://localhost:8001/v1",
+                "model": "wizard-vicuna-7b-awq",
+                "max_iterations": 10,
+                "temperature": 0.1,
+            }
+        ),
     )
     runner = AgentRunner()
     assert runner.llm_base_url == "http://localhost:8001/v1"
@@ -204,9 +207,7 @@ async def test_call_tool_dispatches_to_mcp_client():
     content_item.text = '{"data": "hello"}'
     mock_client.call_tool.return_value = MagicMock(content=[content_item])
 
-    runner._tools["greet"] = ToolRef(
-        server_name="test", client=mock_client, schema={}
-    )
+    runner._tools["greet"] = ToolRef(server_name="test", client=mock_client, schema={})
 
     result = await runner.call_tool("greet", {"name": "world"})
     assert result == '{"data": "hello"}'
@@ -220,9 +221,7 @@ async def test_call_tool_empty_content_returns_ok():
     mock_client = AsyncMock()
     mock_client.call_tool.return_value = MagicMock(content=[])
 
-    runner._tools["noop"] = ToolRef(
-        server_name="test", client=mock_client, schema={}
-    )
+    runner._tools["noop"] = ToolRef(server_name="test", client=mock_client, schema={})
 
     result = await runner.call_tool("noop", {})
     parsed = json.loads(result)
@@ -236,9 +235,7 @@ async def test_call_tool_handles_exception():
     mock_client = AsyncMock()
     mock_client.call_tool.side_effect = ConnectionError("server down")
 
-    runner._tools["broken"] = ToolRef(
-        server_name="test", client=mock_client, schema={}
-    )
+    runner._tools["broken"] = ToolRef(server_name="test", client=mock_client, schema={})
 
     result = await runner.call_tool("broken", {"x": 1})
     parsed = json.loads(result)
@@ -247,6 +244,7 @@ async def test_call_tool_handles_exception():
 
 
 # ── run ──────────────────────────────────────────────────────────────────────
+
 
 def _make_chat_response(content=None, tool_calls=None, finish_reason="stop"):
     """Helper to build a mock chat/completions response."""
@@ -321,10 +319,12 @@ async def test_run_handles_tool_call_loop():
         call_count[0] += 1
         if call_count[0] == 1:
             return _make_chat_response(
-                tool_calls=[{
-                    "id": "tc_1",
-                    "function": {"name": "add", "arguments": '{"a": 2, "b": 2}'},
-                }],
+                tool_calls=[
+                    {
+                        "id": "tc_1",
+                        "function": {"name": "add", "arguments": '{"a": 2, "b": 2}'},
+                    }
+                ],
                 finish_reason="tool_calls",
             )
         return _make_chat_response(content="The sum is 4.")
@@ -354,10 +354,12 @@ async def test_run_respects_max_iterations():
 
     async def always_tool_call(messages, tools):
         return _make_chat_response(
-            tool_calls=[{
-                "id": "tc_loop",
-                "function": {"name": "spin", "arguments": "{}"},
-            }],
+            tool_calls=[
+                {
+                    "id": "tc_loop",
+                    "function": {"name": "spin", "arguments": "{}"},
+                }
+            ],
             finish_reason="tool_calls",
         )
 
@@ -389,10 +391,12 @@ async def test_run_handles_malformed_tool_arguments():
         call_count[0] += 1
         if call_count[0] == 1:
             return _make_chat_response(
-                tool_calls=[{
-                    "id": "tc_bad",
-                    "function": {"name": "oops", "arguments": "NOT VALID JSON"},
-                }],
+                tool_calls=[
+                    {
+                        "id": "tc_bad",
+                        "function": {"name": "oops", "arguments": "NOT VALID JSON"},
+                    }
+                ],
                 finish_reason="tool_calls",
             )
         return _make_chat_response(content="Recovered.")
@@ -408,7 +412,7 @@ async def test_run_handles_malformed_tool_arguments():
     runner._chat_completion = fake_chat
 
     # Should not raise — malformed args become {}
-    result = await runner.run("Test bad args")
+    await runner.run("Test bad args")
     mock_client.call_tool.assert_awaited_with("oops", {})
 
 

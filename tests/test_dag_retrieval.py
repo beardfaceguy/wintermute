@@ -6,22 +6,20 @@ All LLM calls and memory_search calls are mocked.
 
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from mcp_memory.dag_retrieval import (
-    _route_query,
-    _topological_sort,
-    _parse_json_response,
     _decompose_query,
     _extract_edges,
+    _parse_json_response,
+    _route_query,
+    _topological_sort,
     dag_search,
-    DAGSearchResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Complexity router tests
@@ -36,19 +34,24 @@ class TestRouteQuery:
         assert _route_query("List all memory entries") == "direct"
 
     def test_multi_hop_signal_routes_dag(self):
-        assert _route_query(
-            "What strategy did we use for the task that caused the OOM error?"
-        ) == "dag"
+        assert (
+            _route_query("What strategy did we use for the task that caused the OOM error?")
+            == "dag"
+        )
 
     def test_conjunction_routes_dag(self):
-        assert _route_query(
-            "What happened before the model training and then after deployment?"
-        ) == "dag"
+        assert (
+            _route_query("What happened before the model training and then after deployment?")
+            == "dag"
+        )
 
     def test_relationship_routes_dag(self):
-        assert _route_query(
-            "What is the relationship between the Freud auditor and memory trust scores?"
-        ) == "dag"
+        assert (
+            _route_query(
+                "What is the relationship between the Freud auditor and memory trust scores?"
+            )
+            == "dag"
+        )
 
     def test_long_query_routes_dag(self):
         long_q = "Tell me about " + " ".join(["something"] * 30)
@@ -163,9 +166,7 @@ class TestExtractEdges:
         mock_response = '{"dependency_pairs": [[5, 0], [1, 0]]}'
         with patch("mcp_memory.dag_retrieval._llm_call", new_callable=AsyncMock) as mock_llm:
             mock_llm.return_value = mock_response
-            result = await _extract_edges(
-                ["A", "B"], "q", "http://fake/v1", "model"
-            )
+            result = await _extract_edges(["A", "B"], "q", "http://fake/v1", "model")
             assert result == [(1, 0)]
 
     @pytest.mark.asyncio
@@ -194,9 +195,10 @@ class TestDagSearch:
     async def test_dag_route_executes_pipeline(self):
         fake_results = [{"id": "1", "text": "fact A", "similarity": 0.8}]
 
-        with patch("mcp_memory.dag_retrieval._memory_search", return_value=fake_results), \
-             patch("mcp_memory.dag_retrieval._llm_call", new_callable=AsyncMock) as mock_llm:
-
+        with (
+            patch("mcp_memory.dag_retrieval._memory_search", return_value=fake_results),
+            patch("mcp_memory.dag_retrieval._llm_call", new_callable=AsyncMock) as mock_llm,
+        ):
             # Sequence: decompose, extract_edges, summarize, can_answer, summarize, can_answer
             mock_llm.side_effect = [
                 '{"subqueries": ["What is A?", "How does A affect B?"]}',
@@ -220,9 +222,10 @@ class TestDagSearch:
     async def test_force_dag_overrides_router(self):
         fake_results = [{"id": "1", "text": "short", "similarity": 0.9}]
 
-        with patch("mcp_memory.dag_retrieval._memory_search", return_value=fake_results), \
-             patch("mcp_memory.dag_retrieval._llm_call", new_callable=AsyncMock) as mock_llm:
-
+        with (
+            patch("mcp_memory.dag_retrieval._memory_search", return_value=fake_results),
+            patch("mcp_memory.dag_retrieval._llm_call", new_callable=AsyncMock) as mock_llm,
+        ):
             mock_llm.side_effect = [
                 '{"subqueries": ["What is X?"]}',
                 '{"dependency_pairs": []}',

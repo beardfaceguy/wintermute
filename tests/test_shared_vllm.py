@@ -15,8 +15,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 # Stub out llama_index and pydantic imports so we can test without the full package
 _li_keys = [
-    "llama_index", "llama_index.core", "llama_index.core.base",
-    "llama_index.core.base.llms", "llama_index.core.base.llms.types",
+    "llama_index",
+    "llama_index.core",
+    "llama_index.core.base",
+    "llama_index.core.base.llms",
+    "llama_index.core.base.llms.types",
     "llama_index.core.llms",
 ]
 _saved_li = {}
@@ -34,15 +37,23 @@ class _CompletionResponse:
 
 _types_mod.CompletionResponse = _CompletionResponse
 _types_mod.CompletionResponseGen = type(None)
-_types_mod.LLMMetadata = type("LLMMetadata", (), {
-    "__init__": lambda self, **kw: self.__dict__.update(kw),
-})
+_types_mod.LLMMetadata = type(
+    "LLMMetadata",
+    (),
+    {
+        "__init__": lambda self, **kw: self.__dict__.update(kw),
+    },
+)
 
 _llms_mod = ModuleType("llama_index.core.llms")
-_llms_mod.CustomLLM = type("CustomLLM", (), {
-    "__init_subclass__": classmethod(lambda cls, **kw: None),
-    "__init__": lambda self, **kw: None,
-})
+_llms_mod.CustomLLM = type(
+    "CustomLLM",
+    (),
+    {
+        "__init_subclass__": classmethod(lambda cls, **kw: None),
+        "__init__": lambda self, **kw: None,
+    },
+)
 
 for _k in _li_keys:
     sys.modules[_k] = MagicMock()
@@ -75,9 +86,7 @@ def test_metadata_returns_model_name():
 def test_complete_success(mock_post):
     """Successful completion parses choices[0].message.content."""
     mock_resp = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content": "Hello world"}}]
-    }
+    mock_resp.json.return_value = {"choices": [{"message": {"content": "Hello world"}}]}
     mock_post.return_value = mock_resp
 
     llm = VLLM(base_url="http://localhost:8000", model_name="test")
@@ -135,9 +144,7 @@ def test_complete_http_error_raises(mock_post):
 def test_complete_forwards_kwargs(mock_post):
     """Temperature and max_tokens kwargs should be forwarded in the request body."""
     mock_resp = MagicMock()
-    mock_resp.json.return_value = {
-        "choices": [{"message": {"content": "ok"}}]
-    }
+    mock_resp.json.return_value = {"choices": [{"message": {"content": "ok"}}]}
     mock_post.return_value = mock_resp
 
     llm = VLLM(base_url="http://localhost:8000", model_name="test")

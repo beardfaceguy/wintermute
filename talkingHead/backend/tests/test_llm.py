@@ -19,9 +19,7 @@ class TestChatProcessor:
 
     def test_chat_processor_initialization(self) -> None:
         """Test ChatProcessor initialization."""
-        processor = ChatProcessor(
-            model_url="http://localhost:8000", model_name="test-model"
-        )
+        processor = ChatProcessor(model_url="http://localhost:8000", model_name="test-model")
 
         assert processor.model_url == "http://localhost:8000"
         assert processor.model_name == "test-model"
@@ -46,11 +44,13 @@ class TestChatProcessor:
         mock_client.return_value.__aexit__.return_value = None
 
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = _async_iter([
-            'data: {"choices": [{"delta": {"content": "Hello"}}]}',
-            'data: {"choices": [{"delta": {"content": " world"}}]}',
-            "data: [DONE]",
-        ])
+        mock_response.aiter_lines.return_value = _async_iter(
+            [
+                'data: {"choices": [{"delta": {"content": "Hello"}}]}',
+                'data: {"choices": [{"delta": {"content": " world"}}]}',
+                "data: [DONE]",
+            ]
+        )
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -110,11 +110,13 @@ class TestChatProcessor:
         mock_client.return_value.__aexit__.return_value = None
 
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = _async_iter([
-            "data: invalid json",
-            'data: {"choices": [{"delta": {"content": "Valid"}}]}',
-            "data: [DONE]",
-        ])
+        mock_response.aiter_lines.return_value = _async_iter(
+            [
+                "data: invalid json",
+                'data: {"choices": [{"delta": {"content": "Valid"}}]}',
+                "data: [DONE]",
+            ]
+        )
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -136,11 +138,13 @@ class TestChatProcessor:
         mock_client.return_value.__aexit__.return_value = None
 
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = _async_iter([
-            'data: {"choices": [{"delta": {}}]}',
-            'data: {"choices": [{"delta": {"content": "Valid"}}]}',
-            "data: [DONE]",
-        ])
+        mock_response.aiter_lines.return_value = _async_iter(
+            [
+                'data: {"choices": [{"delta": {}}]}',
+                'data: {"choices": [{"delta": {"content": "Valid"}}]}',
+                "data: [DONE]",
+            ]
+        )
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -153,9 +157,7 @@ class TestChatProcessor:
 
     @patch("app.chat.llm.httpx.AsyncClient")
     @pytest.mark.asyncio
-    async def test_stream_response_skip_empty_lines(
-        self, mock_client: MagicMock
-    ) -> None:
+    async def test_stream_response_skip_empty_lines(self, mock_client: MagicMock) -> None:
         """Test that empty lines and control lines are skipped."""
         processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 
@@ -164,12 +166,14 @@ class TestChatProcessor:
         mock_client.return_value.__aexit__.return_value = None
 
         mock_response = MagicMock()
-        mock_response.aiter_lines.return_value = _async_iter([
-            "",
-            ":",
-            'data: {"choices": [{"delta": {"content": "Hello"}}]}',
-            "data: [DONE]",
-        ])
+        mock_response.aiter_lines.return_value = _async_iter(
+            [
+                "",
+                ":",
+                'data: {"choices": [{"delta": {"content": "Hello"}}]}',
+                "data: [DONE]",
+            ]
+        )
         mock_client_instance.stream.return_value.__aenter__.return_value = mock_response
         mock_client_instance.stream.return_value.__aexit__.return_value = None
 
@@ -182,9 +186,7 @@ class TestChatProcessor:
 
     @patch("app.chat.llm.httpx.AsyncClient")
     @pytest.mark.asyncio
-    async def test_stream_response_exception_handling(
-        self, mock_client: MagicMock
-    ) -> None:
+    async def test_stream_response_exception_handling(self, mock_client: MagicMock) -> None:
         """Test exception handling during streaming."""
         processor = ChatProcessor("http://test:8000/v1/chat/completions", "test-model")
 

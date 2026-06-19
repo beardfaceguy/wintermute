@@ -1,3 +1,4 @@
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -25,6 +26,7 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     from db.db_models import Base
     from db.session_async import engine
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     try:
@@ -34,9 +36,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# A wildcard origin is incompatible with allow_credentials=True (browsers reject
+# credentialed responses bearing Access-Control-Allow-Origin: *). Use an explicit
+# allowlist, overridable via CORS_ALLOW_ORIGINS (comma-separated).
+_cors_origins = os.environ.get(
+    "CORS_ALLOW_ORIGINS",
+    "http://localhost:5173,http://127.0.0.1:5173",
+)
+allow_origins = [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -41,4 +41,5 @@ class ConnectionManager:
         for connection in dead:
             self.disconnect(connection)
 
+
 manager = ConnectionManager()
