@@ -1,0 +1,29 @@
+# pip-audit acknowledged vulnerabilities for wintermute
+#
+# All entries below have been reviewed. They fall into two categories:
+#
+# 1. No fix exists: package is already at its latest release.
+# 2. Cannot upgrade: the wintermute requirements.txt combines PyTorch, vLLM,
+#    LlamaIndex, and Chromadb — a mixed ML stack with tightly coupled version
+#    constraints. Bumping any single package breaks dependency resolution.
+#    These packages are reviewed on each release cycle.
+#
+# Re-evaluate whenever a new major version of the affected package is released.
+
+# chromadb 1.5.9 — CVE-2026-45829 (already at latest, no upstream fix)
+CVE-2026-45829 chromadb
+
+# diskcache 5.6.3 — CVE-2025-69872 (already at latest, no upstream fix)
+CVE-2025-69872 diskcache
+
+# torch — CVE-2025-3000 (upgrade blocked by ML stack version coupling)
+CVE-2025-3000 torch
+
+# vllm — multiple CVEs (upgrade blocked by ML stack version coupling)
+# vLLM for serving is typically installed in a separate GPU environment;
+# the entry in requirements.txt is a dev placeholder.
+CVE-2026-53923 vllm
+CVE-2026-54236 vllm
+GHSA-8jr5-v98p-w75m vllm
+CVE-2026-54235 vllm
+CVE-2026-54233 vllm

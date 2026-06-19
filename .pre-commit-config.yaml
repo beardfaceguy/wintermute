@@ -64,6 +64,22 @@ repos:
           - --requirement
           - requirements.txt
           - --skip-editable
+          - --ignore-vuln
+          - CVE-2026-45829  # chromadb — latest release, no upstream fix
+          - --ignore-vuln
+          - CVE-2025-69872  # diskcache — latest release, no upstream fix
+          - --ignore-vuln
+          - CVE-2025-3000   # torch — upgrade blocked by ML stack version coupling
+          - --ignore-vuln
+          - CVE-2026-53923  # vllm — upgrade blocked by ML stack version coupling
+          - --ignore-vuln
+          - CVE-2026-54236  # vllm
+          - --ignore-vuln
+          - GHSA-8jr5-v98p-w75m  # vllm
+          - --ignore-vuln
+          - CVE-2026-54235  # vllm
+          - --ignore-vuln
+          - CVE-2026-54233  # vllm
         # Only runs if requirements.txt changes
         files: ^requirements\.txt$
 
