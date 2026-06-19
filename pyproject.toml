@@ -6,6 +6,7 @@ exclude = [
     "openclaw", "mcp_aws", "titans-pytorch",
     "aws-doc-sdk-examples", ".venv", "venv",
     "model_training",                        # training scripts, not production code
+    "typings",                               # auto-generated type stubs
 ]
 
 [tool.ruff.lint]

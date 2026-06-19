@@ -7,10 +7,7 @@ class DecodeStream:
     Class needed for streaming decode
 
     """
-    def __init__(self, skip_special_tokens) -> None:
-        ...
-    
-
+    def __init__(self, skip_special_tokens) -> None: ...
 
 class Decoder:
     """
@@ -31,8 +28,6 @@ class Decoder:
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class BPEDecoder(Decoder):
     """
@@ -43,9 +38,7 @@ class BPEDecoder(Decoder):
             The suffix that was used to caracterize an end-of-word. This suffix will
             be replaced by whitespaces during the decoding
     """
-    def __init__(self, suffix=...) -> None:
-        ...
-    
+    def __init__(self, suffix=...) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -58,8 +51,6 @@ class BPEDecoder(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class ByteFallback(Decoder):
     """
@@ -69,9 +60,7 @@ class ByteFallback(Decoder):
     cannot be decoded you will get � instead for each inconvertible byte token
 
     """
-    def __init__(self) -> None:
-        ...
-    
+    def __init__(self) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -84,8 +73,6 @@ class ByteFallback(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class ByteLevel(Decoder):
     """
@@ -94,9 +81,7 @@ class ByteLevel(Decoder):
     This decoder is to be used in tandem with the :class:`~tokenizers.pre_tokenizers.ByteLevel`
     :class:`~tokenizers.pre_tokenizers.PreTokenizer`.
     """
-    def __init__(self) -> None:
-        ...
-    
+    def __init__(self) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -109,8 +94,6 @@ class ByteLevel(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class CTC(Decoder):
     """
@@ -125,9 +108,7 @@ class CTC(Decoder):
             Whether to cleanup some tokenization artifacts.
             Mainly spaces before punctuation, and some abbreviated english forms.
     """
-    def __init__(self, pad_token=..., word_delimiter_token=..., cleanup=...) -> None:
-        ...
-    
+    def __init__(self, pad_token=..., word_delimiter_token=..., cleanup=...) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -140,8 +121,6 @@ class CTC(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class Fuse(Decoder):
     """
@@ -150,9 +129,7 @@ class Fuse(Decoder):
     This is the last step of decoding, this decoder exists only if
     there is need to add other decoders *after* the fusion
     """
-    def __init__(self) -> None:
-        ...
-    
+    def __init__(self) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -165,8 +142,6 @@ class Fuse(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class Metaspace(Decoder):
     """
@@ -183,9 +158,7 @@ class Metaspace(Decoder):
             Choices: "always", "never", "first". First means the space is only added on the first
             token (relevant when special tokens are used or other pre_tokenizer are used).
     """
-    def __init__(self, replacement=..., prepend_scheme=..., split=...) -> None:
-        ...
-    
+    def __init__(self, replacement=..., prepend_scheme=..., split=...) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -198,8 +171,6 @@ class Metaspace(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class Replace(Decoder):
     """
@@ -208,9 +179,7 @@ class Replace(Decoder):
     This decoder is to be used in tandem with the :class:`~tokenizers.pre_tokenizers.Replace`
     :class:`~tokenizers.pre_tokenizers.PreTokenizer`.
     """
-    def __init__(self, pattern, content) -> None:
-        ...
-    
+    def __init__(self, pattern, content) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -223,8 +192,6 @@ class Replace(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class Sequence(Decoder):
     """
@@ -234,9 +201,7 @@ class Sequence(Decoder):
         decoders (:obj:`List[Decoder]`)
             The decoders that need to be chained
     """
-    def __init__(self, decoders) -> None:
-        ...
-    
+    def __init__(self, decoders) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -249,17 +214,13 @@ class Sequence(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class Strip(Decoder):
     """
     Strip normalizer
     Strips n left characters of each token, or n right characters of each token
     """
-    def __init__(self, content, left=..., right=...) -> None:
-        ...
-    
+    def __init__(self, content, left=..., right=...) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -272,8 +233,6 @@ class Strip(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
 
 class WordPiece(Decoder):
     """
@@ -287,9 +246,7 @@ class WordPiece(Decoder):
             Whether to cleanup some tokenization artifacts. Mainly spaces before punctuation,
             and some abbreviated english forms.
     """
-    def __init__(self, prefix=..., cleanup=...) -> None:
-        ...
-    
+    def __init__(self, prefix=..., cleanup=...) -> None: ...
     def decode(self, tokens):
         """
         Decode the given list of tokens to a final string
@@ -302,6 +259,3 @@ class WordPiece(Decoder):
             :obj:`str`: The decoded string
         """
         ...
-    
-
-

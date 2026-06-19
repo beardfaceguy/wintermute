@@ -9,8 +9,8 @@ class Trainer:
     This class is not supposed to be instantiated directly. Instead, any implementation of a
     Trainer will return an instance of this class when instantiated.
     """
-    ...
 
+    ...
 
 class BpeTrainer(Trainer):
     """
@@ -50,8 +50,8 @@ class BpeTrainer(Trainer):
             highly repetitive tokens like `======` for wikipedia
 
     """
-    ...
 
+    ...
 
 class UnigramTrainer(Trainer):
     """
@@ -87,10 +87,16 @@ class UnigramTrainer(Trainer):
             The number of iterations of the EM algorithm to perform before
             pruning the vocabulary.
     """
-    def __init__(self, vocab_size=..., show_progress=..., special_tokens=..., shrinking_factor=..., unk_token=..., max_piece_length=..., n_sub_iterations=...) -> None:
-        ...
-    
-
+    def __init__(
+        self,
+        vocab_size=...,
+        show_progress=...,
+        special_tokens=...,
+        shrinking_factor=...,
+        unk_token=...,
+        max_piece_length=...,
+        n_sub_iterations=...,
+    ) -> None: ...
 
 class WordLevelTrainer(Trainer):
     """
@@ -109,8 +115,8 @@ class WordLevelTrainer(Trainer):
         special_tokens (:obj:`List[Union[str, AddedToken]]`):
             A list of special tokens the model should know of.
     """
-    ...
 
+    ...
 
 class WordPieceTrainer(Trainer):
     """
@@ -144,8 +150,14 @@ class WordPieceTrainer(Trainer):
         end_of_word_suffix (:obj:`str`, `optional`):
             A suffix to be used for every subword that is a end-of-word.
     """
-    def __init__(self, vocab_size=..., min_frequency=..., show_progress=..., special_tokens=..., limit_alphabet=..., initial_alphabet=..., continuing_subword_prefix=..., end_of_word_suffix=...) -> None:
-        ...
-    
-
-
+    def __init__(
+        self,
+        vocab_size=...,
+        min_frequency=...,
+        show_progress=...,
+        special_tokens=...,
+        limit_alphabet=...,
+        initial_alphabet=...,
+        continuing_subword_prefix=...,
+        end_of_word_suffix=...,
+    ) -> None: ...

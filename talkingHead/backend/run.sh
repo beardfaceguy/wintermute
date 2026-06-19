@@ -15,4 +15,3 @@ BACKEND_PORT="${BACKEND_PORT:-8000}"
 
 export DEBUG=$DEBUG
 uvicorn app.main:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"
-

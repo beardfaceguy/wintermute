@@ -116,5 +116,3 @@
 
 ### Session Log (recent runs)
 - Config: bpe_50k_bf, seq64, batch 16, d512/L6/H8/FF2048, dropout 0.1, lr 4.5e-5, warmup 120, cosine lr_min_factor 0.1, steps 4000. Outcome: best val loss 1.7530 (ppl 5.77) at step 3960; final val loss 1.7639 (ppl 5.84) at step 4000. Slightly worse than the 3500-step best (1.7199), so 3500-step checkpoint remains SOTA for this shape.
-
-

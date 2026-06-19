@@ -21,18 +21,15 @@ def cdiv(x, div):
 @core._tensor_member_fn
 @jit
 @math._add_math_1arg_docstr("sigmoid")
-def sigmoid(x): # -> tensor:
+def sigmoid(x):  # -> tensor:
     ...
-
 @core._tensor_member_fn
 @jit
 @math._add_math_1arg_docstr("softmax")
-def softmax(x, ieee_rounding=...):
-    ...
-
+def softmax(x, ieee_rounding=...): ...
 @core._tensor_member_fn
 @jit
-def ravel(x, can_reorder=...): # -> tensor:
+def ravel(x, can_reorder=...):  # -> tensor:
     """
     Returns a contiguous flattened view of :code:`x`.
 
@@ -42,7 +39,7 @@ def ravel(x, can_reorder=...): # -> tensor:
     ...
 
 @jit
-def swizzle2d(i, j, size_i, size_j, size_g): # -> tuple[Any, Any]:
+def swizzle2d(i, j, size_i, size_j, size_g):  # -> tuple[Any, Any]:
     """
     Transforms the indices of a row-major `size_i * size_j` matrix into
     the indices of a column-major matrix for each group of `size_g` rows.
@@ -65,7 +62,7 @@ def swizzle2d(i, j, size_i, size_j, size_g): # -> tuple[Any, Any]:
     ...
 
 @jit
-def zeros(shape, dtype): # -> tensor:
+def zeros(shape, dtype):  # -> tensor:
     """
     Returns a tensor filled with the scalar value 0 for the given :code:`shape` and :code:`dtype`.
 
@@ -88,52 +85,52 @@ def zeros_like(input):
 
 @core._tensor_member_fn
 @jit
-@core._add_reduction_docstr("maximum", return_indices_arg="return_indices", tie_break_arg="return_indices_tie_break_left")
-def max(input, axis=..., return_indices=..., return_indices_tie_break_left=..., keep_dims=...): # -> builtins.tuple[Any | tensor, Any | tensor] | tensor | triton.language.core.tuple | Tuple[tensor, ...]:
+@core._add_reduction_docstr(
+    "maximum", return_indices_arg="return_indices", tie_break_arg="return_indices_tie_break_left"
+)
+def max(
+    input, axis=..., return_indices=..., return_indices_tie_break_left=..., keep_dims=...
+):  # -> builtins.tuple[Any | tensor, Any | tensor] | tensor | triton.language.core.tuple | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 @core._add_reduction_docstr("maximum index", tie_break_arg="tie_break_left")
-def argmax(input, axis, tie_break_left=..., keep_dims=...):
-    ...
-
+def argmax(input, axis, tie_break_left=..., keep_dims=...): ...
 @core._tensor_member_fn
 @jit
-@core._add_reduction_docstr("minimum", return_indices_arg="return_indices", tie_break_arg="return_indices_tie_break_left")
-def min(input, axis=..., return_indices=..., return_indices_tie_break_left=..., keep_dims=...): # -> builtins.tuple[Any | tensor, Any | tensor] | tensor | triton.language.core.tuple | Tuple[tensor, ...]:
+@core._add_reduction_docstr(
+    "minimum", return_indices_arg="return_indices", tie_break_arg="return_indices_tie_break_left"
+)
+def min(
+    input, axis=..., return_indices=..., return_indices_tie_break_left=..., keep_dims=...
+):  # -> builtins.tuple[Any | tensor, Any | tensor] | tensor | triton.language.core.tuple | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 @core._add_reduction_docstr("minimum index", tie_break_arg="tie_break_left")
-def argmin(input, axis, tie_break_left=..., keep_dims=...):
-    ...
-
+def argmin(input, axis, tie_break_left=..., keep_dims=...): ...
 @core._tensor_member_fn
 @jit
 @core._add_reduction_docstr("sum", dtype_arg="dtype")
-def sum(input, axis=..., keep_dims=..., dtype: core.constexpr = ...): # -> tensor | tuple | Tuple[tensor, ...]:
+def sum(
+    input, axis=..., keep_dims=..., dtype: core.constexpr = ...
+):  # -> tensor | tuple | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 @core._add_reduction_docstr("xor sum")
-def xor_sum(input, axis=..., keep_dims=...): # -> tensor | tuple | Tuple[tensor, ...]:
+def xor_sum(input, axis=..., keep_dims=...):  # -> tensor | tuple | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 @core._add_scan_docstr("cumsum")
-def cumsum(input, axis=..., reverse=...): # -> tensor | Tuple[tensor, ...]:
+def cumsum(input, axis=..., reverse=...):  # -> tensor | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 @core._add_scan_docstr("cumprod")
-def cumprod(input, axis=..., reverse=...): # -> tensor | Tuple[tensor, ...]:
+def cumprod(input, axis=..., reverse=...):  # -> tensor | Tuple[tensor, ...]:
     ...
-
 @core._tensor_member_fn
 @jit
 def sort(x, dim: core.constexpr = ..., descending: core.constexpr = ...):
@@ -151,7 +148,7 @@ def sort(x, dim: core.constexpr = ..., descending: core.constexpr = ...):
 
 @core._tensor_member_fn
 @jit
-def flip(x, dim=...): # -> tensor:
+def flip(x, dim=...):  # -> tensor:
     """
     Flips a tensor `x` along the dimension `dim`.
 
@@ -163,7 +160,7 @@ def flip(x, dim=...): # -> tensor:
     ...
 
 @jit
-def interleave(a, b): # -> tensor:
+def interleave(a, b):  # -> tensor:
     """
     Interleaves the values of two tensors along their last dimension. The two tensors must have the same shape.
     Equivalent to `tl.join(a, b).reshape(a.shape[:-1] + [2 * a.shape[-1]])`
@@ -174,4 +171,3 @@ def interleave(a, b): # -> tensor:
     :type b: Tensor
     """
     ...
-

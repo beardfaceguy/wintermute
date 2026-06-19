@@ -552,7 +552,7 @@ aws s3 sync /mnt/data/checkpoints s3://alix-ai-ml-staging-data/titan/checkpoints
   - Sanity train attempt (200 steps, g5.xlarge) failed early due to mixing torch versions (torch 2.10 pulled via titans-pytorch deps overriding torch 2.2.2) and an old `train.py` lacking S3 path handling. Instance terminated after failure to avoid costs.
   - Next run instructions: (on fresh g5.xlarge)
     1) `aws s3 sync s3://alix-ai-ml-staging-data/titan/code/wintermute /home/ubuntu/wintermute --exclude '*/logs/LLM/.venv/*' --exclude '*/logs/LLM/.venv/**' --only-show-errors`
-    2) Install deps without upgrading torch:  
+    2) Install deps without upgrading torch:
        ```
        pip install --upgrade --no-cache-dir torch==2.2.2+cu121 torchvision==0.17.2+cu121 torchaudio==2.2.2+cu121 --extra-index-url https://download.pytorch.org/whl/cu121
        pip install --no-cache-dir sentencepiece boto3 pyarrow

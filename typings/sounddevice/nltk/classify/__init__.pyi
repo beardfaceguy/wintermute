@@ -7,9 +7,6 @@ nltk.classify.svm was deprecated. For classification based
 on support vector machines SVMs use nltk.classify.scikitlearn
 (or `scikit-learn <https://scikit-learn.org>`_ directly).
 """
+
 class SvmClassifier:
-    def __init__(self, *args, **kwargs) -> None:
-        ...
-    
-
-
+    def __init__(self, *args, **kwargs) -> None: ...

@@ -39,5 +39,3 @@ Goal: stand up a tiny Titans-based language model (MAC variant) to verify test-t
 - [x] Supervised finetune aligned with tokenizer/context; QA prompts “Answer:”
 - [ ] Optional PEFT/LoRA (not needed for current tiny model)
 - [ ] HF/transformers export script (not yet needed)
-
-

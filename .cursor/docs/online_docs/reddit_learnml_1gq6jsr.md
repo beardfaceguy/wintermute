@@ -49,4 +49,3 @@ Comment highlights (from user paste):
 Advertising links in thread (not followed/ingested):
 - Databricks “Big Book of GenAI” promoted link (not downloaded).
 - Figma/DataCamp ads (not downloaded).
-

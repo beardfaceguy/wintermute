@@ -13,4 +13,3 @@ def serialize_datetime(v: dt.datetime) -> str:
     UTC datetimes end in "Z" while all other timezones are represented as offset from UTC, e.g. +05:00.
     """
     ...
-

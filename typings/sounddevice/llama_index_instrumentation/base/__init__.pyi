@@ -10,6 +10,3 @@ class BaseInstrumentationHandler(ABC):
     def init(cls) -> None:
         """Initialize the instrumentation handler."""
         ...
-    
-
-

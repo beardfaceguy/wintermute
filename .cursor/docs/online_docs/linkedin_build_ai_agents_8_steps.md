@@ -22,4 +22,3 @@
 
 ## Notes
 - Full LinkedIn content may require login; above reflects provided summary and link targets.
-

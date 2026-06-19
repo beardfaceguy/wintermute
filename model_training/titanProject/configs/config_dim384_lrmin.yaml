@@ -29,5 +29,3 @@ data:
   val_path: model_training/LLM/data/tinystories_sampled/val_sample.txt
   tokenizer_path: model_training/LLM/tokenizers/bpe_50k_bf.model
   shuffle_buffer: 100000
-
-

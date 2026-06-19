@@ -9,9 +9,9 @@ function App() {
     <StaticBackground />
     <VCRGlitch />
       <Chat />
-      
+
     </div>
-    
+
   )
 }
 

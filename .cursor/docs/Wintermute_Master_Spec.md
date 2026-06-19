@@ -237,8 +237,8 @@ File upload and audio I/O modules designed for modular integration with other MC
 
 ### 💡 UI Feature: Context-Popover Term Definition
 
-**Status:** Proposed  
-**Created:** 2025-08-07  
+**Status:** Proposed
+**Created:** 2025-08-07
 **Author:** Patrick
 
 ---

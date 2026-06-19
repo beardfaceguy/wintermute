@@ -32,5 +32,3 @@ data:
   max_tokens: 50000000        # cap train tokens loaded
   max_tokens_val: 2000000     # cap val tokens loaded
   shuffle_buffer: 100000
-
-

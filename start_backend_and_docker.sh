@@ -17,4 +17,3 @@ echo "✅ PostgreSQL is ready."
 echo "🚀 Starting FastAPI backend..."
 cd ../talkingHead/backend
 ./run.sh --debug
-

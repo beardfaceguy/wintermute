@@ -37,52 +37,50 @@ class AddedToken:
             Defines whether this token should be skipped when decoding.
 
     """
-    def __init__(self, content, single_word=..., lstrip=..., rstrip=..., normalized=..., special=...) -> None:
-        ...
-    
+    def __init__(
+        self, content, single_word=..., lstrip=..., rstrip=..., normalized=..., special=...
+    ) -> None: ...
     @property
     def content(self):
         """
         Get the content of this :obj:`AddedToken`
         """
         ...
-    
+
     @property
     def lstrip(self):
         """
         Get the value of the :obj:`lstrip` option
         """
         ...
-    
+
     @property
     def normalized(self):
         """
         Get the value of the :obj:`normalized` option
         """
         ...
-    
+
     @property
     def rstrip(self):
         """
         Get the value of the :obj:`rstrip` option
         """
         ...
-    
+
     @property
     def single_word(self):
         """
         Get the value of the :obj:`single_word` option
         """
         ...
-    
+
     @property
     def special(self):
         """
         Get the value of the :obj:`special` option
         """
         ...
-    
-
 
 class Encoding:
     """
@@ -101,7 +99,7 @@ class Encoding:
            :obj:`List[int]`: The attention mask
         """
         ...
-    
+
     def char_to_token(self, char_pos, sequence_index=...):
         """
         Get the token that contains the char at the given position in the input sequence.
@@ -116,7 +114,7 @@ class Encoding:
             :obj:`int`: The index of the token that contains this char in the encoded sequence
         """
         ...
-    
+
     def char_to_word(self, char_pos, sequence_index=...):
         """
         Get the word that contains the char at the given position in the input sequence.
@@ -131,7 +129,7 @@ class Encoding:
             :obj:`int`: The index of the word that contains this char in the input sequence
         """
         ...
-    
+
     @property
     def ids(self):
         """
@@ -144,7 +142,7 @@ class Encoding:
             :obj:`List[int]`: The list of IDs
         """
         ...
-    
+
     @staticmethod
     def merge(encodings, growing_offsets=...):
         """
@@ -161,7 +159,7 @@ class Encoding:
             :class:`~tokenizers.Encoding`: The resulting Encoding
         """
         ...
-    
+
     @property
     def n_sequences(self):
         """
@@ -171,7 +169,7 @@ class Encoding:
             :obj:`int`: The number of sequences in this :class:`~tokenizers.Encoding`
         """
         ...
-    
+
     @property
     def offsets(self):
         """
@@ -184,7 +182,7 @@ class Encoding:
             A :obj:`List` of :obj:`Tuple[int, int]`: The list of offsets
         """
         ...
-    
+
     @property
     def overflowing(self):
         """
@@ -199,7 +197,7 @@ class Encoding:
         maximum length.
         """
         ...
-    
+
     def pad(self, length, direction=..., pad_id=..., pad_type_id=..., pad_token=...):
         """
         Pad the :class:`~tokenizers.Encoding` at the given length
@@ -221,7 +219,7 @@ class Encoding:
                 The pad token to use
         """
         ...
-    
+
     @property
     def sequence_ids(self):
         """
@@ -235,7 +233,7 @@ class Encoding:
             A :obj:`List` of :obj:`Optional[int]`: A list of optional sequence index.
         """
         ...
-    
+
     def set_sequence_id(self, sequence_id):
         """
         Set the given sequence index
@@ -244,7 +242,7 @@ class Encoding:
         :class:`~tokenizers.Encoding`.
         """
         ...
-    
+
     @property
     def special_tokens_mask(self):
         """
@@ -256,7 +254,7 @@ class Encoding:
             :obj:`List[int]`: The special tokens mask
         """
         ...
-    
+
     def token_to_chars(self, token_index):
         """
         Get the offsets of the token at the given index.
@@ -273,7 +271,7 @@ class Encoding:
             :obj:`Tuple[int, int]`: The token offsets :obj:`(first, last + 1)`
         """
         ...
-    
+
     def token_to_sequence(self, token_index):
         """
         Get the index of the sequence represented by the given token.
@@ -289,7 +287,7 @@ class Encoding:
             :obj:`int`: The sequence id of the given token
         """
         ...
-    
+
     def token_to_word(self, token_index):
         """
         Get the index of the word that contains the token in one of the input sequences.
@@ -306,7 +304,7 @@ class Encoding:
             :obj:`int`: The index of the word in the relevant input sequence.
         """
         ...
-    
+
     @property
     def tokens(self):
         """
@@ -318,7 +316,7 @@ class Encoding:
             :obj:`List[str]`: The list of tokens
         """
         ...
-    
+
     def truncate(self, max_length, stride=..., direction=...):
         """
         Truncate the :class:`~tokenizers.Encoding` at the given length
@@ -337,7 +335,7 @@ class Encoding:
                 Truncate direction
         """
         ...
-    
+
     @property
     def type_ids(self):
         """
@@ -350,7 +348,7 @@ class Encoding:
             :obj:`List[int]`: The list of type ids
         """
         ...
-    
+
     @property
     def word_ids(self):
         """
@@ -368,7 +366,7 @@ class Encoding:
             A :obj:`List` of :obj:`Optional[int]`: A list of optional word index.
         """
         ...
-    
+
     def word_to_chars(self, word_index, sequence_index=...):
         """
         Get the offsets of the word at the given index in one of the input sequences.
@@ -383,7 +381,7 @@ class Encoding:
             :obj:`Tuple[int, int]`: The range of characters (span) :obj:`(first, last + 1)`
         """
         ...
-    
+
     def word_to_tokens(self, word_index, sequence_index=...):
         """
         Get the encoded tokens corresponding to the word at the given index
@@ -399,7 +397,7 @@ class Encoding:
             :obj:`Tuple[int, int]`: The range of tokens: :obj:`(first, last + 1)`
         """
         ...
-    
+
     @property
     def words(self):
         """
@@ -421,8 +419,6 @@ class Encoding:
             A :obj:`List` of :obj:`Optional[int]`: A list of optional word index.
         """
         ...
-    
-
 
 class NormalizedString:
     """
@@ -441,37 +437,37 @@ class NormalizedString:
         Append the given sequence to the string
         """
         ...
-    
+
     def clear(self):
         """
         Clears the string
         """
         ...
-    
+
     def filter(self, func):
         """
         Filter each character of the string using the given func
         """
         ...
-    
+
     def for_each(self, func):
         """
         Calls the given function for each character of the string
         """
         ...
-    
+
     def lowercase(self):
         """
         Lowercase the string
         """
         ...
-    
+
     def lstrip(self):
         """
         Strip the left of the string
         """
         ...
-    
+
     def map(self, func):
         """
         Calls the given function for each character of the string
@@ -480,44 +476,44 @@ class NormalizedString:
         returned value **must** be a str of length 1 (ie a character).
         """
         ...
-    
+
     def nfc(self):
         """
         Runs the NFC normalization
         """
         ...
-    
+
     def nfd(self):
         """
         Runs the NFD normalization
         """
         ...
-    
+
     def nfkc(self):
         """
         Runs the NFKC normalization
         """
         ...
-    
+
     def nfkd(self):
         """
         Runs the NFKD normalization
         """
         ...
-    
+
     @property
     def normalized(self):
         """
         The normalized part of the string
         """
         ...
-    
+
     def prepend(self, s):
         """
         Prepend the given sequence to the string
         """
         ...
-    
+
     def replace(self, pattern, content):
         """
         Replace the content of the given pattern with the provided content
@@ -530,19 +526,19 @@ class NormalizedString:
                 The content to be used as replacement
         """
         ...
-    
+
     def rstrip(self):
         """
         Strip the right of the string
         """
         ...
-    
+
     def slice(self, range):
         """
         Slice the string using the given range
         """
         ...
-    
+
     def split(self, pattern, behavior):
         """
         Split the NormalizedString using the given pattern and the specified behavior
@@ -560,20 +556,18 @@ class NormalizedString:
             A list of NormalizedString, representing each split
         """
         ...
-    
+
     def strip(self):
         """
         Strip both ends of the string
         """
         ...
-    
+
     def uppercase(self):
         """
         Uppercase the string
         """
         ...
-    
-
 
 class PreTokenizedString:
     """
@@ -593,9 +587,7 @@ class PreTokenizedString:
         sequence: str:
             The string sequence used to initialize this PreTokenizedString
     """
-    def __init__(self, sequence) -> None:
-        ...
-    
+    def __init__(self, sequence) -> None: ...
     def get_splits(self, offset_referential=..., offset_type=...):
         """
         Get the splits currently managed by the PreTokenizedString
@@ -616,7 +608,7 @@ class PreTokenizedString:
             A list of splits
         """
         ...
-    
+
     def normalize(self, func):
         """
         Normalize each split of the `PreTokenizedString` using the given `func`
@@ -628,7 +620,7 @@ class PreTokenizedString:
                 NormalizedString allow its modification.
         """
         ...
-    
+
     def split(self, func):
         """
         Split the PreTokenizedString using the given `func`
@@ -643,7 +635,7 @@ class PreTokenizedString:
                 should come from calling either `.split` or `.slice` on the received one.
         """
         ...
-    
+
     def to_encoding(self, type_id=..., word_idx=...):
         """
         Return an Encoding generated from this PreTokenizedString
@@ -661,7 +653,7 @@ class PreTokenizedString:
             An Encoding
         """
         ...
-    
+
     def tokenize(self, func):
         """
         Tokenize each split of the `PreTokenizedString` using the given `func`
@@ -672,21 +664,14 @@ class PreTokenizedString:
                 a list of Token generated from the input str.
         """
         ...
-    
-
 
 class Regex:
     """
     Instantiate a new Regex with the given pattern
     """
-    def __init__(self, pattern) -> None:
-        ...
-    
+    def __init__(self, pattern) -> None: ...
 
-
-class Token:
-    ...
-
+class Token: ...
 
 class Tokenizer:
     """
@@ -698,9 +683,7 @@ class Tokenizer:
             The core algorithm that this :obj:`Tokenizer` should be using.
 
     """
-    def __init__(self, model) -> None:
-        ...
-    
+    def __init__(self, model) -> None: ...
     def add_special_tokens(self, tokens):
         """
         Add the given special tokens to the Tokenizer.
@@ -721,7 +704,7 @@ class Tokenizer:
             :obj:`int`: The number of tokens that were created in the vocabulary
         """
         ...
-    
+
     def add_tokens(self, tokens):
         """
         Add the given tokens to the vocabulary
@@ -738,7 +721,7 @@ class Tokenizer:
             :obj:`int`: The number of tokens that were created in the vocabulary
         """
         ...
-    
+
     def decode(self, ids, skip_special_tokens=...):
         """
         Decode the given list of ids back to a string
@@ -756,7 +739,7 @@ class Tokenizer:
             :obj:`str`: The decoded string
         """
         ...
-    
+
     def decode_batch(self, sequences, skip_special_tokens=...):
         """
         Decode a batch of ids back to their corresponding string
@@ -772,15 +755,23 @@ class Tokenizer:
             :obj:`List[str]`: A list of decoded strings
         """
         ...
-    
+
     @property
     def decoder(self):
         """
         The `optional` :class:`~tokenizers.decoders.Decoder` in use by the Tokenizer
         """
         ...
-    
-    def enable_padding(self, direction=..., pad_id=..., pad_type_id=..., pad_token=..., length=..., pad_to_multiple_of=...):
+
+    def enable_padding(
+        self,
+        direction=...,
+        pad_id=...,
+        pad_type_id=...,
+        pad_token=...,
+        length=...,
+        pad_to_multiple_of=...,
+    ):
         """
         Enable the padding
 
@@ -807,7 +798,7 @@ class Tokenizer:
                 the longest sequence in a batch.
         """
         ...
-    
+
     def enable_truncation(self, max_length, stride=..., strategy=..., direction=...):
         """
         Enable truncation
@@ -828,7 +819,7 @@ class Tokenizer:
                 Truncate direction
         """
         ...
-    
+
     def encode(self, sequence, pair=..., is_pretokenized=..., add_special_tokens=...):
         """
         Encode the given sequence and pair. This method can process raw text sequences
@@ -867,7 +858,7 @@ class Tokenizer:
 
         """
         ...
-    
+
     def encode_batch(self, input, is_pretokenized=..., add_special_tokens=...):
         """
         Encode the given batch of inputs. This method accept both raw text sequences
@@ -905,7 +896,7 @@ class Tokenizer:
 
         """
         ...
-    
+
     def encode_batch_fast(self, input, is_pretokenized=..., add_special_tokens=...):
         """
         Encode the given batch of inputs. This method is faster than `encode_batch`
@@ -941,7 +932,7 @@ class Tokenizer:
 
         """
         ...
-    
+
     @property
     def encode_special_tokens(self):
         """
@@ -954,7 +945,7 @@ class Tokenizer:
 
         """
         ...
-    
+
     @staticmethod
     def from_buffer(buffer):
         """
@@ -968,7 +959,7 @@ class Tokenizer:
             :class:`~tokenizers.Tokenizer`: The new tokenizer
         """
         ...
-    
+
     @staticmethod
     def from_file(path):
         """
@@ -983,7 +974,7 @@ class Tokenizer:
             :class:`~tokenizers.Tokenizer`: The new tokenizer
         """
         ...
-    
+
     @staticmethod
     def from_pretrained(identifier, revision=..., token=...):
         """
@@ -1004,7 +995,7 @@ class Tokenizer:
             :class:`~tokenizers.Tokenizer`: The new tokenizer
         """
         ...
-    
+
     @staticmethod
     def from_str(json):
         """
@@ -1019,7 +1010,7 @@ class Tokenizer:
             :class:`~tokenizers.Tokenizer`: The new tokenizer
         """
         ...
-    
+
     def get_added_tokens_decoder(self):
         """
         Get the underlying vocabulary
@@ -1028,7 +1019,7 @@ class Tokenizer:
             :obj:`Dict[int, AddedToken]`: The vocabulary
         """
         ...
-    
+
     def get_vocab(self, with_added_tokens=...):
         """
         Get the underlying vocabulary
@@ -1041,7 +1032,7 @@ class Tokenizer:
             :obj:`Dict[str, int]`: The vocabulary
         """
         ...
-    
+
     def get_vocab_size(self, with_added_tokens=...):
         """
         Get the size of the underlying vocabulary
@@ -1054,7 +1045,7 @@ class Tokenizer:
             :obj:`int`: The size of the vocabulary
         """
         ...
-    
+
     def id_to_token(self, id):
         """
         Convert the given id to its corresponding token if it exists
@@ -1067,33 +1058,33 @@ class Tokenizer:
             :obj:`Optional[str]`: An optional token, :obj:`None` if out of vocabulary
         """
         ...
-    
+
     @property
     def model(self):
         """
         The :class:`~tokenizers.models.Model` in use by the Tokenizer
         """
         ...
-    
+
     def no_padding(self):
         """
         Disable padding
         """
         ...
-    
+
     def no_truncation(self):
         """
         Disable truncation
         """
         ...
-    
+
     @property
     def normalizer(self):
         """
         The `optional` :class:`~tokenizers.normalizers.Normalizer` in use by the Tokenizer
         """
         ...
-    
+
     def num_special_tokens_to_add(self, is_pair):
         """
         Return the number of special tokens that would be added for single/pair sentences.
@@ -1101,7 +1092,7 @@ class Tokenizer:
         :return:
         """
         ...
-    
+
     @property
     def padding(self):
         """
@@ -1114,7 +1105,7 @@ class Tokenizer:
                 A dict with the current padding parameters if padding is enabled
         """
         ...
-    
+
     def post_process(self, encoding, pair=..., add_special_tokens=...):
         """
         Apply all the post-processing steps to the given encodings.
@@ -1141,21 +1132,21 @@ class Tokenizer:
             :class:`~tokenizers.Encoding`: The final post-processed encoding
         """
         ...
-    
+
     @property
     def post_processor(self):
         """
         The `optional` :class:`~tokenizers.processors.PostProcessor` in use by the Tokenizer
         """
         ...
-    
+
     @property
     def pre_tokenizer(self):
         """
         The `optional` :class:`~tokenizers.pre_tokenizers.PreTokenizer` in use by the Tokenizer
         """
         ...
-    
+
     def save(self, path, pretty=...):
         """
         Save the :class:`~tokenizers.Tokenizer` to the file at the given path.
@@ -1168,7 +1159,7 @@ class Tokenizer:
                 Whether the JSON file should be pretty formatted.
         """
         ...
-    
+
     def to_str(self, pretty=...):
         """
         Gets a serialized string representing this :class:`~tokenizers.Tokenizer`.
@@ -1181,7 +1172,7 @@ class Tokenizer:
             :obj:`str`: A string representing the serialized Tokenizer
         """
         ...
-    
+
     def token_to_id(self, token):
         """
         Convert the given token to its corresponding id if it exists
@@ -1194,7 +1185,7 @@ class Tokenizer:
             :obj:`Optional[int]`: An optional id, :obj:`None` if out of vocabulary
         """
         ...
-    
+
     def train(self, files, trainer=...):
         """
         Train the Tokenizer using the given files.
@@ -1211,7 +1202,7 @@ class Tokenizer:
                 An optional trainer that should be used to train our Model
         """
         ...
-    
+
     def train_from_iterator(self, iterator, trainer=..., length=...):
         """
         Train the Tokenizer using the provided iterator.
@@ -1235,7 +1226,7 @@ class Tokenizer:
                 provide meaningful progress tracking
         """
         ...
-    
+
     @property
     def truncation(self):
         """
@@ -1248,6 +1239,3 @@ class Tokenizer:
                 A dict with the current truncation parameters if truncation is enabled
         """
         ...
-    
-
-

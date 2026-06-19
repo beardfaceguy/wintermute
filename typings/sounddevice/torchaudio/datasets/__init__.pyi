@@ -24,4 +24,27 @@ from .vctk import VCTK_092
 from .voxceleb1 import VoxCeleb1Identification, VoxCeleb1Verification
 from .yesno import YESNO
 
-__all__ = ["COMMONVOICE", "LIBRISPEECH", "LibriSpeechBiasing", "LibriLightLimited", "SPEECHCOMMANDS", "VCTK_092", "DR_VCTK", "YESNO", "LJSPEECH", "GTZAN", "CMUARCTIC", "CMUDict", "LibriMix", "LIBRITTS", "TEDLIUM", "QUESST14", "MUSDB_HQ", "FluentSpeechCommands", "VoxCeleb1Identification", "VoxCeleb1Verification", "IEMOCAP", "Snips"]
+__all__ = [
+    "COMMONVOICE",
+    "LIBRISPEECH",
+    "LibriSpeechBiasing",
+    "LibriLightLimited",
+    "SPEECHCOMMANDS",
+    "VCTK_092",
+    "DR_VCTK",
+    "YESNO",
+    "LJSPEECH",
+    "GTZAN",
+    "CMUARCTIC",
+    "CMUDict",
+    "LibriMix",
+    "LIBRITTS",
+    "TEDLIUM",
+    "QUESST14",
+    "MUSDB_HQ",
+    "FluentSpeechCommands",
+    "VoxCeleb1Identification",
+    "VoxCeleb1Verification",
+    "IEMOCAP",
+    "Snips",
+]

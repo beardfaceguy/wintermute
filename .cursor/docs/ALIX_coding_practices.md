@@ -13,7 +13,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **PR Review Comment from @s1owjke:**
 > All our models primary/foreign keys must be in uuid format
-> 
+>
 > ```prisma
 > id String @id @default(uuid())
 > ```
@@ -61,7 +61,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding a `generateScanBoxId()` function that used a loop with string concatenation to build an 8-character ID, suggesting a simpler one-liner approach using `Math.random().toString(36).substring(2, 10)`.
 
-**Practice:** 
+**Practice:**
 - **Prefer simpler implementations** over complex loops when possible
 - **Use built-in JavaScript methods** (`toString(36)`) instead of manual character iteration
 - **Avoid unnecessary complexity** - if a one-liner can achieve the same result, prefer it
@@ -83,7 +83,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding comments in `EstateService.ts` that explained obvious functionality like "scanBoxId is auto-generated, no validation needed" and "Generate scanBoxId using atomic counter (guaranteed unique)".
 
-**Practice:** 
+**Practice:**
 - **Avoid obvious comments** that simply restate what the code is doing
 - **Comments should add value** by explaining "why" not "what"
 - **Remove redundant comments** that don't provide additional context or reasoning
@@ -96,7 +96,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding the use of static methods in `ScanBoxIdService` instead of creating instances. The reviewer suggested using dependency injection pattern with constructor initialization.
 
-**Practice:** 
+**Practice:**
 - **Use instance-based services** instead of static methods when following service pattern
 - **Initialize dependencies in constructor** for better organization and maintainability
 - **Follow dependency injection pattern** for better testability and modularity
@@ -109,7 +109,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding error handling code in `ScanBoxIdService.ts` that checked for "table does not exist" errors and logged migration-related messages.
 
-**Practice:** 
+**Practice:**
 - **Remove unnecessary error handlers** that handle edge cases that shouldn't occur in production
 - **Avoid dead code patterns** that serve as development notifications
 - **Don't use error handling as migration reminders** - handle migrations properly during deployment
@@ -122,7 +122,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding the `initializeCounter()` method in `ScanBoxIdService.ts` that attempted to insert an initial counter row on every estate creation.
 
-**Practice:** 
+**Practice:**
 - **Use database seeding** instead of runtime initialization methods for initial data
 - **Avoid runtime database setup** that runs on every operation
 - **Initialize required data during deployment/migration** not during application runtime
@@ -135,7 +135,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding the use of raw SQL (`$queryRaw`) in `ScanBoxIdService.ts` for a simple SELECT query that could be handled by Prisma ORM methods.
 
-**Practice:** 
+**Practice:**
 - **Use Prisma ORM methods** instead of raw SQL for simple database operations
 - **Prefer `tx.modelName.find()`** over `tx.$queryRaw` when the operation is straightforward
 - **Reserve raw SQL** for complex queries that cannot be expressed with Prisma ORM
@@ -148,7 +148,7 @@ This document captures coding practices and standards derived from PR reviews an
 
 **Context:** This comment was made regarding the `ScanBoxIdExhaustedError` that would be thrown when the counter reaches its maximum value (0xFFFFFFFF), questioning the business impact of this error.
 
-**Practice:** 
+**Practice:**
 - **Consider business impact** of error conditions and limits
 - **Plan for edge cases** that could block core business functionality
 - **Document error handling strategy** for limit scenarios
@@ -160,7 +160,7 @@ This document captures coding practices and standards derived from PR reviews an
 **PR Review Comment from @Selnapenek:**
 > please don't use raw sql
 > here is an example of usage to make an updates
-> 
+>
 > ```typescript
 > const updatedCounter = await prisma.scan_box_id_counter.updateMany({
 >   where: {
@@ -176,7 +176,7 @@ This document captures coding practices and standards derived from PR reviews an
 >   },
 > });
 > ```
-> 
+>
 > Prisma's fluent API is more intuitive and easier to read compared to raw SQL queries.
 > Prisma can optimize queries, potentially improving performance compared to manually written SQL.
 
@@ -194,12 +194,12 @@ This document captures coding practices and standards derived from PR reviews an
 
 **PR Review Comment from @Selnapenek:**
 > Overall, all of the comments above ^ doesn't make much sense except for educational purposes.
-> 
+>
 > Too complicated solution, if I understood task correctly it's all can be done with database. In that case this PR must contain just few lines of code.
-> 
+>
 > ```sql
 > CREATE SEQUENCE scan_box_id_seq;
-> 
+>
 > ALTER TABLE Estate
 > ADD COLUMN scanBoxId CHAR(8) UNIQUE DEFAULT lpad(to_hex(nextval(scan_box_id_seq)), 8, '0');
 > ```
@@ -268,16 +268,16 @@ This document captures coding practices and standards derived from PR reviews an
 
 **PR Review Comment from @IgorSolovyoff:**
 > I guess the logic might be more simple if we use cuid generator instead of hand writed scripts: https://www.npmjs.com/package/@paralleldrive/cuid2
-> 
+>
 > If we have unique check for scanBoxId so we can just do
-> 
+>
 > ```typescript
 > import { init } from '@paralleldrive/cuid2';
 > const generateScanBoxId = init({
 >   // the length of the id
 >   length: 8,
 > });
-> 
+>
 > const scanBoxId = generateScanBoxId();
 > const estate = await prisma.estate.create({
 >  data: {
@@ -285,13 +285,13 @@ This document captures coding practices and standards derived from PR reviews an
 >   scanBoxId,
 > },
 > ```
-> 
+>
 > And if it fails just regenerate the id.
-> 
+>
 > In that case we dont scan_box_id_counter table, ScanBoxIdService, scanBoxIdGenerator. So the whole PR will be few lines of code
-> 
+>
 > Or as suggested @s1owjke
-> 
+>
 > ```typescript
 > export function generateScanBoxId() {
 >   return Math.random().toString(36).substring(2, 10)

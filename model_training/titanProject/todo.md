@@ -27,4 +27,3 @@
 
 ## Current blockers
 - [none] No critical blockers for baseline AWS run completion.
-

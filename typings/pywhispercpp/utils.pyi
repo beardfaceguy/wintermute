@@ -8,6 +8,7 @@ import contextlib
 Helper functions
 """
 logger = ...
+
 def download_model(model_name: str, download_dir=..., chunk_size=...) -> str:
     """
     Helper function to download the `ggml` models
@@ -90,4 +91,3 @@ def redirect_stderr(to=...) -> None:
         - False to do nothing (no redirection).
     """
     ...
-

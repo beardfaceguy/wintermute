@@ -20,7 +20,7 @@ class WordNetLemmatizer:
     Anythinggoeszxcv
 
     """
-    def morphy(self, form, pos=..., check_exceptions=...): # -> None:
+    def morphy(self, form, pos=..., check_exceptions=...):  # -> None:
         """
         morphy() is a restrictive wrapper around _morphy().
         It returns the first lemma found in WordNet,
@@ -34,7 +34,7 @@ class WordNetLemmatizer:
         None
         """
         ...
-    
+
     def lemmatize(self, word: str, pos: str = ...) -> str:
         """Lemmatize `word` by picking the shortest of the possible lemmas,
         using the wordnet corpus reader's built-in _morphy function.
@@ -61,9 +61,6 @@ class WordNetLemmatizer:
         :return: The shortest lemma of `word`, for the given `pos`.
         """
         ...
-    
-    def __repr__(self): # -> Literal['<WordNetLemmatizer>']:
+
+    def __repr__(self):  # -> Literal['<WordNetLemmatizer>']:
         ...
-    
-
-

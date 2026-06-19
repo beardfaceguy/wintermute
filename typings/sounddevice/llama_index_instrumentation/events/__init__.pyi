@@ -12,11 +12,9 @@ class SpanDropEvent(BaseEvent):
         err_str (str): Error string.
 
     """
+
     err_str: str
     @classmethod
     def class_name(cls) -> str:
         """Class name."""
         ...
-    
-
-

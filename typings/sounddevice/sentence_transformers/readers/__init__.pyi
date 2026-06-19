@@ -11,6 +11,7 @@ See https://www.sbert.net/docs/sentence_transformer/training_overview.html for m
 
 Instead, you should create a `datasets` `Dataset` for training: https://huggingface.co/docs/datasets/create_dataset
 """
+
 class InputExample:
     """Structure for one input example with texts, the label and a unique id"""
     def __init__(self, guid: str = ..., texts: list[str] = ..., label: int | float = ...) -> None:
@@ -23,9 +24,5 @@ class InputExample:
             label: the label for the example
         """
         ...
-    
-    def __str__(self) -> str:
-        ...
-    
 
-
+    def __str__(self) -> str: ...

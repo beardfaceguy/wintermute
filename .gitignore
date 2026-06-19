@@ -121,3 +121,5 @@ model_training/titanProject/results/
 # Generated agent run artifacts — rebuild on every run
 agents/test_cases/last_freud_audit.json
 agents/test_cases/last_run.json
+thVoice/models/*.bin
+.cj-review/

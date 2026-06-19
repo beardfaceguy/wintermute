@@ -1,6 +1,7 @@
 # file: typings/llama_index/readers/file.pyi
 
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -8,13 +9,13 @@ from llama_index.core.schema import Document
 class SimpleDirectoryReader(BaseReader):
     def __init__(
         self,
-        input_dir: Optional[str] = ...,
-        input_files: Optional[List[str]] = ...,
-        exclude: Optional[List[str]] = ...,
+        input_dir: str | None = ...,
+        input_files: list[str] | None = ...,
+        exclude: list[str] | None = ...,
         recursive: bool = ...,
         encoding: str = ...,
-        num_files_limit: Optional[int] = ...,
-        file_metadata: Optional[Callable[[str], Dict[str, Any]]] = ...,
+        num_files_limit: int | None = ...,
+        file_metadata: Callable[[str], dict[str, Any]] | None = ...,
     ) -> None: ...
-    def load_data(self, **kwargs: Any) -> List[Document]: ...
-    def iter_data(self, **kwargs: Any) -> List[Document]: ...
+    def load_data(self, **kwargs: Any) -> list[Document]: ...
+    def iter_data(self, **kwargs: Any) -> list[Document]: ...
