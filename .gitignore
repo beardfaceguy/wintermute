@@ -123,3 +123,8 @@ agents/test_cases/last_freud_audit.json
 agents/test_cases/last_run.json
 thVoice/models/*.bin
 .cj-review/
+
+# Graphify cache (large, reproducible from source)
+graphify-out/cache/
+# Graphify intermediate files
+graphify-out/.graphify_uncached.txt

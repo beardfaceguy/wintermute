@@ -1,0 +1,3557 @@
+{
+  "/home/beardface/work/wintermute/start_backend_and_docker.sh": {
+    "mtime": 1781849277.0327818,
+    "ast_hash": "241f4019ff0b28b960ceec0d42e51cfd",
+    "semantic_hash": "241f4019ff0b28b960ceec0d42e51cfd"
+  },
+  "/home/beardface/work/wintermute/.pyrightconfig.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ea791254b9a3dc0d1242200eef7c1cf4",
+    "semantic_hash": "ea791254b9a3dc0d1242200eef7c1cf4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/run.sh": {
+    "mtime": 1781849277.0328834,
+    "ast_hash": "f31341713a2351e8151a8d4daa740191",
+    "semantic_hash": "f31341713a2351e8151a8d4daa740191"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/utils/rag_utils.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b747d723c8d115c7802b4b7d5d3aea93",
+    "semantic_hash": "b747d723c8d115c7802b4b7d5d3aea93"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/utils/test_rag.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "154ae2106b9d4dc317dcbfa57d0b222b",
+    "semantic_hash": "154ae2106b9d4dc317dcbfa57d0b222b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/utils/config_utils.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5a695d942878899a7ff3484cc8ef6e6b",
+    "semantic_hash": "5a695d942878899a7ff3484cc8ef6e6b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/utils/rag_service.py": {
+    "mtime": 1781678932.8517268,
+    "ast_hash": "f2ec32d9b2ddb67385cb3322e0c2ffc3",
+    "semantic_hash": "f2ec32d9b2ddb67385cb3322e0c2ffc3"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/alembic/env.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c839fdabfce0cda1508f981415bd1b63",
+    "semantic_hash": "c839fdabfce0cda1508f981415bd1b63"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/alembic/versions/5485ec4d8be1_check_sync.py": {
+    "mtime": 1781678932.8510914,
+    "ast_hash": "c9b982e13becb356db257eca5d0b7650",
+    "semantic_hash": "c9b982e13becb356db257eca5d0b7650"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/alembic/versions/9384575752e4_create_messages_table.py": {
+    "mtime": 1781678932.8511646,
+    "ast_hash": "56ec4e9837c44a91d00b466f408b2e44",
+    "semantic_hash": "56ec4e9837c44a91d00b466f408b2e44"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/memory/__init__.py": {
+    "mtime": 1781678932.8513298,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/memory/short_term.py": {
+    "mtime": 1781678932.851361,
+    "ast_hash": "aede1e0b5d61f241519913f71374a1b6",
+    "semantic_hash": "aede1e0b5d61f241519913f71374a1b6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/memory/strategic.py": {
+    "mtime": 1781678932.8513877,
+    "ast_hash": "f8c4ef54ca4f2aec308445198e24ebe2",
+    "semantic_hash": "f8c4ef54ca4f2aec308445198e24ebe2"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/main.py": {
+    "mtime": 1781709458.357707,
+    "ast_hash": "cff9b45439d6ce850174e8a1146432e6",
+    "semantic_hash": "cff9b45439d6ce850174e8a1146432e6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/chat/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/chat/llm.py": {
+    "mtime": 1781678932.8511646,
+    "ast_hash": "7e419f10ef19970c3add42874ac6a84a",
+    "semantic_hash": "7e419f10ef19970c3add42874ac6a84a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/websocket/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/websocket/connection_manager.py": {
+    "mtime": 1781678932.8512652,
+    "ast_hash": "6e44b2486caaa11728d0e036907e1e82",
+    "semantic_hash": "6e44b2486caaa11728d0e036907e1e82"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/websocket/chat_ws.py": {
+    "mtime": 1781678932.8511646,
+    "ast_hash": "d62d7c1b62d6c41cc381fc8afa46e8fd",
+    "semantic_hash": "d62d7c1b62d6c41cc381fc8afa46e8fd"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/api/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/api/voice_chat.py": {
+    "mtime": 1779039288.0790236,
+    "ast_hash": "eac9fd0b66022f4a8f65155453107910",
+    "semantic_hash": "eac9fd0b66022f4a8f65155453107910"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/app/api/tts.py": {
+    "mtime": 1778691856.6682775,
+    "ast_hash": "6c9e8da0ecb63ec8bfd7b89943190c81",
+    "semantic_hash": "6c9e8da0ecb63ec8bfd7b89943190c81"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/db/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/db/db_models.py": {
+    "mtime": 1781678932.8512652,
+    "ast_hash": "17c5e32b4190ec946f620fb0a1c50d6e",
+    "semantic_hash": "17c5e32b4190ec946f620fb0a1c50d6e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/db/session_async.py": {
+    "mtime": 1781678932.8513298,
+    "ast_hash": "c3e40a910ec8e37cd546f72778bdef1f",
+    "semantic_hash": "c3e40a910ec8e37cd546f72778bdef1f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/db/db_ops.py": {
+    "mtime": 1781678932.8513114,
+    "ast_hash": "8a2392aff4c76fc290ba5a6a432fc196",
+    "semantic_hash": "8a2392aff4c76fc290ba5a6a432fc196"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_strategic_memory.py": {
+    "mtime": 1781678932.8516695,
+    "ast_hash": "1251b3adf15b96cca90984bdec1d6f9f",
+    "semantic_hash": "1251b3adf15b96cca90984bdec1d6f9f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_memory_leaks.py": {
+    "mtime": 1781678932.8516276,
+    "ast_hash": "f78ea0191da7434e02bf18fd9a4518af",
+    "semantic_hash": "f78ea0191da7434e02bf18fd9a4518af"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_main_app.py": {
+    "mtime": 1779039319.2752683,
+    "ast_hash": "3f1d3ae323e5b56436491eb94b083582",
+    "semantic_hash": "3f1d3ae323e5b56436491eb94b083582"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_lifecycle.py": {
+    "mtime": 1781849196.31919,
+    "ast_hash": "f3d95cdd8eac1edf809b19c2df15c9b7",
+    "semantic_hash": "f3d95cdd8eac1edf809b19c2df15c9b7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/conftest.py": {
+    "mtime": 1781849124.573867,
+    "ast_hash": "44c6cb39bdd5b8335a820967b863a7ee",
+    "semantic_hash": "44c6cb39bdd5b8335a820967b863a7ee"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/__init__.py": {
+    "mtime": 1781678932.8514645,
+    "ast_hash": "e27b8cce9b6e632db53fe31ac0c86a08",
+    "semantic_hash": "e27b8cce9b6e632db53fe31ac0c86a08"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_tts.py": {
+    "mtime": 1781678932.8516889,
+    "ast_hash": "4a81a30a2d8b43e4e99d1352d9ff46cc",
+    "semantic_hash": "4a81a30a2d8b43e4e99d1352d9ff46cc"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_chat_ws_extended.py": {
+    "mtime": 1781678932.8515399,
+    "ast_hash": "fb18311ad3522a58e4cfb28d381396b8",
+    "semantic_hash": "fb18311ad3522a58e4cfb28d381396b8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_short_term.py": {
+    "mtime": 1778619884.1070137,
+    "ast_hash": "02e75bf4865b8dfed64759c174bcc162",
+    "semantic_hash": "02e75bf4865b8dfed64759c174bcc162"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_llm.py": {
+    "mtime": 1781678932.8516083,
+    "ast_hash": "2a5c908aace254d7a66cd263120c16b1",
+    "semantic_hash": "2a5c908aace254d7a66cd263120c16b1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_runner.py": {
+    "mtime": 1781678932.8516507,
+    "ast_hash": "7c0972d040f499337a8d048115356bac",
+    "semantic_hash": "7c0972d040f499337a8d048115356bac"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_voice_chat.py": {
+    "mtime": 1781678932.8517075,
+    "ast_hash": "3932b56c9a9395bc486cf5fdf413b3d6",
+    "semantic_hash": "3932b56c9a9395bc486cf5fdf413b3d6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_db_ops.py": {
+    "mtime": 1781678932.8515599,
+    "ast_hash": "e28bf3d9965fbd0d8b061e95de87e593",
+    "semantic_hash": "e28bf3d9965fbd0d8b061e95de87e593"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_websocket.py": {
+    "mtime": 1781678932.8517268,
+    "ast_hash": "6b60c9b546e82fb9d0611bea113e0756",
+    "semantic_hash": "6b60c9b546e82fb9d0611bea113e0756"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/test_session_async.py": {
+    "mtime": 1778643905.057822,
+    "ast_hash": "f4524e48c7179f652e5a17fbbf7272b5",
+    "semantic_hash": "f4524e48c7179f652e5a17fbbf7272b5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/tsconfig.node.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bbe7be9a87c35f43acf6ece93639dea9",
+    "semantic_hash": "bbe7be9a87c35f43acf6ece93639dea9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/vite.config.ts": {
+    "mtime": 1778693773.850628,
+    "ast_hash": "3879f7584b6daea7ade633581af5ffc9",
+    "semantic_hash": "3879f7584b6daea7ade633581af5ffc9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/tsconfig.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": "a3d39fa780ebff65444de257f291ce6c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/playwright.config.ts": {
+    "mtime": 1778693497.5795932,
+    "ast_hash": "14ccdf5261ee70764a622d4eda7138a8",
+    "semantic_hash": "14ccdf5261ee70764a622d4eda7138a8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/tsconfig.app.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "804b496f472c2fe002931847502c3b07",
+    "semantic_hash": "804b496f472c2fe002931847502c3b07"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/package.json": {
+    "mtime": 1778693609.8523884,
+    "ast_hash": "4522103460b9f3987e84dbc5a1739d99",
+    "semantic_hash": "4522103460b9f3987e84dbc5a1739d99"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/eslint.config.js": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2683e26e70707841590ff4ad24253919",
+    "semantic_hash": "2683e26e70707841590ff4ad24253919"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/main.tsx": {
+    "mtime": 1781849277.0329692,
+    "ast_hash": "921c6243277afadf115149cab6b87572",
+    "semantic_hash": "921c6243277afadf115149cab6b87572"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/vite-env.d.ts": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0352474ba2918efe13895edbc3780d94",
+    "semantic_hash": "0352474ba2918efe13895edbc3780d94"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/App.tsx": {
+    "mtime": 1781849277.0328834,
+    "ast_hash": "8d08f5ba49afc91cd8bfa658f5c685ee",
+    "semantic_hash": "8d08f5ba49afc91cd8bfa658f5c685ee"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/hooks/useTextToSpeech.ts": {
+    "mtime": 1778692113.7975051,
+    "ast_hash": "9afd979376be76b053d697a991234a5d",
+    "semantic_hash": "9afd979376be76b053d697a991234a5d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/hooks/useVoiceRecorder.ts": {
+    "mtime": 1778619856.361285,
+    "ast_hash": "1d501051afa9bdd0f95683040da21cd4",
+    "semantic_hash": "1d501051afa9bdd0f95683040da21cd4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/hooks/useTextToSpeech.test.tsx": {
+    "mtime": 1778692315.980347,
+    "ast_hash": "66fb2bc2b3540e3453065181dead7d1b",
+    "semantic_hash": "66fb2bc2b3540e3453065181dead7d1b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/hooks/useChatSocket.ts": {
+    "mtime": 1778692180.037797,
+    "ast_hash": "607e198541472fd43b0c46ef827d6fb7",
+    "semantic_hash": "607e198541472fd43b0c46ef827d6fb7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/utils/websocket.test.ts": {
+    "mtime": 1778692245.651097,
+    "ast_hash": "919da71726b75d31eba1bd1b0e17c078",
+    "semantic_hash": "919da71726b75d31eba1bd1b0e17c078"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/utils/websocket.ts": {
+    "mtime": 1781849277.0330036,
+    "ast_hash": "fa6649ed81b74ab1e1d83764dada339e",
+    "semantic_hash": "fa6649ed81b74ab1e1d83764dada339e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/utils/debug.ts": {
+    "mtime": 1781849277.0329692,
+    "ast_hash": "c14c594177fc9a872f103bbdaf512635",
+    "semantic_hash": "c14c594177fc9a872f103bbdaf512635"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/test/setup.ts": {
+    "mtime": 1778620007.4957676,
+    "ast_hash": "2c271435e60d9aeb6cd3a5e1e122a5c0",
+    "semantic_hash": "2c271435e60d9aeb6cd3a5e1e122a5c0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/store/index.ts": {
+    "mtime": 1765265200.0,
+    "ast_hash": "188c9a68ec0bb54c5832ed00863c6733",
+    "semantic_hash": "188c9a68ec0bb54c5832ed00863c6733"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/store/chatSlice.ts": {
+    "mtime": 1778619866.8881822,
+    "ast_hash": "08e3409197719b300d59ab8a081c200d",
+    "semantic_hash": "08e3409197719b300d59ab8a081c200d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/store/chatSlice.test.ts": {
+    "mtime": 1778620026.3415854,
+    "ast_hash": "903fb9df47b1c400a5cbc6af66a6553d",
+    "semantic_hash": "903fb9df47b1c400a5cbc6af66a6553d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/VCRGlitch.tsx": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cc31b1e199cb457a3b6003659908df97",
+    "semantic_hash": "cc31b1e199cb457a3b6003659908df97"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/Chat.test.tsx": {
+    "mtime": 1778620051.4343426,
+    "ast_hash": "775500393e78197d6db474f3a19fcc44",
+    "semantic_hash": "775500393e78197d6db474f3a19fcc44"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/SpeakerToggleButton.tsx": {
+    "mtime": 1778692118.8994503,
+    "ast_hash": "17d654522b319d143694b5abf081b4da",
+    "semantic_hash": "17d654522b319d143694b5abf081b4da"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/VoiceToggleButton.tsx": {
+    "mtime": 1765265200.0,
+    "ast_hash": "fa3324579664cffc6e179a0e4412f9dd",
+    "semantic_hash": "fa3324579664cffc6e179a0e4412f9dd"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/StaticBackground.tsx": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4577fef9bb71ef8dfda4d2374d1c42ad",
+    "semantic_hash": "4577fef9bb71ef8dfda4d2374d1c42ad"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/components/Chat.tsx": {
+    "mtime": 1778692210.147476,
+    "ast_hash": "2b2729db34867219417096bfdb2e3235",
+    "semantic_hash": "2b2729db34867219417096bfdb2e3235"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/e2e/chat.spec.ts": {
+    "mtime": 1778693553.218996,
+    "ast_hash": "85bffd009fbdd91bb380816b203599c0",
+    "semantic_hash": "85bffd009fbdd91bb380816b203599c0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/e2e/tts.spec.ts": {
+    "mtime": 1778693716.2222466,
+    "ast_hash": "53434de84a90b5fb1fa7d56a65d92634",
+    "semantic_hash": "53434de84a90b5fb1fa7d56a65d92634"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/e2e/helpers.ts": {
+    "mtime": 1778693527.0002775,
+    "ast_hash": "cf12e0267ce94de1e40ed1f7b6843a0f",
+    "semantic_hash": "cf12e0267ce94de1e40ed1f7b6843a0f"
+  },
+  "/home/beardface/work/wintermute/thVoice/test_whisper.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "26834a0ba84e44ff97acd241b3113d37",
+    "semantic_hash": "26834a0ba84e44ff97acd241b3113d37"
+  },
+  "/home/beardface/work/wintermute/thVoice/scripts/fetch_all.sh": {
+    "mtime": 1779039259.9337049,
+    "ast_hash": "7600c815bd0ba60999a976fb370ed86f",
+    "semantic_hash": "7600c815bd0ba60999a976fb370ed86f"
+  },
+  "/home/beardface/work/wintermute/thVoice/scripts/fetch_voice.sh": {
+    "mtime": 1778691790.106995,
+    "ast_hash": "0c74be90599994d0e00f559a6312b63d",
+    "semantic_hash": "0c74be90599994d0e00f559a6312b63d"
+  },
+  "/home/beardface/work/wintermute/thVoice/scripts/fetch_whisper.sh": {
+    "mtime": 1779039220.9476488,
+    "ast_hash": "51f23e488cc712c639b70f797208528b",
+    "semantic_hash": "51f23e488cc712c639b70f797208528b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/models/en_GB-cori-medium.onnx.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "12b1dc45d8919f3475cf296d5f16a4c6",
+    "semantic_hash": "12b1dc45d8919f3475cf296d5f16a4c6"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/script/generate_supported_languages.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "82c1cc60ac9b556b2515231ab989b288",
+    "semantic_hash": "82c1cc60ac9b556b2515231ab989b288"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/script/generate_voices_md.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2b2813b80668147777f9338674b7e3b0",
+    "semantic_hash": "2b2813b80668147777f9338674b7e3b0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/main.cpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e3bb3af744589686d0a384a43485aa78",
+    "semantic_hash": "e3bb3af744589686d0a384a43485aa78"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8d315afa6ce071720c965abd9bdfaa3d",
+    "semantic_hash": "8d315afa6ce071720c965abd9bdfaa3d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/piper.hpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "621f6680d28abcd63c9530150387b239",
+    "semantic_hash": "621f6680d28abcd63c9530150387b239"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/wavfile.hpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "627d0c7a7fd47aca3eb120073550d02e",
+    "semantic_hash": "627d0c7a7fd47aca3eb120073550d02e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/json.hpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b1c1ce77d46b72b72f38051d8384c7b8",
+    "semantic_hash": "b1c1ce77d46b72b72f38051d8384c7b8"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/piper.cpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3f0a40fe761ad7754ff2943f4dc03f3f",
+    "semantic_hash": "3f0a40fe761ad7754ff2943f4dc03f3f"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/test.cpp": {
+    "mtime": 1765265200.0,
+    "ast_hash": "98ff30cdf320d4df738e7c1528b67e0e",
+    "semantic_hash": "98ff30cdf320d4df738e7c1528b67e0e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8/checked.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d7fe62a8f7bd062ab90e16370e920567",
+    "semantic_hash": "d7fe62a8f7bd062ab90e16370e920567"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8/cpp11.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f01bec4858946325fde19103dcde842d",
+    "semantic_hash": "f01bec4858946325fde19103dcde842d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8/unchecked.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1cb7aa41fb9745d94ff3316efb88db0b",
+    "semantic_hash": "1cb7aa41fb9745d94ff3316efb88db0b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8/core.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3557846669af65f9b3118c24a60831b4",
+    "semantic_hash": "3557846669af65f9b3118c24a60831b4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/cpp/utf8/cpp17.h": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6d7b6f12640d9c2cbde2b6c732b2f115",
+    "semantic_hash": "6d7b6f12640d9c2cbde2b6c732b2f115"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/run-docker": {
+    "mtime": 1773075024.0,
+    "ast_hash": "f084f553c8a35b38f16adc523324dd69",
+    "semantic_hash": "f084f553c8a35b38f16adc523324dd69"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/setup.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f214ead31d2351983f0e6728c6178739",
+    "semantic_hash": "f214ead31d2351983f0e6728c6178739"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/build_monotonic_align.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "7370cfca86141babdceb1bb74fc18955",
+    "semantic_hash": "7370cfca86141babdceb1bb74fc18955"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/scripts/check.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "8eb7548e8ff99df1fec8149ff8d88d96",
+    "semantic_hash": "8eb7548e8ff99df1fec8149ff8d88d96"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/scripts/setup.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "79276d251d99219acb4d089cf73db73a",
+    "semantic_hash": "79276d251d99219acb4d089cf73db73a"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/infer_onnx_streaming.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "869b2605c64eb36514d674a67e63ffbd",
+    "semantic_hash": "869b2605c64eb36514d674a67e63ffbd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/infer.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ccecefe5a6664f8d2d3f7e8489d29234",
+    "semantic_hash": "ccecefe5a6664f8d2d3f7e8489d29234"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/export_generator.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9ca212cc2fff9a671fb721f4aee8516c",
+    "semantic_hash": "9ca212cc2fff9a671fb721f4aee8516c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/export_torchscript.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e61824f905083ee4359fd036640dec61",
+    "semantic_hash": "e61824f905083ee4359fd036640dec61"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/infer_onnx.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4ad362ba3a98b044c74e071413305d54",
+    "semantic_hash": "4ad362ba3a98b044c74e071413305d54"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/voice_conversion.py": {
+    "mtime": 1773075024.0,
+    "ast_hash": "f63c3fd86e8b2b944e20f528b09e9516",
+    "semantic_hash": "f63c3fd86e8b2b944e20f528b09e9516"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/filter_utterances.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "990353e6ba8f5d8bfa58da6dd5e48304",
+    "semantic_hash": "990353e6ba8f5d8bfa58da6dd5e48304"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/infer_generator.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e75dac08609e9897fcd0685b07385d34",
+    "semantic_hash": "e75dac08609e9897fcd0685b07385d34"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/select_speaker.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "79a54583f4c771a76ae4b136ff6a426c",
+    "semantic_hash": "79a54583f4c771a76ae4b136ff6a426c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/_resources.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5977909a1a826317bb2f5e813f9424c0",
+    "semantic_hash": "5977909a1a826317bb2f5e813f9424c0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/export_onnx.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8e58c23486cf87ce398aa18ddc897938",
+    "semantic_hash": "8e58c23486cf87ce398aa18ddc897938"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/export_onnx_streaming.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2d775eac902979e8ca33ca3edb2216d4",
+    "semantic_hash": "2d775eac902979e8ca33ca3edb2216d4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/preprocess.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "35d268acaf843b027d7650ab1a9aa202",
+    "semantic_hash": "35d268acaf843b027d7650ab1a9aa202"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/check_phonemes.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3d405eb424f08c9ca65b788108626d54",
+    "semantic_hash": "3d405eb424f08c9ca65b788108626d54"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/infer_torchscript.py": {
+    "mtime": 1773075024.0,
+    "ast_hash": "778f0fa0e54292d413c4c8ebdc2013ae",
+    "semantic_hash": "778f0fa0e54292d413c4c8ebdc2013ae"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/clean_cached_audio.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cf09aa1da6d7a0570acac9edcb3acbfd",
+    "semantic_hash": "cf09aa1da6d7a0570acac9edcb3acbfd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/__main__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "42096bc5035b5caab51e016f951437a7",
+    "semantic_hash": "42096bc5035b5caab51e016f951437a7"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/dataset.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4480ca3d445ea65575b7b608079d1fe0",
+    "semantic_hash": "4480ca3d445ea65575b7b608079d1fe0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/modules.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f16b140447467741a0e454c109e91b3d",
+    "semantic_hash": "f16b140447467741a0e454c109e91b3d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/utils.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a30196d0ba84c5b7e878e147d5d1ff72",
+    "semantic_hash": "a30196d0ba84c5b7e878e147d5d1ff72"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/lightning.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bfa13fdf840beb31c76c820db8b8692d",
+    "semantic_hash": "bfa13fdf840beb31c76c820db8b8692d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/wavfile.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e854cd701e51fc350d0d252ec55ed2dc",
+    "semantic_hash": "e854cd701e51fc350d0d252ec55ed2dc"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/mel_processing.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1bbf72804ae2a6d6d17cc3776ae98720",
+    "semantic_hash": "1bbf72804ae2a6d6d17cc3776ae98720"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/config.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e50ffd60e49613b2ff0207af0e8b3474",
+    "semantic_hash": "e50ffd60e49613b2ff0207af0e8b3474"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/transforms.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7000d8302bc7adfbcda8b5e695b49a5e",
+    "semantic_hash": "7000d8302bc7adfbcda8b5e695b49a5e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/models.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4130cd71441a7aa9a92d1900846ca20d",
+    "semantic_hash": "4130cd71441a7aa9a92d1900846ca20d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/commons.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7b3fccf9ec5ecf7c739e85c2ca0fd24a",
+    "semantic_hash": "7b3fccf9ec5ecf7c739e85c2ca0fd24a"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/attentions.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5d60ef9c7647450f797ed2b981a50951",
+    "semantic_hash": "5d60ef9c7647450f797ed2b981a50951"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/losses.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c5ca9211a60ceb87e7e5dbb26c93b6a6",
+    "semantic_hash": "c5ca9211a60ceb87e7e5dbb26c93b6a6"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/monotonic_align/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f3ed03153bdec59fb3e0554e5d378b79",
+    "semantic_hash": "f3ed03153bdec59fb3e0554e5d378b79"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/monotonic_align/setup.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b19562fb7169fec543f75451ab04b250",
+    "semantic_hash": "b19562fb7169fec543f75451ab04b250"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/vits/monotonic_align/core.c": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ba63f74d65cc19ac31b051c60f420289",
+    "semantic_hash": "ba63f74d65cc19ac31b051c60f420289"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/norm_audio/trim.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2f14a7ce1e104971fdc05d46b93529dc",
+    "semantic_hash": "2f14a7ce1e104971fdc05d46b93529dc"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/norm_audio/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e516322ea79311fd8125ad6b2ebc0c3b",
+    "semantic_hash": "e516322ea79311fd8125ad6b2ebc0c3b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/piper_train/norm_audio/vad.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6850af7b9e4de57dcc87cc4c459ce356",
+    "semantic_hash": "6850af7b9e4de57dcc87cc4c459ce356"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/benchmark/benchmark_generator.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7d7b2a7357f9831ee798d3548d541722",
+    "semantic_hash": "7d7b2a7357f9831ee798d3548d541722"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/benchmark/benchmark_torchscript.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "55bf764270a0a00f1bdbe796e5f02c67",
+    "semantic_hash": "55bf764270a0a00f1bdbe796e5f02c67"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/benchmark/benchmark_onnx.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "fe9221710d53db9f5b988e5f9c226dda",
+    "semantic_hash": "fe9221710d53db9f5b988e5f9c226dda"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/setup.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "af38b2b41ee71034fd7028d56ef67266",
+    "semantic_hash": "af38b2b41ee71034fd7028d56ef67266"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/script/lint": {
+    "mtime": 1773075024.0,
+    "ast_hash": "e574c8d1d1e53fd66ace662cf12c2962",
+    "semantic_hash": "e574c8d1d1e53fd66ace662cf12c2962"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/script/format": {
+    "mtime": 1773075024.0,
+    "ast_hash": "ec46b43c1b8243b337e63542922489a4",
+    "semantic_hash": "ec46b43c1b8243b337e63542922489a4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/script/setup": {
+    "mtime": 1773075024.0,
+    "ast_hash": "b316bcb0a697f8dde47c36b5e6308dfa",
+    "semantic_hash": "b316bcb0a697f8dde47c36b5e6308dfa"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/script/piper": {
+    "mtime": 1773075024.0,
+    "ast_hash": "192247c6ca014ed81d75f9cd2d174d59",
+    "semantic_hash": "192247c6ca014ed81d75f9cd2d174d59"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/util.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cf29c37b278352864360ecd76cba9bfe",
+    "semantic_hash": "cf29c37b278352864360ecd76cba9bfe"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/http_server.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "318388a0aa45764ad85efef053cea284",
+    "semantic_hash": "318388a0aa45764ad85efef053cea284"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/const.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "91b9fb2cd49c4cfe7b3a001345a4861b",
+    "semantic_hash": "91b9fb2cd49c4cfe7b3a001345a4861b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0ad6111f6009579629701dfd0ffff9c7",
+    "semantic_hash": "0ad6111f6009579629701dfd0ffff9c7"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/voice.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "19d437538f9b6ebac6b33eeff9f7533e",
+    "semantic_hash": "19d437538f9b6ebac6b33eeff9f7533e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/voices.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e5305ae93327741b44a050012dbb8fd4",
+    "semantic_hash": "e5305ae93327741b44a050012dbb8fd4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/config.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0fdad8790de4cc505a95ade97c8628ce",
+    "semantic_hash": "0fdad8790de4cc505a95ade97c8628ce"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/download.py": {
+    "mtime": 1773075024.0,
+    "ast_hash": "4c5d1942ac8149bcba0f0833d76c2b72",
+    "semantic_hash": "4c5d1942ac8149bcba0f0833d76c2b72"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/file_hash.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2ed6cd6fabfca5fdeff3d6e0f51599cb",
+    "semantic_hash": "2ed6cd6fabfca5fdeff3d6e0f51599cb"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/piper/__main__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a986d3acacaa900d485caf1a70f3ddd5",
+    "semantic_hash": "a986d3acacaa900d485caf1a70f3ddd5"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_voice.onnx.json": {
+    "mtime": 1765265200.0,
+    "ast_hash": "06b7255db7f49069a9abcb3037804cc5",
+    "semantic_hash": "06b7255db7f49069a9abcb3037804cc5"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/translator.py": {
+    "mtime": 1781849277.0620632,
+    "ast_hash": "0367f711ec5d4d415dde3405b63fb3d2",
+    "semantic_hash": "0367f711ec5d4d415dde3405b63fb3d2"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/pretrained_models.json": {
+    "mtime": 1781849277.0620189,
+    "ast_hash": "ed0e920dc7e1f8115c9745f75232e16b",
+    "semantic_hash": "ed0e920dc7e1f8115c9745f75232e16b"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/test_whisper.py": {
+    "mtime": 1781678932.8806293,
+    "ast_hash": "4eaf158f7076ab452b9a3e11be21c650",
+    "semantic_hash": "4eaf158f7076ab452b9a3e11be21c650"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/conftest.py": {
+    "mtime": 1781678932.8805203,
+    "ast_hash": "5d4478d8ddb8f44dd998ceda71ff4641",
+    "semantic_hash": "5d4478d8ddb8f44dd998ceda71ff4641"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b47ca6f6abebf987b782ba530cf15a14",
+    "semantic_hash": "b47ca6f6abebf987b782ba530cf15a14"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/test_piper.py": {
+    "mtime": 1781678932.880579,
+    "ast_hash": "abbd546ac3235a1aea07dce54a3879a5",
+    "semantic_hash": "abbd546ac3235a1aea07dce54a3879a5"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/test_whisper_real.py": {
+    "mtime": 1781678932.8806543,
+    "ast_hash": "cbfa7b808de4ccdad288c012f06ce57b",
+    "semantic_hash": "cbfa7b808de4ccdad288c012f06ce57b"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/test_runner.py": {
+    "mtime": 1781678932.8806071,
+    "ast_hash": "1f2113e8cc4a401d96d16fca5fe0957e",
+    "semantic_hash": "1f2113e8cc4a401d96d16fca5fe0957e"
+  },
+  "/home/beardface/work/wintermute/agents/sql_agent.py": {
+    "mtime": 1781678341.4465563,
+    "ast_hash": "170a187a89959269da37ce691343a1cb",
+    "semantic_hash": "170a187a89959269da37ce691343a1cb"
+  },
+  "/home/beardface/work/wintermute/agents/freud.py": {
+    "mtime": 1781678283.0022516,
+    "ast_hash": "0020661083e6264da04b73689a579b21",
+    "semantic_hash": "0020661083e6264da04b73689a579b21"
+  },
+  "/home/beardface/work/wintermute/agents/__init__.py": {
+    "mtime": 1781678932.8494692,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/agents/runner.py": {
+    "mtime": 1781678283.0012517,
+    "ast_hash": "eabbe72085b48923a5c3d80ae8f3a941",
+    "semantic_hash": "eabbe72085b48923a5c3d80ae8f3a941"
+  },
+  "/home/beardface/work/wintermute/shared/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/shared/vllm_llm.py": {
+    "mtime": 1781678902.978895,
+    "ast_hash": "4ecf683849e97aa2e32fa9b1b92ca5ed",
+    "semantic_hash": "4ecf683849e97aa2e32fa9b1b92ca5ed"
+  },
+  "/home/beardface/work/wintermute/shared/config_loader.py": {
+    "mtime": 1781678911.6937933,
+    "ast_hash": "89ad196843f5724264ac507a4a6f34c0",
+    "semantic_hash": "89ad196843f5724264ac507a4a6f34c0"
+  },
+  "/home/beardface/work/wintermute/shared/setup_path.py": {
+    "mtime": 1781678932.8509908,
+    "ast_hash": "b13608a9bbbafee2b98fd5ceaf77cc59",
+    "semantic_hash": "b13608a9bbbafee2b98fd5ceaf77cc59"
+  },
+  "/home/beardface/work/wintermute/typings/pgvector/sqlalchemy.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8ea27aa5c2a82cfc8760047a66e8b589",
+    "semantic_hash": "8ea27aa5c2a82cfc8760047a66e8b589"
+  },
+  "/home/beardface/work/wintermute/config/detached_training_probe.json": {
+    "mtime": 1778906357.3409445,
+    "ast_hash": "a2d5f35155d97194f6385bdb115377ed",
+    "semantic_hash": "a2d5f35155d97194f6385bdb115377ed"
+  },
+  "/home/beardface/work/wintermute/config/shared_api_config.json": {
+    "mtime": 1779204381.1612062,
+    "ast_hash": "5d761bd6073200fd5b9339a33d1a51e1",
+    "semantic_hash": "5d761bd6073200fd5b9339a33d1a51e1"
+  },
+  "/home/beardface/work/wintermute/scripts/start_vllm_mistral-7b.sh": {
+    "mtime": 1781849277.0327818,
+    "ast_hash": "237f4c8a6e723d2d1a6842621788fbef",
+    "semantic_hash": "237f4c8a6e723d2d1a6842621788fbef"
+  },
+  "/home/beardface/work/wintermute/scripts/start_vllm_nous-hermes-2-mistal.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "760cce4050f61782ee1fda3195368b69",
+    "semantic_hash": "760cce4050f61782ee1fda3195368b69"
+  },
+  "/home/beardface/work/wintermute/scripts/start_vllm.sh": {
+    "mtime": 1778620489.4756956,
+    "ast_hash": "afbb0eec2e4f97e8ce239f2fbca6fc07",
+    "semantic_hash": "afbb0eec2e4f97e8ce239f2fbca6fc07"
+  },
+  "/home/beardface/work/wintermute/scripts/mcp_toolchain_test.py": {
+    "mtime": 1781678932.850913,
+    "ast_hash": "0f0252552f16336d1860e7993f782158",
+    "semantic_hash": "0f0252552f16336d1860e7993f782158"
+  },
+  "/home/beardface/work/wintermute/scripts/run_local_prompt.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "506ab2b79575074c9fe3ef3c30ad0765",
+    "semantic_hash": "506ab2b79575074c9fe3ef3c30ad0765"
+  },
+  "/home/beardface/work/wintermute/scripts/rag_memory_bootstrap.py": {
+    "mtime": 1781678932.8509746,
+    "ast_hash": "1d0deea2be9022dc561dbd78541ad2b5",
+    "semantic_hash": "1d0deea2be9022dc561dbd78541ad2b5"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/hf_sft_cloudwatch.sh": {
+    "mtime": 1777746819.3386889,
+    "ast_hash": "d7a01f283f5a61b8d44ac0e65aa6d2c7",
+    "semantic_hash": "d7a01f283f5a61b8d44ac0e65aa6d2c7"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/ssm_timeout_wait_for_command.sh": {
+    "mtime": 1775021755.0,
+    "ast_hash": "e2d49f4ed50317a761424295ca82f7f9",
+    "semantic_hash": "e2d49f4ed50317a761424295ca82f7f9"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_small_pretrain_long_cloudwatch.sh": {
+    "mtime": 1777567020.5860183,
+    "ast_hash": "8d6bc932735fbf6f21d7e912bbcd2645",
+    "semantic_hash": "8d6bc932735fbf6f21d7e912bbcd2645"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_small_ssm_with_logs.sh": {
+    "mtime": 1777567020.5860183,
+    "ast_hash": "869658d9a828a590d12dd34ab1910554",
+    "semantic_hash": "869658d9a828a590d12dd34ab1910554"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_medium_sft_cloudwatch.sh": {
+    "mtime": 1777567020.5770185,
+    "ast_hash": "45fab132b2a7a98006d4e760101b32f7",
+    "semantic_hash": "45fab132b2a7a98006d4e760101b32f7"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/ssm_timeout_sleep_test.sh": {
+    "mtime": 1776055719.0,
+    "ast_hash": "ae807c20f70ddfa3906fea4cf700840e",
+    "semantic_hash": "ae807c20f70ddfa3906fea4cf700840e"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/check_detached_training_status.sh": {
+    "mtime": 1778906052.579108,
+    "ast_hash": "b90154f3c222c4d4ac175dfde47a6a39",
+    "semantic_hash": "b90154f3c222c4d4ac175dfde47a6a39"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/vllm_serve.sh": {
+    "mtime": 1777567020.5860183,
+    "ast_hash": "997e734eb3467a4fd5effd41e2a24a33",
+    "semantic_hash": "997e734eb3467a4fd5effd41e2a24a33"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/codereview_serve.sh": {
+    "mtime": 1779204381.1592064,
+    "ast_hash": "195b97841c6af7c638b313924141ad57",
+    "semantic_hash": "195b97841c6af7c638b313924141ad57"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/check_detached_titan_status.sh": {
+    "mtime": 1778906378.0624034,
+    "ast_hash": "375686cba2379502947e1dc251b39e61",
+    "semantic_hash": "375686cba2379502947e1dc251b39e61"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_small_fresh_10k_with_logs.sh": {
+    "mtime": 1775801577.0,
+    "ast_hash": "620f58f3c0eb66fd1f5f3b2d67c86b39",
+    "semantic_hash": "620f58f3c0eb66fd1f5f3b2d67c86b39"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_small_sft_pilot_cloudwatch.sh": {
+    "mtime": 1777567020.5840185,
+    "ast_hash": "0dec237bab66049097407e4f258489c2",
+    "semantic_hash": "0dec237bab66049097407e4f258489c2"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_medium_pretrain_multigpu_cloudwatch.sh": {
+    "mtime": 1777567020.5780187,
+    "ast_hash": "39e23c922a0fd9f6595ee1594f65cf83",
+    "semantic_hash": "39e23c922a0fd9f6595ee1594f65cf83"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/gpt_medium_pretrain_long_cloudwatch.sh": {
+    "mtime": 1777567020.5850184,
+    "ast_hash": "3f7b7933a440bd8cbc3e9ebabde159d8",
+    "semantic_hash": "3f7b7933a440bd8cbc3e9ebabde159d8"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/lib/remote_training_probe_paths.sh": {
+    "mtime": 1778906362.3818128,
+    "ast_hash": "d341ffe8c62c0231ba992f21f48797a1",
+    "semantic_hash": "d341ffe8c62c0231ba992f21f48797a1"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/iam/ssm_cloudwatch_logs_inline_policy.json": {
+    "mtime": 1774981095.0,
+    "ast_hash": "eac1037769ebc15158bfa1c0972f84a2",
+    "semantic_hash": "eac1037769ebc15158bfa1c0972f84a2"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/iam/ssm_long_run_self_stop_inline_policy.json": {
+    "mtime": 1776055719.0,
+    "ast_hash": "bd0fa8326431f9d37e6c536b94967f59",
+    "semantic_hash": "bd0fa8326431f9d37e6c536b94967f59"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/legacy/check_ssm_status.sh": {
+    "mtime": 1776055719.0,
+    "ast_hash": "fb06921548eb5f3f5a47777d98c53b2b",
+    "semantic_hash": "fb06921548eb5f3f5a47777d98c53b2b"
+  },
+  "/home/beardface/work/wintermute/.vscode/settings.json": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "37546b44307caf7bb6eac61d2875f340",
+    "semantic_hash": "37546b44307caf7bb6eac61d2875f340"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/__init__.py": {
+    "mtime": 1781678932.8494692,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/dag_retrieval.py": {
+    "mtime": 1781849267.1649299,
+    "ast_hash": "6645818ff7a0f3036b0cb0cee9e51845",
+    "semantic_hash": "6645818ff7a0f3036b0cb0cee9e51845"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/run.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "43f95d82726893fd47b4eb53b525c1f6",
+    "semantic_hash": "43f95d82726893fd47b4eb53b525c1f6"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/server.py": {
+    "mtime": 1781849174.2917118,
+    "ast_hash": "85b72040d16f318e0c08b4ab8353d8da",
+    "semantic_hash": "85b72040d16f318e0c08b4ab8353d8da"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/run_prod.sh": {
+    "mtime": 1773075024.0,
+    "ast_hash": "608a413f3021260f693868c713c10384",
+    "semantic_hash": "608a413f3021260f693868c713c10384"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/__init__.py": {
+    "mtime": 1776582477.3361154,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/main.py": {
+    "mtime": 1781678932.8496397,
+    "ast_hash": "492437e428fccbe5dc61ce36cc68feda",
+    "semantic_hash": "492437e428fccbe5dc61ce36cc68feda"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/models/memory_entry.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a75cf25f565ab21d6274d676b9fa498a",
+    "semantic_hash": "a75cf25f565ab21d6274d676b9fa498a"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/services/memory_ops.py": {
+    "mtime": 1781678932.8496397,
+    "ast_hash": "d0a052459ccecb52a5743dc058b8d945",
+    "semantic_hash": "d0a052459ccecb52a5743dc058b8d945"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/db/init_db.py": {
+    "mtime": 1781678932.8494692,
+    "ast_hash": "8056b8222268e44d927c0e5574aec504",
+    "semantic_hash": "8056b8222268e44d927c0e5574aec504"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/db/session.py": {
+    "mtime": 1781678932.8496397,
+    "ast_hash": "f2487e4e0ef6445bed0b852c12b919cc",
+    "semantic_hash": "f2487e4e0ef6445bed0b852c12b919cc"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/api/__init__.py": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/mcp_memory/app/api/memory.py": {
+    "mtime": 1781678932.8494692,
+    "ast_hash": "ac844f6d3864c3e70673c0d46685c91e",
+    "semantic_hash": "ac844f6d3864c3e70673c0d46685c91e"
+  },
+  "/home/beardface/work/wintermute/infra/postgres-init/init.sql": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "899c6932e4b5f0c7ce5d60566718a4b1",
+    "semantic_hash": "899c6932e4b5f0c7ce5d60566718a4b1"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/memory_test_eval.py": {
+    "mtime": 1781678932.8503804,
+    "ast_hash": "f0e98676cd028c6316718d8cc52d856e",
+    "semantic_hash": "f0e98676cd028c6316718d8cc52d856e"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/generate.py": {
+    "mtime": 1781678932.8502538,
+    "ast_hash": "7b3aa933f55ac308b15cebd3072dfff9",
+    "semantic_hash": "7b3aa933f55ac308b15cebd3072dfff9"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/finetune_sft.py": {
+    "mtime": 1781678932.8502183,
+    "ast_hash": "d278d88be5618673c283a9f023c87d5d",
+    "semantic_hash": "d278d88be5618673c283a9f023c87d5d"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/serve_codereview.py": {
+    "mtime": 1781678932.850686,
+    "ast_hash": "756bb9165ed3e9e0e2dfc436a5004ee6",
+    "semantic_hash": "756bb9165ed3e9e0e2dfc436a5004ee6"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model.py": {
+    "mtime": 1781678932.85043,
+    "ast_hash": "7ff8aa1d4c12d1a968c2a91689eeb2fd",
+    "semantic_hash": "7ff8aa1d4c12d1a968c2a91689eeb2fd"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/chat_repl.py": {
+    "mtime": 1781678932.8500004,
+    "ast_hash": "23189f7082bc8f48d399bab9414e6543",
+    "semantic_hash": "23189f7082bc8f48d399bab9414e6543"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/inference_smoke.py": {
+    "mtime": 1781678932.850292,
+    "ast_hash": "394ceef4962e773f62a514583c78dce7",
+    "semantic_hash": "394ceef4962e773f62a514583c78dce7"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/train_utils.py": {
+    "mtime": 1781678932.850913,
+    "ast_hash": "3c40db859374cbbb0400c81a68c067a5",
+    "semantic_hash": "3c40db859374cbbb0400c81a68c067a5"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/modeling_titans.py": {
+    "mtime": 1781678932.8505144,
+    "ast_hash": "64be1a93001752ed2d845e3b9ce19924",
+    "semantic_hash": "64be1a93001752ed2d845e3b9ce19924"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/memory_test_gen.py": {
+    "mtime": 1781678932.8504124,
+    "ast_hash": "430f9d0cb442c2ca1fa3f4e021129334",
+    "semantic_hash": "430f9d0cb442c2ca1fa3f4e021129334"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/prepare_sft_mix.py": {
+    "mtime": 1781678932.850532,
+    "ast_hash": "849c52b1794956d2f5e11f9fa1107139",
+    "semantic_hash": "849c52b1794956d2f5e11f9fa1107139"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/chat_http.py": {
+    "mtime": 1781678932.84998,
+    "ast_hash": "83bcaa21319cf43eba12ba8744998268",
+    "semantic_hash": "83bcaa21319cf43eba12ba8744998268"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/export_to_hf.py": {
+    "mtime": 1781678932.8501773,
+    "ast_hash": "1f5bbcab0ed6d42bd97b4a48e759d1a3",
+    "semantic_hash": "1f5bbcab0ed6d42bd97b4a48e759d1a3"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/hf_utils.py": {
+    "mtime": 1781678932.850274,
+    "ast_hash": "b1af51b945de1c4409fd0db7543d7afc",
+    "semantic_hash": "b1af51b945de1c4409fd0db7543d7afc"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/aws_titan_next_steps.py": {
+    "mtime": 1781678932.8499572,
+    "ast_hash": "c6d767bf64ec3672ed88e8696a139a50",
+    "semantic_hash": "c6d767bf64ec3672ed88e8696a139a50"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/data.py": {
+    "mtime": 1781678932.8501272,
+    "ast_hash": "9538008a2166d53af96e85d38f3a4864",
+    "semantic_hash": "9538008a2166d53af96e85d38f3a4864"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/prompt_formats.py": {
+    "mtime": 1781678932.850552,
+    "ast_hash": "a1e1ce51b3389a1a48eed1bdd6d9e34b",
+    "semantic_hash": "a1e1ce51b3389a1a48eed1bdd6d9e34b"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/train.py": {
+    "mtime": 1781678932.8508937,
+    "ast_hash": "d316765d2986387f6ef3d2c989f2a545",
+    "semantic_hash": "d316765d2986387f6ef3d2c989f2a545"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/finetune_memory_qa.py": {
+    "mtime": 1781678932.8501992,
+    "ast_hash": "ff7128a485b41728b35cf72f8f736f50",
+    "semantic_hash": "ff7128a485b41728b35cf72f8f736f50"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_dixie_mistral_sft_ssm.sh": {
+    "mtime": 1779043763.082409,
+    "ast_hash": "1b62f6f0b3c0690af1ec6539edc744c6",
+    "semantic_hash": "1b62f6f0b3c0690af1ec6539edc744c6"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_ab_lookahead_ssm.sh": {
+    "mtime": 1778700723.5634725,
+    "ast_hash": "9ef13a1733bd6dfdd7035278c9b82a97",
+    "semantic_hash": "9ef13a1733bd6dfdd7035278c9b82a97"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/launch_dixie_sft_ssm.sh": {
+    "mtime": 1779044648.9022856,
+    "ast_hash": "3262c0913296b3b7c5b0974c872712f7",
+    "semantic_hash": "3262c0913296b3b7c5b0974c872712f7"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/build_smoke_instruction_variant.py": {
+    "mtime": 1781678932.850618,
+    "ast_hash": "b15f18af855d21ad7fd5624f6cddd9ee",
+    "semantic_hash": "b15f18af855d21ad7fd5624f6cddd9ee"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/smoke_sft_data.py": {
+    "mtime": 1781678932.850671,
+    "ast_hash": "e977b6b9c7544c95474ba2963fc8652f",
+    "semantic_hash": "e977b6b9c7544c95474ba2963fc8652f"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_sanity_sweep.py": {
+    "mtime": 1781678932.8506553,
+    "ast_hash": "d156a65f0a0fe8f051f7e2c55c8e1c4b",
+    "semantic_hash": "d156a65f0a0fe8f051f7e2c55c8e1c4b"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/train_gpt2_nomem.py": {
+    "mtime": 1781678932.850686,
+    "ast_hash": "ef9245d52fb65e833a65a2db55e77799",
+    "semantic_hash": "ef9245d52fb65e833a65a2db55e77799"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/preprocess_corpus_and_tokenizer.py": {
+    "mtime": 1781678932.8506362,
+    "ast_hash": "1c8e69905c68d47949183c8c401c370d",
+    "semantic_hash": "1c8e69905c68d47949183c8c401c370d"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_dixie_sft_smoke_cheap_ssm.sh": {
+    "mtime": 1779038962.463907,
+    "ast_hash": "6cc49473189732e2773916ad6d76f1a2",
+    "semantic_hash": "6cc49473189732e2773916ad6d76f1a2"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_gpt2_nomem_ssm.sh": {
+    "mtime": 1773174011.0,
+    "ast_hash": "fc174d88db84b0fc01e459dde073bb69",
+    "semantic_hash": "fc174d88db84b0fc01e459dde073bb69"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/build_hf_dolly_smoke_variant.py": {
+    "mtime": 1781678932.8505828,
+    "ast_hash": "12e5385062cb894e6bc833f2227c2c5b",
+    "semantic_hash": "12e5385062cb894e6bc833f2227c2c5b"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/run_titan_arms_ssm.sh": {
+    "mtime": 1778872509.3849802,
+    "ast_hash": "960a7092d88b51646fb5714bfd403256",
+    "semantic_hash": "960a7092d88b51646fb5714bfd403256"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/lib/aws_lifecycle.sh": {
+    "mtime": 1779044798.5924554,
+    "ast_hash": "0402e62d022bc5817fb3d3bc1066411c",
+    "semantic_hash": "0402e62d022bc5817fb3d3bc1066411c"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/scripts/lib/dixie_s3_code_uri.sh": {
+    "mtime": 1779044647.4613225,
+    "ast_hash": "34e7a4f37e8a5dfaf654f8f5f76389d7",
+    "semantic_hash": "34e7a4f37e8a5dfaf654f8f5f76389d7"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_micro_balanced_v2/meta.json": {
+    "mtime": 1776040335.0,
+    "ast_hash": "eb37cd7ef6073df0cf2bc41039bfe812",
+    "semantic_hash": "eb37cd7ef6073df0cf2bc41039bfe812"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_story_broad_stabilized/meta.json": {
+    "mtime": 1776055719.0,
+    "ast_hash": "2d419a6be4d30dd9775c97bd2f88a963",
+    "semantic_hash": "2d419a6be4d30dd9775c97bd2f88a963"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_micro_balanced_backup_20260408/meta.json": {
+    "mtime": 1776042027.0,
+    "ast_hash": "040cdf3fa710f81b5fed3466f7b20d49",
+    "semantic_hash": "040cdf3fa710f81b5fed3466f7b20d49"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction/meta.json": {
+    "mtime": 1781849277.0326517,
+    "ast_hash": "4cad060a3befba153283d69a71e89af7",
+    "semantic_hash": "4cad060a3befba153283d69a71e89af7"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_micro_balanced_dolly_short/meta.json": {
+    "mtime": 1776042288.0,
+    "ast_hash": "fa300c60384da621b735aca46c9efa20",
+    "semantic_hash": "fa300c60384da621b735aca46c9efa20"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_curated/meta.json": {
+    "mtime": 1781849277.0326517,
+    "ast_hash": "7bc376e1d70919c03d4b08dc4ef839c5",
+    "semantic_hash": "7bc376e1d70919c03d4b08dc4ef839c5"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_story_curated/meta.json": {
+    "mtime": 1776055719.0,
+    "ast_hash": "93e6a990c6e9a5786580abce3c7422cb",
+    "semantic_hash": "93e6a990c6e9a5786580abce3c7422cb"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_micro_balanced/meta.json": {
+    "mtime": 1776055719.0,
+    "ast_hash": "040cdf3fa710f81b5fed3466f7b20d49",
+    "semantic_hash": "040cdf3fa710f81b5fed3466f7b20d49"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/model_training/LLM/data/sft_smoke_instruction_logic/meta.json": {
+    "mtime": 1781849277.0326517,
+    "ast_hash": "14a1f282852cf5c9d30ecf03f81f7671",
+    "semantic_hash": "14a1f282852cf5c9d30ecf03f81f7671"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_data.py": {
+    "mtime": 1781678932.8507526,
+    "ast_hash": "999d2880a2eb60ddf9d35b3d09b6bfd7",
+    "semantic_hash": "999d2880a2eb60ddf9d35b3d09b6bfd7"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_model.py": {
+    "mtime": 1781678932.8508053,
+    "ast_hash": "21b1e400c273517c8c5e14312126382b",
+    "semantic_hash": "21b1e400c273517c8c5e14312126382b"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/conftest.py": {
+    "mtime": 1781678932.8507347,
+    "ast_hash": "2e57a95db30025f122d7b8254dbc3b77",
+    "semantic_hash": "2e57a95db30025f122d7b8254dbc3b77"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/__init__.py": {
+    "mtime": 1781678932.850686,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_sft_formats.py": {
+    "mtime": 1781678932.8508432,
+    "ast_hash": "df988a74c88b8b91f3d34dce6f0aa854",
+    "semantic_hash": "df988a74c88b8b91f3d34dce6f0aa854"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_hf_utils.py": {
+    "mtime": 1781678932.8507867,
+    "ast_hash": "48c753d86623c7470f5ff15543b92ffc",
+    "semantic_hash": "48c753d86623c7470f5ff15543b92ffc"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_finetune_sft_extended.py": {
+    "mtime": 1781678932.8507693,
+    "ast_hash": "ad384e5008498657b677224115d91ce3",
+    "semantic_hash": "ad384e5008498657b677224115d91ce3"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_dixie_config.py": {
+    "mtime": 1778923241.5880055,
+    "ast_hash": "9585484e5d46943f00e72fb0de02b142",
+    "semantic_hash": "9585484e5d46943f00e72fb0de02b142"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_multi_gpu.py": {
+    "mtime": 1781678932.850821,
+    "ast_hash": "7a6715a92111c786e914da8ca62919dd",
+    "semantic_hash": "7a6715a92111c786e914da8ca62919dd"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/tests/test_train_utils.py": {
+    "mtime": 1781678932.8508599,
+    "ast_hash": "b1cbc4802978182ef6116ffcda097521",
+    "semantic_hash": "b1cbc4802978182ef6116ffcda097521"
+  },
+  "/home/beardface/work/wintermute/model_training/LLM/data/canstalian/api_key_checker.py": {
+    "mtime": 1781678932.8498907,
+    "ast_hash": "d9c77f509a1715d838bca0bd287b0d60",
+    "semantic_hash": "d9c77f509a1715d838bca0bd287b0d60"
+  },
+  "/home/beardface/work/wintermute/model_training/LLM/data/canstalian/ai_utils.py": {
+    "mtime": 1781678932.8498678,
+    "ast_hash": "16e7af152a749de62d2a15e68e759b8b",
+    "semantic_hash": "16e7af152a749de62d2a15e68e759b8b"
+  },
+  "/home/beardface/work/wintermute/model_training/LLM/data/canstalian/PcapGenerator.py": {
+    "mtime": 1781849077.6923773,
+    "ast_hash": "05380f680036032bc56edac607d4c66a",
+    "semantic_hash": "05380f680036032bc56edac607d4c66a"
+  },
+  "/home/beardface/work/wintermute/mcp_servers/map_echo.py": {
+    "mtime": 1781678932.8497148,
+    "ast_hash": "f41e3af78a4350985f08698d0271a671",
+    "semantic_hash": "f41e3af78a4350985f08698d0271a671"
+  },
+  "/home/beardface/work/wintermute/mcp_servers/map_list.py": {
+    "mtime": 1781678932.8497598,
+    "ast_hash": "d8a9c14205a991b97e60ef1506fde608",
+    "semantic_hash": "d8a9c14205a991b97e60ef1506fde608"
+  },
+  "/home/beardface/work/wintermute/mcp_servers/mcp_postgres/__init__.py": {
+    "mtime": 1781678932.8497598,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/mcp_servers/mcp_postgres/server.py": {
+    "mtime": 1781678932.849795,
+    "ast_hash": "4b763a9b89981dd4d57c8f5b02d2ed1c",
+    "semantic_hash": "4b763a9b89981dd4d57c8f5b02d2ed1c"
+  },
+  "/home/beardface/work/wintermute/tests/test_shared_setup_path.py": {
+    "mtime": 1781678932.852153,
+    "ast_hash": "ec502825676459368b5cc6dd542cc695",
+    "semantic_hash": "ec502825676459368b5cc6dd542cc695"
+  },
+  "/home/beardface/work/wintermute/tests/test_mcp_memory_server.py": {
+    "mtime": 1781849196.32119,
+    "ast_hash": "1b476a2f9392a5938ed7f3e33b3864c3",
+    "semantic_hash": "1b476a2f9392a5938ed7f3e33b3864c3"
+  },
+  "/home/beardface/work/wintermute/tests/conftest.py": {
+    "mtime": 1781678932.851912,
+    "ast_hash": "f2260e5fd56fef4e8c24abfebad40941",
+    "semantic_hash": "f2260e5fd56fef4e8c24abfebad40941"
+  },
+  "/home/beardface/work/wintermute/tests/__init__.py": {
+    "mtime": 1781678932.8518739,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/tests/test_mcp_postgres_server.py": {
+    "mtime": 1781678932.852061,
+    "ast_hash": "07d8650f6699fc1ff109df338ce26d2d",
+    "semantic_hash": "07d8650f6699fc1ff109df338ce26d2d"
+  },
+  "/home/beardface/work/wintermute/tests/test_agents_freud.py": {
+    "mtime": 1781678932.8519287,
+    "ast_hash": "dd0e483565030d2aaca3b1d16f3f9ec5",
+    "semantic_hash": "dd0e483565030d2aaca3b1d16f3f9ec5"
+  },
+  "/home/beardface/work/wintermute/tests/test_prompt_formats.py": {
+    "mtime": 1781849196.32119,
+    "ast_hash": "6861576f5c616e9f55fb64f0af696dde",
+    "semantic_hash": "6861576f5c616e9f55fb64f0af696dde"
+  },
+  "/home/beardface/work/wintermute/tests/test_eval_sandbox.py": {
+    "mtime": 1781676932.748251,
+    "ast_hash": "1f95aca7bc2682fb3220f6fd74862b8f",
+    "semantic_hash": "1f95aca7bc2682fb3220f6fd74862b8f"
+  },
+  "/home/beardface/work/wintermute/tests/test_agents_sql_agent.py": {
+    "mtime": 1781678932.851983,
+    "ast_hash": "f1f4c74b84d2a8974d6b0609f04547a9",
+    "semantic_hash": "f1f4c74b84d2a8974d6b0609f04547a9"
+  },
+  "/home/beardface/work/wintermute/tests/test_map_list.py": {
+    "mtime": 1781678932.8520238,
+    "ast_hash": "0af30a8198b32b595fd1d9965c652fe5",
+    "semantic_hash": "0af30a8198b32b595fd1d9965c652fe5"
+  },
+  "/home/beardface/work/wintermute/tests/test_agents_runner.py": {
+    "mtime": 1781849196.32119,
+    "ast_hash": "0a86869ebadf7a9e0184f8a1963b30fd",
+    "semantic_hash": "0a86869ebadf7a9e0184f8a1963b30fd"
+  },
+  "/home/beardface/work/wintermute/tests/test_eval_parsers.py": {
+    "mtime": 1781676932.7882504,
+    "ast_hash": "e3d71767e5fc3ac8601d08219cf0d077",
+    "semantic_hash": "e3d71767e5fc3ac8601d08219cf0d077"
+  },
+  "/home/beardface/work/wintermute/tests/test_shared_vllm.py": {
+    "mtime": 1781678932.8521702,
+    "ast_hash": "d151b1bc74d708b0ed1b7b37728e274e",
+    "semantic_hash": "d151b1bc74d708b0ed1b7b37728e274e"
+  },
+  "/home/beardface/work/wintermute/tests/test_memory_ops.py": {
+    "mtime": 1781678932.8520792,
+    "ast_hash": "8ecb957b7099f9dbef359eae9fd85b47",
+    "semantic_hash": "8ecb957b7099f9dbef359eae9fd85b47"
+  },
+  "/home/beardface/work/wintermute/tests/test_remote_training_probe.py": {
+    "mtime": 1781678932.8521142,
+    "ast_hash": "e63dfdbddc1f06c3b1d8153259adff40",
+    "semantic_hash": "e63dfdbddc1f06c3b1d8153259adff40"
+  },
+  "/home/beardface/work/wintermute/tests/test_eval_results.py": {
+    "mtime": 1781676932.7882504,
+    "ast_hash": "b696a61065705f964781b6158ff9ec7a",
+    "semantic_hash": "b696a61065705f964781b6158ff9ec7a"
+  },
+  "/home/beardface/work/wintermute/tests/test_eval_model.py": {
+    "mtime": 1781676932.7882504,
+    "ast_hash": "c79dd6de073bc2f189f23d7e8cf6385c",
+    "semantic_hash": "c79dd6de073bc2f189f23d7e8cf6385c"
+  },
+  "/home/beardface/work/wintermute/tests/test_dag_retrieval.py": {
+    "mtime": 1781678932.8519993,
+    "ast_hash": "82ce0352c6f7178a5fcfc1aca845a3c5",
+    "semantic_hash": "82ce0352c6f7178a5fcfc1aca845a3c5"
+  },
+  "/home/beardface/work/wintermute/tests/test_shared_config.py": {
+    "mtime": 1781678932.8521345,
+    "ast_hash": "77709c5091e8a5ced1317cb767f35690",
+    "semantic_hash": "77709c5091e8a5ced1317cb767f35690"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/test_helpers.sh": {
+    "mtime": 1778868292.0429487,
+    "ast_hash": "5c348f43bd646bdf34662d0c05b932c3",
+    "semantic_hash": "5c348f43bd646bdf34662d0c05b932c3"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/test_aws_lifecycle.sh": {
+    "mtime": 1779044884.190265,
+    "ast_hash": "2b6a29f0465c24d26a85c3766c3413f5",
+    "semantic_hash": "2b6a29f0465c24d26a85c3766c3413f5"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/test_dixie_s3_code_uri.sh": {
+    "mtime": 1779044685.660345,
+    "ast_hash": "3e45facafbf9960602a5635f2d72b8bd",
+    "semantic_hash": "3e45facafbf9960602a5635f2d72b8bd"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/test_remote_training_probe_paths.sh": {
+    "mtime": 1778906390.3340816,
+    "ast_hash": "3718bc93110dd196c033ca3beb743bfb",
+    "semantic_hash": "3718bc93110dd196c033ca3beb743bfb"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/run_all.sh": {
+    "mtime": 1778906064.3097816,
+    "ast_hash": "612b9765cf4ea490e2b4b8204eb0c427",
+    "semantic_hash": "612b9765cf4ea490e2b4b8204eb0c427"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/test_aws_instance_watcher.sh": {
+    "mtime": 1778872500.8940732,
+    "ast_hash": "c05b6cfdd7bf6f171d799004abb29cd9",
+    "semantic_hash": "c05b6cfdd7bf6f171d799004abb29cd9"
+  },
+  "/home/beardface/work/wintermute/eval/model.py": {
+    "mtime": 1781678630.6271155,
+    "ast_hash": "65b734dc874ab680752a9e36c338e4e3",
+    "semantic_hash": "65b734dc874ab680752a9e36c338e4e3"
+  },
+  "/home/beardface/work/wintermute/eval/compare.py": {
+    "mtime": 1781676664.2338076,
+    "ast_hash": "3359be4412b01349f01f6f7196297ca3",
+    "semantic_hash": "3359be4412b01349f01f6f7196297ca3"
+  },
+  "/home/beardface/work/wintermute/eval/__init__.py": {
+    "mtime": 1781676664.2338076,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/eval/run_benchmark.py": {
+    "mtime": 1781678511.7355301,
+    "ast_hash": "329690810000ccde7e04aa6757815028",
+    "semantic_hash": "329690810000ccde7e04aa6757815028"
+  },
+  "/home/beardface/work/wintermute/eval/sandbox.py": {
+    "mtime": 1781678617.715269,
+    "ast_hash": "e7496d3ae0bea8d35fa9ba656dac3cd3",
+    "semantic_hash": "e7496d3ae0bea8d35fa9ba656dac3cd3"
+  },
+  "/home/beardface/work/wintermute/eval/results.py": {
+    "mtime": 1781676664.2370596,
+    "ast_hash": "74445b1355bfcacd99a17c51e177e6c1",
+    "semantic_hash": "74445b1355bfcacd99a17c51e177e6c1"
+  },
+  "/home/beardface/work/wintermute/eval/fixtures/memory_seed.json": {
+    "mtime": 1781457843.881459,
+    "ast_hash": "b49726254b0a8e7b3bf5ea65c798648e",
+    "semantic_hash": "b49726254b0a8e7b3bf5ea65c798648e"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260617T043547_4aacb0.json": {
+    "mtime": 1781673257.786095,
+    "ast_hash": "54623b819749836e0918cb84eb8524ee",
+    "semantic_hash": "54623b819749836e0918cb84eb8524ee"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260615T091840_abdcf1.json": {
+    "mtime": 1781541084.8588,
+    "ast_hash": "1455802911e48b581ebfb06977332824",
+    "semantic_hash": "1455802911e48b581ebfb06977332824"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260617T022525_868788.json": {
+    "mtime": 1781665706.7668455,
+    "ast_hash": "42e19e30d3f621f3ab59570455bcbce8",
+    "semantic_hash": "42e19e30d3f621f3ab59570455bcbce8"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260615T023928_90ce09.json": {
+    "mtime": 1781513513.4142685,
+    "ast_hash": "0bc4e724a38589117d3f53fa74624869",
+    "semantic_hash": "0bc4e724a38589117d3f53fa74624869"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260617T043405_bfa372.json": {
+    "mtime": 1781670860.2150924,
+    "ast_hash": "eb62dcb525fe0799bea278bfb8f80101",
+    "semantic_hash": "eb62dcb525fe0799bea278bfb8f80101"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260617T043547_e4b9bf.json": {
+    "mtime": 1781671916.7132678,
+    "ast_hash": "b5d0f8e5f54a63abc78eccc6136dace0",
+    "semantic_hash": "b5d0f8e5f54a63abc78eccc6136dace0"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260614T180536_abc9b0.json": {
+    "mtime": 1781461646.3400314,
+    "ast_hash": "d28b04e1a587bc58ad43e2d628683deb",
+    "semantic_hash": "d28b04e1a587bc58ad43e2d628683deb"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260615T091751_49bacf.json": {
+    "mtime": 1781515087.5480816,
+    "ast_hash": "c634c55b10e16991eb3287a01628a394",
+    "semantic_hash": "c634c55b10e16991eb3287a01628a394"
+  },
+  "/home/beardface/work/wintermute/eval/results/20260615T172013_76296c.json": {
+    "mtime": 1781547355.4839861,
+    "ast_hash": "bfadf1684091a43a441239beb23ad78a",
+    "semantic_hash": "bfadf1684091a43a441239beb23ad78a"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/base.py": {
+    "mtime": 1781676664.2380009,
+    "ast_hash": "ae96c622d024d960bfa8873e2c9c59ae",
+    "semantic_hash": "ae96c622d024d960bfa8873e2c9c59ae"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/swebench.py": {
+    "mtime": 1781676664.2388706,
+    "ast_hash": "57e8fe34a58c35da0c999f500e828587",
+    "semantic_hash": "57e8fe34a58c35da0c999f500e828587"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/livecodebench.py": {
+    "mtime": 1781678604.9784207,
+    "ast_hash": "437a7e210624e5d376c8e826713b99cd",
+    "semantic_hash": "437a7e210624e5d376c8e826713b99cd"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/__init__.py": {
+    "mtime": 1781676664.2396111,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/mbpp.py": {
+    "mtime": 1781676664.2404258,
+    "ast_hash": "cc5a6451237db8236c841ab181aac489",
+    "semantic_hash": "cc5a6451237db8236c841ab181aac489"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/mmlu.py": {
+    "mtime": 1781676664.2414258,
+    "ast_hash": "59b5d0a26d9aee8935234abe8c8516d1",
+    "semantic_hash": "59b5d0a26d9aee8935234abe8c8516d1"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/locomo.py": {
+    "mtime": 1781676664.2430084,
+    "ast_hash": "1f761a4e8b9bd61223f82dbe501d02dc",
+    "semantic_hash": "1f761a4e8b9bd61223f82dbe501d02dc"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/winogrande.py": {
+    "mtime": 1781676664.2439668,
+    "ast_hash": "64bf7ab86181a9b90293248f55dcd430",
+    "semantic_hash": "64bf7ab86181a9b90293248f55dcd430"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/humaneval.py": {
+    "mtime": 1781676664.244941,
+    "ast_hash": "adca8502b80f881546fe7f28519bbbd1",
+    "semantic_hash": "adca8502b80f881546fe7f28519bbbd1"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/gpqa.py": {
+    "mtime": 1781678531.0902998,
+    "ast_hash": "fb3e39a94b85cc23ba1ff9b2391c4803",
+    "semantic_hash": "fb3e39a94b85cc23ba1ff9b2391c4803"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/xstest.py": {
+    "mtime": 1781676664.2468693,
+    "ast_hash": "99895fa7018d326618ebca981ae91fe8",
+    "semantic_hash": "99895fa7018d326618ebca981ae91fe8"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/ifeval.py": {
+    "mtime": 1781678582.930683,
+    "ast_hash": "abfb07630b9d384e1035a51c588982ae",
+    "semantic_hash": "abfb07630b9d384e1035a51c588982ae"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/hellaswag.py": {
+    "mtime": 1781676664.2484257,
+    "ast_hash": "213f3523a34d55c206e14756629d17e5",
+    "semantic_hash": "213f3523a34d55c206e14756629d17e5"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/arc.py": {
+    "mtime": 1781676664.2554255,
+    "ast_hash": "b4f229723587d67d1bed79b2981183c1",
+    "semantic_hash": "b4f229723587d67d1bed79b2981183c1"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/math_bench.py": {
+    "mtime": 1781678556.5109973,
+    "ast_hash": "f122c0228635d2e814f63da3c62f5968",
+    "semantic_hash": "f122c0228635d2e814f63da3c62f5968"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/gsm8k.py": {
+    "mtime": 1781676664.2514255,
+    "ast_hash": "f4d1e4e91d4feef012202b19808d8653",
+    "semantic_hash": "f4d1e4e91d4feef012202b19808d8653"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/truthfulqa.py": {
+    "mtime": 1781676664.2573853,
+    "ast_hash": "a8f77bbbb9396570793cb65fcde86714",
+    "semantic_hash": "a8f77bbbb9396570793cb65fcde86714"
+  },
+  "/home/beardface/work/wintermute/eval/benchmarks/or_bench.py": {
+    "mtime": 1781676664.2543092,
+    "ast_hash": "a9b9f3a196291532261437dbefd3cb0d",
+    "semantic_hash": "a9b9f3a196291532261437dbefd3cb0d"
+  },
+  "/home/beardface/work/wintermute/apt-requirements.txt": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "6281c3384c53d405b589239aaac0dc8a",
+    "semantic_hash": "6281c3384c53d405b589239aaac0dc8a"
+  },
+  "/home/beardface/work/wintermute/README.md": {
+    "mtime": 1781677269.793267,
+    "ast_hash": "243d7c47d116d32930ffac2ba698ac95",
+    "semantic_hash": "243d7c47d116d32930ffac2ba698ac95"
+  },
+  "/home/beardface/work/wintermute/AGENTS.md": {
+    "mtime": 1778629414.9610758,
+    "ast_hash": "25dc036eb19f354227bba56868697db6",
+    "semantic_hash": "25dc036eb19f354227bba56868697db6"
+  },
+  "/home/beardface/work/wintermute/EXTERNAL_REPOS.md": {
+    "mtime": 1776230619.0,
+    "ast_hash": "f2ac0a68c87551562b2172e4d54a146f",
+    "semantic_hash": "f2ac0a68c87551562b2172e4d54a146f"
+  },
+  "/home/beardface/work/wintermute/CURSOR_README.md": {
+    "mtime": 1777749040.0165973,
+    "ast_hash": "dca139533cf4dc70e36598fd89ffedac",
+    "semantic_hash": "dca139533cf4dc70e36598fd89ffedac"
+  },
+  "/home/beardface/work/wintermute/Pale_Fire.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d085fb7e3e6544054123d01287453201",
+    "semantic_hash": "d085fb7e3e6544054123d01287453201"
+  },
+  "/home/beardface/work/wintermute/requirements.txt": {
+    "mtime": 1781849277.0327818,
+    "ast_hash": "5887863fc7666b07aa771be25a14e748",
+    "semantic_hash": "5887863fc7666b07aa771be25a14e748"
+  },
+  "/home/beardface/work/wintermute/.pre-commit-config.yaml": {
+    "mtime": 1781676512.1592247,
+    "ast_hash": "b955b2671793984ed35b296d14d61a00",
+    "semantic_hash": "b955b2671793984ed35b296d14d61a00"
+  },
+  "/home/beardface/work/wintermute/talkingHead/README.md": {
+    "mtime": 1779039318.951276,
+    "ast_hash": "b973bdb8e2a55559c33a51d48898288a",
+    "semantic_hash": "b973bdb8e2a55559c33a51d48898288a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/requirements-test.txt": {
+    "mtime": 1779041384.0794601,
+    "ast_hash": "8151f071feb37572de84ccfee128ccc0",
+    "semantic_hash": "8151f071feb37572de84ccfee128ccc0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/backend/tests/README.md": {
+    "mtime": 1781849124.5738404,
+    "ast_hash": "53732c3f16b6127dfec3e6388a93cfb3",
+    "semantic_hash": "53732c3f16b6127dfec3e6388a93cfb3"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/index.html": {
+    "mtime": 1765265200.0,
+    "ast_hash": "66cd7e734bb71ecc06c0e5293053c562",
+    "semantic_hash": "66cd7e734bb71ecc06c0e5293053c562"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/e2e/README.md": {
+    "mtime": 1778693594.8545492,
+    "ast_hash": "f6ae9ea20d906bd5814165a754787924",
+    "semantic_hash": "f6ae9ea20d906bd5814165a754787924"
+  },
+  "/home/beardface/work/wintermute/thVoice/requirements-test.txt": {
+    "mtime": 1781849277.0620952,
+    "ast_hash": "293f35f9523fc7b14ede5e4675a9e233",
+    "semantic_hash": "293f35f9523fc7b14ede5e4675a9e233"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/LICENSE.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4b44211737a971d70fc946bdaeefab65",
+    "semantic_hash": "4b44211737a971d70fc946bdaeefab65"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/README.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "17c671ea5396372cd2f7d5ca4033c4ff",
+    "semantic_hash": "17c671ea5396372cd2f7d5ca4033c4ff"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/VOICES.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ee882f8dbb2044f7be0357307216f42d",
+    "semantic_hash": "ee882f8dbb2044f7be0357307216f42d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/TRAINING.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "306c17eed0ce3770040f4831b5aa8062",
+    "semantic_hash": "306c17eed0ce3770040f4831b5aa8062"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/CMakeLists.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "eb699cb5cb25798934a7b25accb3219d",
+    "semantic_hash": "eb699cb5cb25798934a7b25accb3219d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/.github/workflows/main.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3e1e1c28d6c1452c59c8370f13585cbf",
+    "semantic_hash": "3e1e1c28d6c1452c59c8370f13585cbf"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/README.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/requirements.txt": {
+    "mtime": 1778643845.6986835,
+    "ast_hash": "223fb94c8fc48d14912171346ad5e5ee",
+    "semantic_hash": "223fb94c8fc48d14912171346ad5e5ee"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python/requirements_dev.txt": {
+    "mtime": 1778643847.9056516,
+    "ast_hash": "3f0c179f4c88a3d91bc992745ccdeb68",
+    "semantic_hash": "3f0c179f4c88a3d91bc992745ccdeb68"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/benchmark/requirements.txt": {
+    "mtime": 1778643849.255632,
+    "ast_hash": "3f9c1143040cb4acde0cad176fc053a0",
+    "semantic_hash": "3f9c1143040cb4acde0cad176fc053a0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/requirements_http.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "22511f62fc4d8141a163279511ef7c86",
+    "semantic_hash": "22511f62fc4d8141a163279511ef7c86"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/requirements.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "076565760b30591fdb036e50514b0ab1",
+    "semantic_hash": "076565760b30591fdb036e50514b0ab1"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/requirements_gpu.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8009a1d37cd68b020a254e39ef5d7132",
+    "semantic_hash": "8009a1d37cd68b020a254e39ef5d7132"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/README_http.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5b846c894bbfdea58ba0b24de5af33ef",
+    "semantic_hash": "5b846c894bbfdea58ba0b24de5af33ef"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/src/python_run/requirements_dev.txt": {
+    "mtime": 1778643848.9476364,
+    "ast_hash": "c3aed4cc1c2414718c933791f5bfdeb2",
+    "semantic_hash": "c3aed4cc1c2414718c933791f5bfdeb2"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/vi.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d3e45f12f9f528fdd600456d5cab1d79",
+    "semantic_hash": "d3e45f12f9f528fdd600456d5cab1d79"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/no.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4e02841bc97a231c95f8e0e1997248ee",
+    "semantic_hash": "4e02841bc97a231c95f8e0e1997248ee"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ml.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1ed275806f4a64ae4d3be9a923a9e229",
+    "semantic_hash": "1ed275806f4a64ae4d3be9a923a9e229"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/eu.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7300051389debda3d0cce5248fc17904",
+    "semantic_hash": "7300051389debda3d0cce5248fc17904"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/nl.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "489966e05a7f4b7daf21598d5a4ad088",
+    "semantic_hash": "489966e05a7f4b7daf21598d5a4ad088"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/sw.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ee57a1334a7987b5aa8cfad43e35438e",
+    "semantic_hash": "ee57a1334a7987b5aa8cfad43e35438e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/kk.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b3e1f8491cfe0999862b37ecf696c977",
+    "semantic_hash": "b3e1f8491cfe0999862b37ecf696c977"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/lv.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d297a5f95391711fe22849e41c048c92",
+    "semantic_hash": "d297a5f95391711fe22849e41c048c92"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/fi.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cf8585d76d352c6fb3c854c048432e7c",
+    "semantic_hash": "cf8585d76d352c6fb3c854c048432e7c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/uk.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e5b3c47cd1ed2f00e990b0ecc3ed3f36",
+    "semantic_hash": "e5b3c47cd1ed2f00e990b0ecc3ed3f36"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/it.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "360bec587f1efc3c373ceac1140ad16c",
+    "semantic_hash": "360bec587f1efc3c373ceac1140ad16c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/sk.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9be69169c0d7732b50e283b2f1b75059",
+    "semantic_hash": "9be69169c0d7732b50e283b2f1b75059"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ka.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "eecc4b6a13208c900a04809979404b50",
+    "semantic_hash": "eecc4b6a13208c900a04809979404b50"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/fa.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "fb44e0c3fec882a96a93d76a62ccc204",
+    "semantic_hash": "fb44e0c3fec882a96a93d76a62ccc204"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/en.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6368eb0c561742028e6ff4850c7397dd",
+    "semantic_hash": "6368eb0c561742028e6ff4850c7397dd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/de.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f56c7e17e73962f7b4ed2c3e745a707e",
+    "semantic_hash": "f56c7e17e73962f7b4ed2c3e745a707e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/sl.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "534999b13972786f80a6c51e920563e0",
+    "semantic_hash": "534999b13972786f80a6c51e920563e0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/pt.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b655c6210e3b1f2ff048af8bf86d672b",
+    "semantic_hash": "b655c6210e3b1f2ff048af8bf86d672b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/fr.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d2b09caa3aa2a2a528cddba5c0322443",
+    "semantic_hash": "d2b09caa3aa2a2a528cddba5c0322443"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/sr.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "677644d3ca93fc9d3183c792670500d3",
+    "semantic_hash": "677644d3ca93fc9d3183c792670500d3"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/cs.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "18b6fcfcc5c11fc4f0acd03ee06c5916",
+    "semantic_hash": "18b6fcfcc5c11fc4f0acd03ee06c5916"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ar.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b1dd1b0037b5e41e09630613876720a2",
+    "semantic_hash": "b1dd1b0037b5e41e09630613876720a2"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/es.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ec9f1d8843d590ee16a0b81a6db4f55d",
+    "semantic_hash": "ec9f1d8843d590ee16a0b81a6db4f55d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/tr.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d052858a09591be8ca65d6ee6d404ddd",
+    "semantic_hash": "d052858a09591be8ca65d6ee6d404ddd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/is.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "15ffdb939c4df1d9e7681b955d742add",
+    "semantic_hash": "15ffdb939c4df1d9e7681b955d742add"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ro.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "77b3ec697278f5ae36fc23aef92690af",
+    "semantic_hash": "77b3ec697278f5ae36fc23aef92690af"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/pl.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0c8fa832fc3f65e0971162cf2fa6dcd9",
+    "semantic_hash": "0c8fa832fc3f65e0971162cf2fa6dcd9"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ca.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8444571fb58d7863857e2a6a84840194",
+    "semantic_hash": "8444571fb58d7863857e2a6a84840194"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/sv.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "981b19af3322be9b1df5ee841bb22979",
+    "semantic_hash": "981b19af3322be9b1df5ee841bb22979"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/zh.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4d2be17df8664ad2771079e3671163ee",
+    "semantic_hash": "4d2be17df8664ad2771079e3671163ee"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/el.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0d891136830122cecb147de7e96778b3",
+    "semantic_hash": "0d891136830122cecb147de7e96778b3"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/cy.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a89f9947f813344ec2d8460be3609a3c",
+    "semantic_hash": "a89f9947f813344ec2d8460be3609a3c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/hu.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c3d760f2b5614af762ba58fb349c67fb",
+    "semantic_hash": "c3d760f2b5614af762ba58fb349c67fb"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/da.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "20ae865142c22035cdbc4016129c9dfd",
+    "semantic_hash": "20ae865142c22035cdbc4016129c9dfd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ne.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f36ff2fa21d8813319dceda449261366",
+    "semantic_hash": "f36ff2fa21d8813319dceda449261366"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/lb.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c7608f92f035ce2b23deafd22ed9b81a",
+    "semantic_hash": "c7608f92f035ce2b23deafd22ed9b81a"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/test_sentences/ru.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "db90c7df138390ed2c2e36331ad31b3d",
+    "semantic_hash": "db90c7df138390ed2c2e36331ad31b3d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/lng/translation guide.txt": {
+    "mtime": 1781849277.0620189,
+    "ast_hash": "7008529af8fb7c1eb9311e1c879cac48",
+    "semantic_hash": "7008529af8fb7c1eb9311e1c879cac48"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/lng/0.txt": {
+    "mtime": 1781849277.0602777,
+    "ast_hash": "afce64a55b8862131217fc272839e967",
+    "semantic_hash": "afce64a55b8862131217fc272839e967"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/lng/gu\u00eda de traducci\u00f3n.txt": {
+    "mtime": 1781849277.0619977,
+    "ast_hash": "715018cea93157d9015112b972cf2809",
+    "semantic_hash": "715018cea93157d9015112b972cf2809"
+  },
+  "/home/beardface/work/wintermute/thVoice/tests/README.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "137aa91801d201af3bc2b41ad34672f6",
+    "semantic_hash": "137aa91801d201af3bc2b41ad34672f6"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/IMPLEMENTATION_AWS_titan_llm_model_training.md": {
+    "mtime": 1781849277.0321329,
+    "ast_hash": "b22bfe205bf703e812e5f6a5c7d16918",
+    "semantic_hash": "b22bfe205bf703e812e5f6a5c7d16918"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/TRAINING_RUN_GPT_MEDIUM_20260419.md": {
+    "mtime": 1777578078.957287,
+    "ast_hash": "93fcc11bab238566d00457671fe88024",
+    "semantic_hash": "93fcc11bab238566d00457671fe88024"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/IMPLEMENTATION_DOC_LINEAR.md": {
+    "mtime": 1777578134.606789,
+    "ast_hash": "ab251c9e112cc1516edc9843119e9dc2",
+    "semantic_hash": "ab251c9e112cc1516edc9843119e9dc2"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/llm_training_project.md": {
+    "mtime": 1777749057.7501702,
+    "ast_hash": "6fffca7cb86d8d5fe47f1a1e0d925321",
+    "semantic_hash": "6fffca7cb86d8d5fe47f1a1e0d925321"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/SFT_PIPELINE_GUIDE.md": {
+    "mtime": 1777749014.7882047,
+    "ast_hash": "0d58ceefb3b350c77f255b3b6b30d539",
+    "semantic_hash": "0d58ceefb3b350c77f255b3b6b30d539"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/ALIX_coding_practices.md": {
+    "mtime": 1781849277.030278,
+    "ast_hash": "06bf778fe06993cc7e5a776ef1d16aeb",
+    "semantic_hash": "06bf778fe06993cc7e5a776ef1d16aeb"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/IMPLEMENTATION_MCP_CORE.md": {
+    "mtime": 1777578124.8510468,
+    "ast_hash": "44e1a4547bb896d6f9c17e774ad836ff",
+    "semantic_hash": "44e1a4547bb896d6f9c17e774ad836ff"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/ssm_timeout_fixes.md": {
+    "mtime": 1776055719.0,
+    "ast_hash": "4476b8de516df99714a4d18c35509aef",
+    "semantic_hash": "4476b8de516df99714a4d18c35509aef"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/AGENT_LINEAR_HANDOFF.md": {
+    "mtime": 1775665439.0,
+    "ast_hash": "1360272c699a589a31c4a2357cf576c3",
+    "semantic_hash": "1360272c699a589a31c4a2357cf576c3"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/Wintermute_Master_Spec.md": {
+    "mtime": 1781849277.0321624,
+    "ast_hash": "7646953f80d2062fd8cf1392098c53c6",
+    "semantic_hash": "7646953f80d2062fd8cf1392098c53c6"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/README.md": {
+    "mtime": 1777578053.1765473,
+    "ast_hash": "30c5714e2093b0d5812a03a2f029d07a",
+    "semantic_hash": "30c5714e2093b0d5812a03a2f029d07a"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/IMPLEMENTATION_DOC_TITAN_BRANCH_EXECUTION.md": {
+    "mtime": 1776055719.0,
+    "ast_hash": "b818c1fb3decf4e7e20830669337027a",
+    "semantic_hash": "b818c1fb3decf4e7e20830669337027a"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/TA_Install_guide.md": {
+    "mtime": 1771738855.0,
+    "ast_hash": "b452a0a90388d5c9973b06c32a46a120",
+    "semantic_hash": "b452a0a90388d5c9973b06c32a46a120"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/Tessier-Ashpool_Boot_Guide.md": {
+    "mtime": 1771738860.0,
+    "ast_hash": "e59317e9de4fe37549c9069e609e97d9",
+    "semantic_hash": "e59317e9de4fe37549c9069e609e97d9"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/IMPLEMENTATION_DOC_TITAN_GPT_SMALL_PRETRAINING.md": {
+    "mtime": 1776206292.0,
+    "ast_hash": "efc83a041e4b86e3d6fc0f13a4c53384",
+    "semantic_hash": "efc83a041e4b86e3d6fc0f13a4c53384"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/Wintermute_dev_log.md": {
+    "mtime": 1781849277.0321624,
+    "ast_hash": "440975f346b0d43e18d9221e5fc70411",
+    "semantic_hash": "440975f346b0d43e18d9221e5fc70411"
+  },
+  "/home/beardface/work/wintermute/.cursor/docs/archive/PLAN_AWS_hosting.md": {
+    "mtime": 1775689921.0,
+    "ast_hash": "d56fe565b2cb4c37053caa9a33655cee",
+    "semantic_hash": "d56fe565b2cb4c37053caa9a33655cee"
+  },
+  "/home/beardface/work/wintermute/.github/workflows/freud-audit.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/home/beardface/work/wintermute/.github/ISSUE_TEMPLATE/change-proposal.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5f558758f0b46babfa1705df389202d6",
+    "semantic_hash": "5f558758f0b46babfa1705df389202d6"
+  },
+  "/home/beardface/work/wintermute/.github/ISSUE_TEMPLATE/decision.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2124d38034c89490d1f70d4689bc34e4",
+    "semantic_hash": "2124d38034c89490d1f70d4689bc34e4"
+  },
+  "/home/beardface/work/wintermute/.github/ISSUE_TEMPLATE/memory-promotion.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3698f7842680e78a8267ad9f5572ce55",
+    "semantic_hash": "3698f7842680e78a8267ad9f5572ce55"
+  },
+  "/home/beardface/work/wintermute/agents/test_cases/memory_queries.yaml": {
+    "mtime": 1777567020.5820186,
+    "ast_hash": "8dd388a703dc54d62b9cea748bc90f9c",
+    "semantic_hash": "8dd388a703dc54d62b9cea748bc90f9c"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/README.md": {
+    "mtime": 1778906407.0306144,
+    "ast_hash": "48e8e269fbf440b011f2ddb769dac3ad",
+    "semantic_hash": "48e8e269fbf440b011f2ddb769dac3ad"
+  },
+  "/home/beardface/work/wintermute/scripts/aws_commands/legacy/README.md": {
+    "mtime": 1776055719.0,
+    "ast_hash": "ef2bfa2f3dc8daf970e6727da3e65ba4",
+    "semantic_hash": "ef2bfa2f3dc8daf970e6727da3e65ba4"
+  },
+  "/home/beardface/work/wintermute/infra/docker-compose.yml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5d1171b28c11ce775a9a03995286b41f",
+    "semantic_hash": "5d1171b28c11ce775a9a03995286b41f"
+  },
+  "/home/beardface/work/wintermute/memory/live/monkey_song.txt": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cd68e35c822d7b5ba276646b48d3bf6c",
+    "semantic_hash": "cd68e35c822d7b5ba276646b48d3bf6c"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/README.md": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "b296d371899af24845ec1df2b5189fe4",
+    "semantic_hash": "b296d371899af24845ec1df2b5189fe4"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/run_log.md": {
+    "mtime": 1781849277.0327382,
+    "ast_hash": "c9019df6d00199a8ba6989d721bfde66",
+    "semantic_hash": "c9019df6d00199a8ba6989d721bfde66"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/memory_test_answers.txt": {
+    "mtime": 1781849277.0326517,
+    "ast_hash": "d48ec22e7ea97e1281ca6fcd4cc5a9a9",
+    "semantic_hash": "d48ec22e7ea97e1281ca6fcd4cc5a9a9"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/todo.md": {
+    "mtime": 1781849277.0327818,
+    "ast_hash": "2892487eb1f17b0d034b81c82eb9ff20",
+    "semantic_hash": "2892487eb1f17b0d034b81c82eb9ff20"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/memory_test.txt": {
+    "mtime": 1781849277.0325909,
+    "ast_hash": "dbf643181ef6e5ab61050a35777b645f",
+    "semantic_hash": "dbf643181ef6e5ab61050a35777b645f"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_story_broad_stabilized.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "8af269981a609337770cda1f1996658f",
+    "semantic_hash": "8af269981a609337770cda1f1996658f"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_dim384.yaml": {
+    "mtime": 1781849277.032545,
+    "ast_hash": "f3e27e9ed6d18286311f7008b71d3213",
+    "semantic_hash": "f3e27e9ed6d18286311f7008b71d3213"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_micro_balanced.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "8a4595303c25e81b5ee3b4403598c520",
+    "semantic_hash": "8a4595303c25e81b5ee3b4403598c520"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_micro_balanced_v2.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "fd9dceb44f75d5e1f5b4653e3de001e4",
+    "semantic_hash": "fd9dceb44f75d5e1f5b4653e3de001e4"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_hf_qlora.yaml": {
+    "mtime": 1777746819.2956898,
+    "ast_hash": "3b9711ff464c0a3ac6682933d6fc5af0",
+    "semantic_hash": "3b9711ff464c0a3ac6682933d6fc5af0"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_curated.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "173a66c6d660026d354dcdb7a89428ad",
+    "semantic_hash": "173a66c6d660026d354dcdb7a89428ad"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_gate_only_25k.yaml": {
+    "mtime": 1778724112.5497422,
+    "ast_hash": "0b3fbf016968eb01884af77a10405b1d",
+    "semantic_hash": "0b3fbf016968eb01884af77a10405b1d"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_dim384_lrmin.yaml": {
+    "mtime": 1781849277.0325596,
+    "ast_hash": "c847c66c7721e71798db14f0cb51a468",
+    "semantic_hash": "c847c66c7721e71798db14f0cb51a468"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_gpt_medium_sanity_overfit.yaml": {
+    "mtime": 1777567020.5840185,
+    "ast_hash": "c7ee81203fbf43c6d103d5610c5a2744",
+    "semantic_hash": "c7ee81203fbf43c6d103d5610c5a2744"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_logic.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "a3142fb6435a9a98bc58f505a4f0e798",
+    "semantic_hash": "a3142fb6435a9a98bc58f505a4f0e798"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_lookahead_only_25k.yaml": {
+    "mtime": 1778724105.5888214,
+    "ast_hash": "de91627453452a66274c4a9424a3dcb3",
+    "semantic_hash": "de91627453452a66274c4a9424a3dcb3"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_residual_only_25k.yaml": {
+    "mtime": 1778724108.5007868,
+    "ast_hash": "603fe0928dfbe895aadedda5b2634aa9",
+    "semantic_hash": "603fe0928dfbe895aadedda5b2634aa9"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_decay_slow.yaml": {
+    "mtime": 1781849277.0325313,
+    "ast_hash": "13539b997af372b586b587bf7758aa23",
+    "semantic_hash": "13539b997af372b586b587bf7758aa23"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_dixie_mistral_full.yaml": {
+    "mtime": 1778923230.6332624,
+    "ast_hash": "a48b4df73b1f017439d90ba3ac4aa745",
+    "semantic_hash": "a48b4df73b1f017439d90ba3ac4aa745"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_combo_all.yaml": {
+    "mtime": 1781849277.0325143,
+    "ast_hash": "c4abd28b7663c0b1921228ac9b184d0f",
+    "semantic_hash": "c4abd28b7663c0b1921228ac9b184d0f"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_lookahead.yaml": {
+    "mtime": 1778622934.2083209,
+    "ast_hash": "4d4c1701de708d8577107e2485024418",
+    "semantic_hash": "4d4c1701de708d8577107e2485024418"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_dixie_gpt2_smoke_aws.yaml": {
+    "mtime": 1778923765.4077232,
+    "ast_hash": "c011ff283a5dde47fefddd621f572372",
+    "semantic_hash": "c011ff283a5dde47fefddd621f572372"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_story_curated.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "11005d3928ae772acc2b37f7bf8694fd",
+    "semantic_hash": "11005d3928ae772acc2b37f7bf8694fd"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_pilot_oasst1_dolly.yaml": {
+    "mtime": 1773075024.0,
+    "ast_hash": "6de99e8a22d634ce29b81cd5360184d2",
+    "semantic_hash": "6de99e8a22d634ce29b81cd5360184d2"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_seq512.yaml": {
+    "mtime": 1781849277.0325909,
+    "ast_hash": "045ef01658916c0a4f6b13eda0144f08",
+    "semantic_hash": "045ef01658916c0a4f6b13eda0144f08"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt_medium_instruction.yaml": {
+    "mtime": 1777567020.5860183,
+    "ast_hash": "c733707c41ef7da379ddfbbe63617d36",
+    "semantic_hash": "c733707c41ef7da379ddfbbe63617d36"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_gpt_small_sanity_overfit.yaml": {
+    "mtime": 1776113019.0,
+    "ast_hash": "e2ac0e611d623091749149b417477213",
+    "semantic_hash": "e2ac0e611d623091749149b417477213"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke_micro_balanced_dolly_short.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "de9be39bb2bdec7e61c16448923a2307",
+    "semantic_hash": "de9be39bb2bdec7e61c16448923a2307"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_baseline_nomem.yaml": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "d324b5a1d039be4e8067ff3592284d12",
+    "semantic_hash": "d324b5a1d039be4e8067ff3592284d12"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "4b6b993e5b6eeab33bcf37a97643a837",
+    "semantic_hash": "4b6b993e5b6eeab33bcf37a97643a837"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_baseline_25k.yaml": {
+    "mtime": 1778699865.3608267,
+    "ast_hash": "926ef681189fa777566759fab3039394",
+    "semantic_hash": "926ef681189fa777566759fab3039394"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_gpt2_small.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "6de251b9ad68bd6ed56bb6c13dd91214",
+    "semantic_hash": "6de251b9ad68bd6ed56bb6c13dd91214"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_sft_gpt2_small_instruction_smoke.yaml": {
+    "mtime": 1776055719.0,
+    "ast_hash": "aaf3b4f8e02877777c24989eb7a9e73b",
+    "semantic_hash": "aaf3b4f8e02877777c24989eb7a9e73b"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_lrmin.yaml": {
+    "mtime": 1781849277.0325758,
+    "ast_hash": "01670fc08bbae784279dd13cc925d09a",
+    "semantic_hash": "01670fc08bbae784279dd13cc925d09a"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_gpt_small.yaml": {
+    "mtime": 1774981095.0,
+    "ast_hash": "1ba398901344afb17a0659483880bb6c",
+    "semantic_hash": "1ba398901344afb17a0659483880bb6c"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_mac_lookahead_25k.yaml": {
+    "mtime": 1778699858.6758983,
+    "ast_hash": "b46940644538d0b5cc6bbbf950e759e2",
+    "semantic_hash": "b46940644538d0b5cc6bbbf950e759e2"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/config_gpt_medium.yaml": {
+    "mtime": 1777567020.5812128,
+    "ast_hash": "654cd0091a4f89a1e0518543b4921aaf",
+    "semantic_hash": "654cd0091a4f89a1e0518543b4921aaf"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/generated_sanity_sweep/sanity_sweep_lr_8e4_20260408T105632.yaml": {
+    "mtime": 1775670992.0,
+    "ast_hash": "b74ff1116230ecc882fbd7c625173cc2",
+    "semantic_hash": "b74ff1116230ecc882fbd7c625173cc2"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/generated_sanity_sweep/sanity_sweep_lr_4e4_20260408T105050.yaml": {
+    "mtime": 1775670650.0,
+    "ast_hash": "e127f4a36e9e287b4aa23c0e21101ebb",
+    "semantic_hash": "e127f4a36e9e287b4aa23c0e21101ebb"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/generated_sanity_sweep/sanity_sweep_seq_128_20260408T110210.yaml": {
+    "mtime": 1775671330.0,
+    "ast_hash": "1827833b0e733ef69695c2c32ee49902",
+    "semantic_hash": "1827833b0e733ef69695c2c32ee49902"
+  },
+  "/home/beardface/work/wintermute/model_training/titanProject/configs/generated_sanity_sweep/sanity_sweep_warmup_0_20260408T110626.yaml": {
+    "mtime": 1775671586.0,
+    "ast_hash": "94178829bcda583b6747ea9b1d369a35",
+    "semantic_hash": "94178829bcda583b6747ea9b1d369a35"
+  },
+  "/home/beardface/work/wintermute/model_training/LLM/data/canstalian/README.md": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "83753b0c007f9841f83722decd632157",
+    "semantic_hash": "83753b0c007f9841f83722decd632157"
+  },
+  "/home/beardface/work/wintermute/model_training/LLM/data/slimpajama_1b/README.md": {
+    "mtime": 1781849277.0323672,
+    "ast_hash": "ad95a28f9fca64975355bfd90dfa5132",
+    "semantic_hash": "ad95a28f9fca64975355bfd90dfa5132"
+  },
+  "/home/beardface/work/wintermute/governance/design-decisions.md": {
+    "mtime": 1765265200.0,
+    "ast_hash": "66ec34eb8017ae33287db4bac0b7cd13",
+    "semantic_hash": "66ec34eb8017ae33287db4bac0b7cd13"
+  },
+  "/home/beardface/work/wintermute/governance/dependency-map.yaml": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e56582b4bdbdd3c331869cab192828fc",
+    "semantic_hash": "e56582b4bdbdd3c331869cab192828fc"
+  },
+  "/home/beardface/work/wintermute/tests/aws_tooling/README.md": {
+    "mtime": 1778906221.915517,
+    "ast_hash": "8742679b621b6b254160310390c81167",
+    "semantic_hash": "8742679b621b6b254160310390c81167"
+  },
+  "/home/beardface/work/wintermute/eval/fixtures/compliance_prompts.yaml": {
+    "mtime": 1781457839.6425126,
+    "ast_hash": "8f486e5ff9a3e7e9cb73766624296f4f",
+    "semantic_hash": "8f486e5ff9a3e7e9cb73766624296f4f"
+  },
+  "/home/beardface/work/wintermute/eval/fixtures/personality_rubric.yaml": {
+    "mtime": 1781676590.2998447,
+    "ast_hash": "5123e761427038cf9e4667cb196cac9d",
+    "semantic_hash": "5123e761427038cf9e4667cb196cac9d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/vite.svg": {
+    "mtime": 1781849277.0328834,
+    "ast_hash": "7ae4ed8f8a0457e9e8722fd81e504747",
+    "semantic_hash": "7ae4ed8f8a0457e9e8722fd81e504747"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/noise.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "28359df250103599e9feb9ce7026dace",
+    "semantic_hash": "28359df250103599e9feb9ce7026dace"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_167.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e7e297550e1571ef6bafc62c1b3e331f",
+    "semantic_hash": "e7e297550e1571ef6bafc62c1b3e331f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_014.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1f9204d475f3a8e72e12bcdf6f2e49c2",
+    "semantic_hash": "1f9204d475f3a8e72e12bcdf6f2e49c2"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_120.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1c54f0ee2af73ed5005106309b739da0",
+    "semantic_hash": "1c54f0ee2af73ed5005106309b739da0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_138.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "76cfaa7cf0853df609865d53cbd03400",
+    "semantic_hash": "76cfaa7cf0853df609865d53cbd03400"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_143.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c948bec93fceedf3dfa4b7722b351b60",
+    "semantic_hash": "c948bec93fceedf3dfa4b7722b351b60"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_173.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0019173934dd3bbcaa9e5168f5f90e52",
+    "semantic_hash": "0019173934dd3bbcaa9e5168f5f90e52"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_102.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3e9d5f045623127f8c1f365f80084c6d",
+    "semantic_hash": "3e9d5f045623127f8c1f365f80084c6d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_051.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "fbc037a43cbbc95333c675e8c4650092",
+    "semantic_hash": "fbc037a43cbbc95333c675e8c4650092"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_011.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e9d4e4b9ee7f2c34813c06bfae9e54e9",
+    "semantic_hash": "e9d4e4b9ee7f2c34813c06bfae9e54e9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_074.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5b359f14c6525449e78591d49ea55bb6",
+    "semantic_hash": "5b359f14c6525449e78591d49ea55bb6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_029.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e048e3ec76fc89e9ffbe1c6df7a59843",
+    "semantic_hash": "e048e3ec76fc89e9ffbe1c6df7a59843"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_153.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3e4a7f6d5543cd272c9fca47b6003397",
+    "semantic_hash": "3e4a7f6d5543cd272c9fca47b6003397"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_165.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "62eb09c700af9ae3aa4edb0c00727dfb",
+    "semantic_hash": "62eb09c700af9ae3aa4edb0c00727dfb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_063.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "af1a5f917e0f471f22610e64153f7ec9",
+    "semantic_hash": "af1a5f917e0f471f22610e64153f7ec9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_188.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "353a887c2b832e0f391eeca05d84935b",
+    "semantic_hash": "353a887c2b832e0f391eeca05d84935b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_175.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "920b57128d09edc9b5964a90b0a02b35",
+    "semantic_hash": "920b57128d09edc9b5964a90b0a02b35"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_144.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4117fcdb69203afc0d01653bf7f411c4",
+    "semantic_hash": "4117fcdb69203afc0d01653bf7f411c4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_186.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f59997417193ec8d5b53f7927b5bb10c",
+    "semantic_hash": "f59997417193ec8d5b53f7927b5bb10c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_094.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3d723099f68b0394946b6dc02ec634f6",
+    "semantic_hash": "3d723099f68b0394946b6dc02ec634f6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_184.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "de7645abdb1e4f6b63dcfe957aaadb87",
+    "semantic_hash": "de7645abdb1e4f6b63dcfe957aaadb87"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_068.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9398a6f07e99513395ed912fad3f48a6",
+    "semantic_hash": "9398a6f07e99513395ed912fad3f48a6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_064.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e7e16045b278f2f2d057d3394dbcbf59",
+    "semantic_hash": "e7e16045b278f2f2d057d3394dbcbf59"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_046.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f7e0feff1e2d49d70a51d66823d3f7b1",
+    "semantic_hash": "f7e0feff1e2d49d70a51d66823d3f7b1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_032.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3027fb0c8feafd7a2e2cecf11105677b",
+    "semantic_hash": "3027fb0c8feafd7a2e2cecf11105677b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_016.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "115ef50eb280cb9207e03f04d91ad14a",
+    "semantic_hash": "115ef50eb280cb9207e03f04d91ad14a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_104.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d04a8486025bb9df02e55d793a2d685c",
+    "semantic_hash": "d04a8486025bb9df02e55d793a2d685c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_042.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c2314565a71e16cca90c70be8f0ce05f",
+    "semantic_hash": "c2314565a71e16cca90c70be8f0ce05f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_076.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ce2d32b9de7315cd95a30fc6eb53f98c",
+    "semantic_hash": "ce2d32b9de7315cd95a30fc6eb53f98c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_129.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7dae4c0b5bdd9131a2d9134989da2601",
+    "semantic_hash": "7dae4c0b5bdd9131a2d9134989da2601"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_130.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5287bb2b406a3176a4f6f0e31a57fc80",
+    "semantic_hash": "5287bb2b406a3176a4f6f0e31a57fc80"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_148.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e568ba34bd56161188148b33d947ebfe",
+    "semantic_hash": "e568ba34bd56161188148b33d947ebfe"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_010.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "646619c15bed863a84472e8e8594729a",
+    "semantic_hash": "646619c15bed863a84472e8e8594729a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_017.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cb601804b9ff33cd316af1f7fedf2b94",
+    "semantic_hash": "cb601804b9ff33cd316af1f7fedf2b94"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_168.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6243116e56f3fe5a235dc23e1d65bd03",
+    "semantic_hash": "6243116e56f3fe5a235dc23e1d65bd03"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_084.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "baff752f47c7e0678cca224136f3caf3",
+    "semantic_hash": "baff752f47c7e0678cca224136f3caf3"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_037.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1baca448ad0db78fe7a00008ed4bf709",
+    "semantic_hash": "1baca448ad0db78fe7a00008ed4bf709"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_171.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b55893038d34cb4ff14dd51048d1c5ec",
+    "semantic_hash": "b55893038d34cb4ff14dd51048d1c5ec"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_069.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e6a24dea4bbfd734e1f006c5c156fcdf",
+    "semantic_hash": "e6a24dea4bbfd734e1f006c5c156fcdf"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_059.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0216fbeec1979ebe87b23eee24945587",
+    "semantic_hash": "0216fbeec1979ebe87b23eee24945587"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_117.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f739e4f91373fc4ed8a4598db24f38fd",
+    "semantic_hash": "f739e4f91373fc4ed8a4598db24f38fd"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_043.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0d9c546177e4768816b1e5b21ffe07ec",
+    "semantic_hash": "0d9c546177e4768816b1e5b21ffe07ec"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_149.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6334c31bad765f9887bd5ddc0b0a33fd",
+    "semantic_hash": "6334c31bad765f9887bd5ddc0b0a33fd"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_189.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "170cedd4085eaf8bccc925a1cef4217a",
+    "semantic_hash": "170cedd4085eaf8bccc925a1cef4217a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_035.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bf77a0670bac950e0f10a77119bc4191",
+    "semantic_hash": "bf77a0670bac950e0f10a77119bc4191"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_049.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0277248caf17937566509d73b1262719",
+    "semantic_hash": "0277248caf17937566509d73b1262719"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_013.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9aa4c1eca81e5857a235c6eebc578578",
+    "semantic_hash": "9aa4c1eca81e5857a235c6eebc578578"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_092.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "26da238644bc0d930616038e222e41dc",
+    "semantic_hash": "26da238644bc0d930616038e222e41dc"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_031.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a9244f759ee3bf600f41e54943446e51",
+    "semantic_hash": "a9244f759ee3bf600f41e54943446e51"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_047.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "77e569e2acddfcc7132986dafe0cd8d6",
+    "semantic_hash": "77e569e2acddfcc7132986dafe0cd8d6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_106.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "923f47abdcc764ff34c9214b68813a6a",
+    "semantic_hash": "923f47abdcc764ff34c9214b68813a6a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_166.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6732f51f284eff36b8d1a04f596e12fc",
+    "semantic_hash": "6732f51f284eff36b8d1a04f596e12fc"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_132.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7a9d51d9ca4ffda33fad40ee213f2a13",
+    "semantic_hash": "7a9d51d9ca4ffda33fad40ee213f2a13"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_020.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2afa614a5435bbf3baf33856bad7ab4f",
+    "semantic_hash": "2afa614a5435bbf3baf33856bad7ab4f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_103.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "69fed00e35ee0674458d86ce7763ceaf",
+    "semantic_hash": "69fed00e35ee0674458d86ce7763ceaf"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_162.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "20d162ba0423e899b702dc4fadc937ac",
+    "semantic_hash": "20d162ba0423e899b702dc4fadc937ac"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_056.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "790c0dabefc7741455951b5512cd99b9",
+    "semantic_hash": "790c0dabefc7741455951b5512cd99b9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_021.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "16b9fc7444815f8ec4489d3c3f66effe",
+    "semantic_hash": "16b9fc7444815f8ec4489d3c3f66effe"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_081.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "227fab79f5b0961f2a18f99efcfe73c4",
+    "semantic_hash": "227fab79f5b0961f2a18f99efcfe73c4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_048.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "873f3940aab6505571274c7393801fad",
+    "semantic_hash": "873f3940aab6505571274c7393801fad"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_003.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6121d917bd5728c9566e40ed591debab",
+    "semantic_hash": "6121d917bd5728c9566e40ed591debab"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_052.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ffc72225c7b0ed3306815808052b3447",
+    "semantic_hash": "ffc72225c7b0ed3306815808052b3447"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_038.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "235818381a291a10537f51e843bddcb0",
+    "semantic_hash": "235818381a291a10537f51e843bddcb0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_015.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6748fbae37ba5bd02e334b76d7b0c76d",
+    "semantic_hash": "6748fbae37ba5bd02e334b76d7b0c76d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_154.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "68eadfe8c25b37ab03ca5705dd6b5094",
+    "semantic_hash": "68eadfe8c25b37ab03ca5705dd6b5094"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_091.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7e136ed8235ae374aac1c2b29f69ca39",
+    "semantic_hash": "7e136ed8235ae374aac1c2b29f69ca39"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_100.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "16aab5f8790e1b0e8312ed6f9bd1e0a9",
+    "semantic_hash": "16aab5f8790e1b0e8312ed6f9bd1e0a9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_161.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d289e1c7d3740d20185481e7782dab51",
+    "semantic_hash": "d289e1c7d3740d20185481e7782dab51"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_152.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a168a3f7cbbdde0ee0ac6b4a64d499a8",
+    "semantic_hash": "a168a3f7cbbdde0ee0ac6b4a64d499a8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_062.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "fd9ba32d0978d424bc187d7475f4e822",
+    "semantic_hash": "fd9ba32d0978d424bc187d7475f4e822"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_127.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "081346db4c14f8ec07686b2fcbd9b06d",
+    "semantic_hash": "081346db4c14f8ec07686b2fcbd9b06d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_028.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0d1a5dbad3daaa2087efe27aaec11771",
+    "semantic_hash": "0d1a5dbad3daaa2087efe27aaec11771"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_183.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "09d13e6a0c0b1e2db2669d9b822ed298",
+    "semantic_hash": "09d13e6a0c0b1e2db2669d9b822ed298"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_105.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "082fbc509d997169488e6aadf8c1e09a",
+    "semantic_hash": "082fbc509d997169488e6aadf8c1e09a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_196.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2bb7a57654db9857e3d39c49b7e8b1e5",
+    "semantic_hash": "2bb7a57654db9857e3d39c49b7e8b1e5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_109.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c5ce140ae7dc134e771f0b11f0b79bc7",
+    "semantic_hash": "c5ce140ae7dc134e771f0b11f0b79bc7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_147.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "24d51e4042c398d714312dbfe5a99401",
+    "semantic_hash": "24d51e4042c398d714312dbfe5a99401"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_039.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d9881b9203ca62b9dab200a109dbd783",
+    "semantic_hash": "d9881b9203ca62b9dab200a109dbd783"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_126.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4a2ba1ae3208d26b35a7146298a56e93",
+    "semantic_hash": "4a2ba1ae3208d26b35a7146298a56e93"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_045.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cf5ddea2971cc3e1246af4d8f07eeb16",
+    "semantic_hash": "cf5ddea2971cc3e1246af4d8f07eeb16"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_107.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6ddca685e0816946d94914a68ee1d9a1",
+    "semantic_hash": "6ddca685e0816946d94914a68ee1d9a1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_133.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0e64530fb4a9231cb96cfa708f73f10c",
+    "semantic_hash": "0e64530fb4a9231cb96cfa708f73f10c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_181.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8f089c5bd126dd97a1710b92057505ad",
+    "semantic_hash": "8f089c5bd126dd97a1710b92057505ad"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_112.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5dd9102cabfc93498228922cbece8af5",
+    "semantic_hash": "5dd9102cabfc93498228922cbece8af5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_137.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1ffa1ae6f015d57172d5362df483e69d",
+    "semantic_hash": "1ffa1ae6f015d57172d5362df483e69d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_111.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b5210e310e8ceda813e4233c40e67e51",
+    "semantic_hash": "b5210e310e8ceda813e4233c40e67e51"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_187.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3e38a52f7e8c438677084b5488d8b384",
+    "semantic_hash": "3e38a52f7e8c438677084b5488d8b384"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_123.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "188421b0e0ede52917c47ebc19af63b8",
+    "semantic_hash": "188421b0e0ede52917c47ebc19af63b8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_001.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "eedc01c54e821b920ebc93ab8ff061e9",
+    "semantic_hash": "eedc01c54e821b920ebc93ab8ff061e9"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_007.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4e4563167e8a7cc18af64818d37b3bd3",
+    "semantic_hash": "4e4563167e8a7cc18af64818d37b3bd3"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_055.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d86682dba2c490bf0f8aa05d594cc6da",
+    "semantic_hash": "d86682dba2c490bf0f8aa05d594cc6da"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_002.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f1e212565161438f8c732e60ff99ec5e",
+    "semantic_hash": "f1e212565161438f8c732e60ff99ec5e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_030.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2095bc16dbf2c48ba44b6190b0ce4515",
+    "semantic_hash": "2095bc16dbf2c48ba44b6190b0ce4515"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_146.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9c78a39dea0cb76ed584924ad3d1318d",
+    "semantic_hash": "9c78a39dea0cb76ed584924ad3d1318d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_050.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "906e2abb0c2021c522a65ad5e904b9ae",
+    "semantic_hash": "906e2abb0c2021c522a65ad5e904b9ae"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_195.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e0baed51cbbcc777beff0f3cbb4fca77",
+    "semantic_hash": "e0baed51cbbcc777beff0f3cbb4fca77"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_131.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3dbc18e779dde3dc84a275e4a7577647",
+    "semantic_hash": "3dbc18e779dde3dc84a275e4a7577647"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_110.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "25eb81e970804229c5aaaedbcc8e5642",
+    "semantic_hash": "25eb81e970804229c5aaaedbcc8e5642"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_115.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "855681e18a0b1c4822da5a195078fad3",
+    "semantic_hash": "855681e18a0b1c4822da5a195078fad3"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_176.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bff2b96925eb426d1188a320dfb2c6d5",
+    "semantic_hash": "bff2b96925eb426d1188a320dfb2c6d5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_150.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c5d11bd77bc79c71a16ba3a7fa4e580a",
+    "semantic_hash": "c5d11bd77bc79c71a16ba3a7fa4e580a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_065.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a73a1aa928baa9c6156ab89cc379029e",
+    "semantic_hash": "a73a1aa928baa9c6156ab89cc379029e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_023.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e660d905d0701f0b898a14874a58e252",
+    "semantic_hash": "e660d905d0701f0b898a14874a58e252"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_113.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "dccb5a5b265c64dbc251d5b4f3a8d6aa",
+    "semantic_hash": "dccb5a5b265c64dbc251d5b4f3a8d6aa"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_158.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "91591d8154138da25b3235de7d052cfb",
+    "semantic_hash": "91591d8154138da25b3235de7d052cfb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_075.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6f134551d5051eddd210acf236784149",
+    "semantic_hash": "6f134551d5051eddd210acf236784149"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_033.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ca4837a13ab4f2f0a9dfeb7cb90d1039",
+    "semantic_hash": "ca4837a13ab4f2f0a9dfeb7cb90d1039"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_139.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ac948502d61763adf923bb7e3804ee22",
+    "semantic_hash": "ac948502d61763adf923bb7e3804ee22"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_096.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ec72553340a33a57fce1cca24f222170",
+    "semantic_hash": "ec72553340a33a57fce1cca24f222170"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_182.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6436b30f147e6fea03396d995f3c4489",
+    "semantic_hash": "6436b30f147e6fea03396d995f3c4489"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_044.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3b8e26232538bbec7b2ba3528128e48b",
+    "semantic_hash": "3b8e26232538bbec7b2ba3528128e48b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_101.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ff0a99af5535ef9c2068608488bc93d0",
+    "semantic_hash": "ff0a99af5535ef9c2068608488bc93d0"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_190.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "73460a6d5d15abc4f682397436bb23cb",
+    "semantic_hash": "73460a6d5d15abc4f682397436bb23cb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_114.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "75cbe749b8c0de39efb4374ba75ef1fe",
+    "semantic_hash": "75cbe749b8c0de39efb4374ba75ef1fe"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_026.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4e5308d9eb26a4427030701c57e4c8fc",
+    "semantic_hash": "4e5308d9eb26a4427030701c57e4c8fc"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_097.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1d672be01011af8fb8236e6cca8e385a",
+    "semantic_hash": "1d672be01011af8fb8236e6cca8e385a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_000.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bda6c0f4ce121080c4d425650bd654bb",
+    "semantic_hash": "bda6c0f4ce121080c4d425650bd654bb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_070.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ac11eacaddff6fce08ed1fb15ce4ebc7",
+    "semantic_hash": "ac11eacaddff6fce08ed1fb15ce4ebc7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_040.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4d813321780b8fa378ab350315864d4b",
+    "semantic_hash": "4d813321780b8fa378ab350315864d4b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_178.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "21be88a60072e15b5ce73ec7a2d0c482",
+    "semantic_hash": "21be88a60072e15b5ce73ec7a2d0c482"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_180.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c1ab10ac288b23f7ae11554333d5e6f4",
+    "semantic_hash": "c1ab10ac288b23f7ae11554333d5e6f4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_071.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6e3e5611d1e17f3e6592f4a7ae2fa623",
+    "semantic_hash": "6e3e5611d1e17f3e6592f4a7ae2fa623"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_022.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2ee35a0a73cf2dd191a9be49da4e5d44",
+    "semantic_hash": "2ee35a0a73cf2dd191a9be49da4e5d44"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_164.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e5332a8d3e99b77e5be7826c1d5bb442",
+    "semantic_hash": "e5332a8d3e99b77e5be7826c1d5bb442"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_088.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c3fad66f0a951e23abd4898089aae52a",
+    "semantic_hash": "c3fad66f0a951e23abd4898089aae52a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_141.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "68c89e23e8c867e62c8655e8960966d5",
+    "semantic_hash": "68c89e23e8c867e62c8655e8960966d5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_156.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e83c1150e0d55bdd513a4f93051a44ff",
+    "semantic_hash": "e83c1150e0d55bdd513a4f93051a44ff"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_006.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "26c12470371bb577e4481f3cf55aeec6",
+    "semantic_hash": "26c12470371bb577e4481f3cf55aeec6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_086.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8c82ef52f13c601dee6006a1e195f95d",
+    "semantic_hash": "8c82ef52f13c601dee6006a1e195f95d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_124.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f29a98817d8c0e9408ce4095c89609c1",
+    "semantic_hash": "f29a98817d8c0e9408ce4095c89609c1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_025.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6db281d08cc582c366aa5aad84d5845c",
+    "semantic_hash": "6db281d08cc582c366aa5aad84d5845c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_159.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4ee1bb5d273c17bb24291ae7b06c91f6",
+    "semantic_hash": "4ee1bb5d273c17bb24291ae7b06c91f6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_108.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "066a7f0aa1545f11ca32eb5a7a596fc6",
+    "semantic_hash": "066a7f0aa1545f11ca32eb5a7a596fc6"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_119.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "542bb147661a7309b19e15f5d75ffaeb",
+    "semantic_hash": "542bb147661a7309b19e15f5d75ffaeb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_095.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ddb8c4b3432160ffcebf2acf2af0b0c5",
+    "semantic_hash": "ddb8c4b3432160ffcebf2acf2af0b0c5"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_098.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f41de6c5a55589798d5dfb4801652450",
+    "semantic_hash": "f41de6c5a55589798d5dfb4801652450"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_004.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f27747fc8e1a454a3b1cdb42e15bf620",
+    "semantic_hash": "f27747fc8e1a454a3b1cdb42e15bf620"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_067.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7061d5742b47c3a878e7eabe9f2e9568",
+    "semantic_hash": "7061d5742b47c3a878e7eabe9f2e9568"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_034.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9ca9c5d4fc5e45927e29053781f521aa",
+    "semantic_hash": "9ca9c5d4fc5e45927e29053781f521aa"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_073.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b1ace1acf501a152fabf85c9f4e11903",
+    "semantic_hash": "b1ace1acf501a152fabf85c9f4e11903"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_177.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d3f10b89c7198b458f06ec40f193df9c",
+    "semantic_hash": "d3f10b89c7198b458f06ec40f193df9c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_093.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "576a8bfbd01c14607a8f141055596f02",
+    "semantic_hash": "576a8bfbd01c14607a8f141055596f02"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_018.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2f8d3c17cba18c3cd01914ac65501971",
+    "semantic_hash": "2f8d3c17cba18c3cd01914ac65501971"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_083.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "188aa6a64e7148f9510caaeab9bfdc3e",
+    "semantic_hash": "188aa6a64e7148f9510caaeab9bfdc3e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_134.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3635204737a360b88189137af3ec1ace",
+    "semantic_hash": "3635204737a360b88189137af3ec1ace"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_122.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4f0fb1004b24b30570f62323358ee571",
+    "semantic_hash": "4f0fb1004b24b30570f62323358ee571"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_053.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d4d8b19ed4a3070a2929687b23219900",
+    "semantic_hash": "d4d8b19ed4a3070a2929687b23219900"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_024.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c2bedce29d01d53e37e8662ac19f5f68",
+    "semantic_hash": "c2bedce29d01d53e37e8662ac19f5f68"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_192.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ef675d1b8ee6e6b5aa102f277c840af8",
+    "semantic_hash": "ef675d1b8ee6e6b5aa102f277c840af8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_036.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "71e407e9ea00f6428ece0692961a8ec8",
+    "semantic_hash": "71e407e9ea00f6428ece0692961a8ec8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_151.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "08781a82b0abfaa8f711b0c45f819fe1",
+    "semantic_hash": "08781a82b0abfaa8f711b0c45f819fe1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_194.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6d0c57b8523f77680c1fd122426b0edd",
+    "semantic_hash": "6d0c57b8523f77680c1fd122426b0edd"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_179.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9cb02f00a747f9f60c5770b501608aba",
+    "semantic_hash": "9cb02f00a747f9f60c5770b501608aba"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_170.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "e740696f5847c13b0467b35e3754e3db",
+    "semantic_hash": "e740696f5847c13b0467b35e3754e3db"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_172.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "56e59bda870ae59efff94b816e539ef1",
+    "semantic_hash": "56e59bda870ae59efff94b816e539ef1"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_174.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2de8d321bd7c11acb15eca06821892ab",
+    "semantic_hash": "2de8d321bd7c11acb15eca06821892ab"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_198.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a5c27c5c57a0d6b7d9b11de8d69973b8",
+    "semantic_hash": "a5c27c5c57a0d6b7d9b11de8d69973b8"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_077.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1a7a372494fa398fdfa96a73e2f92575",
+    "semantic_hash": "1a7a372494fa398fdfa96a73e2f92575"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_005.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b39647b6832b11c51bc3aa710d707021",
+    "semantic_hash": "b39647b6832b11c51bc3aa710d707021"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_128.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "06cf28de9b48d0cce2b3c2e8c53f4b2c",
+    "semantic_hash": "06cf28de9b48d0cce2b3c2e8c53f4b2c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_066.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a7ffb4a41e2659d067960b6e0dbfb73c",
+    "semantic_hash": "a7ffb4a41e2659d067960b6e0dbfb73c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_199.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6350ab10e71bd340900a4a658bd21c96",
+    "semantic_hash": "6350ab10e71bd340900a4a658bd21c96"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_140.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6b4da48c553fcb2e132c3ee4ff91c205",
+    "semantic_hash": "6b4da48c553fcb2e132c3ee4ff91c205"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_121.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f972dfb3eccbfcaad168a91334c28792",
+    "semantic_hash": "f972dfb3eccbfcaad168a91334c28792"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_160.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3346f405f075c07a0afbecc492f7f07e",
+    "semantic_hash": "3346f405f075c07a0afbecc492f7f07e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_099.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0c906ed74e58e8ce0256510f93f3b539",
+    "semantic_hash": "0c906ed74e58e8ce0256510f93f3b539"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_169.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2423733e1f6002ccb86765e6fde09753",
+    "semantic_hash": "2423733e1f6002ccb86765e6fde09753"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_193.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "73d2a489fb59b678144aa60b93d8435a",
+    "semantic_hash": "73d2a489fb59b678144aa60b93d8435a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_125.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "63905534f5e06825c2a2ea345da1b3a2",
+    "semantic_hash": "63905534f5e06825c2a2ea345da1b3a2"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_009.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "88aff79bb3852de1ae7fe3ba8beebd94",
+    "semantic_hash": "88aff79bb3852de1ae7fe3ba8beebd94"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_089.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "cda72d87addf0cf2c7b87a7c4ff55c02",
+    "semantic_hash": "cda72d87addf0cf2c7b87a7c4ff55c02"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_027.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "65934d4f2edb56eb282aae0f0a12633c",
+    "semantic_hash": "65934d4f2edb56eb282aae0f0a12633c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_085.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3996e342303ad1f51578fd682618cf5b",
+    "semantic_hash": "3996e342303ad1f51578fd682618cf5b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_155.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2be2cf7aafcd4a5d387d4a1d1ffd15c7",
+    "semantic_hash": "2be2cf7aafcd4a5d387d4a1d1ffd15c7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_079.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d11aac4a494de906220045f965a10601",
+    "semantic_hash": "d11aac4a494de906220045f965a10601"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_058.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8c6c6b5f6f8cd17b443e8adcb62e3803",
+    "semantic_hash": "8c6c6b5f6f8cd17b443e8adcb62e3803"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_135.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8f163b18013e3f1e6c1bc197a635656f",
+    "semantic_hash": "8f163b18013e3f1e6c1bc197a635656f"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_080.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "66f4cb6452a4aebdae23939b04a5fb13",
+    "semantic_hash": "66f4cb6452a4aebdae23939b04a5fb13"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_157.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "12aff267710b4ff3bad68f6a6f527f1d",
+    "semantic_hash": "12aff267710b4ff3bad68f6a6f527f1d"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_136.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "7d69a981106ed0799980466eac8fc8ad",
+    "semantic_hash": "7d69a981106ed0799980466eac8fc8ad"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_090.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b49cd1311537a8a23fa962b0040a2636",
+    "semantic_hash": "b49cd1311537a8a23fa962b0040a2636"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_145.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1c3c3056f9810cb348e435a033fc7526",
+    "semantic_hash": "1c3c3056f9810cb348e435a033fc7526"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_054.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "0ced9c7cc881620d3ef9d9f640b0ae88",
+    "semantic_hash": "0ced9c7cc881620d3ef9d9f640b0ae88"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_142.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "1c0f513b6e990d971dbf062e1fda1020",
+    "semantic_hash": "1c0f513b6e990d971dbf062e1fda1020"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_078.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "df11b09431e705da46d43bf1691987c4",
+    "semantic_hash": "df11b09431e705da46d43bf1691987c4"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_118.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "5efcb890eda064241e89e442a3116e43",
+    "semantic_hash": "5efcb890eda064241e89e442a3116e43"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_082.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9ed4762d72114322b593fa4529d38167",
+    "semantic_hash": "9ed4762d72114322b593fa4529d38167"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_191.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a90511eb307cc15da2e2b05294b85749",
+    "semantic_hash": "a90511eb307cc15da2e2b05294b85749"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_072.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "41244f3ef20fa8769fed9335761519c7",
+    "semantic_hash": "41244f3ef20fa8769fed9335761519c7"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_041.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "eae16992464a671f01e747afec48288b",
+    "semantic_hash": "eae16992464a671f01e747afec48288b"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_185.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "2e04976c82fd4b76554edb87a808571e",
+    "semantic_hash": "2e04976c82fd4b76554edb87a808571e"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_197.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6a06a1336e35a68e40b338233fa300ae",
+    "semantic_hash": "6a06a1336e35a68e40b338233fa300ae"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_012.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d3fa260255388661257d2144c6123636",
+    "semantic_hash": "d3fa260255388661257d2144c6123636"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_116.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a85e2d466a3521c881b608fc5efcda8a",
+    "semantic_hash": "a85e2d466a3521c881b608fc5efcda8a"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_057.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "133573f78b5c72d87a8716714c8dfb00",
+    "semantic_hash": "133573f78b5c72d87a8716714c8dfb00"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_087.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "264e92d489e887dc136121a049f48a20",
+    "semantic_hash": "264e92d489e887dc136121a049f48a20"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_019.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c2e769c32a30d956992769c008237ecb",
+    "semantic_hash": "c2e769c32a30d956992769c008237ecb"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_061.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f1ca81df52cf9a23aac7a2082b5ad783",
+    "semantic_hash": "f1ca81df52cf9a23aac7a2082b5ad783"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_163.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "ab8a3c99351e6294c23f7c3d1a586a88",
+    "semantic_hash": "ab8a3c99351e6294c23f7c3d1a586a88"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_060.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9ef487169ca2749cd4e82cde14046654",
+    "semantic_hash": "9ef487169ca2749cd4e82cde14046654"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/public/static_frames/static_008.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "187038df74a1231d35b0c023c4b56a9c",
+    "semantic_hash": "187038df74a1231d35b0c023c4b56a9c"
+  },
+  "/home/beardface/work/wintermute/talkingHead/frontend/src/assets/react.svg": {
+    "mtime": 1781849277.0328834,
+    "ast_hash": "c596e106aea0473a16deffbdf284859b",
+    "semantic_hash": "c596e106aea0473a16deffbdf284859b"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/logo.svg": {
+    "mtime": 1765265200.0,
+    "ast_hash": "bf758b053dfcd827a44a1805fb9645bd",
+    "semantic_hash": "bf758b053dfcd827a44a1805fb9645bd"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/logo.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "de0758b1fa08b6f8912513cebcd5085c",
+    "semantic_hash": "de0758b1fa08b6f8912513cebcd5085c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/nabu_casa_sponsored.png": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4764980f1a3070007c14c4de792395de",
+    "semantic_hash": "4764980f1a3070007c14c4de792395de"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/etc/nabu_casa_sponsored.svg": {
+    "mtime": 1765265200.0,
+    "ast_hash": "a838857a3dd94e02fb6bc639792fc2cf",
+    "semantic_hash": "a838857a3dd94e02fb6bc639792fc2cf"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/loaded.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b0f2826e3f4a95c8a64fe82ac04c521d",
+    "semantic_hash": "b0f2826e3f4a95c8a64fe82ac04c521d"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/success.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "44419724e8b562f9702cd48d2f1df508",
+    "semantic_hash": "44419724e8b562f9702cd48d2f1df508"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/installed.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9b71c156a322cfd4b592f92661921661",
+    "semantic_hash": "9b71c156a322cfd4b592f92661921661"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/installing.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "4807dbe811ca6fbdeebbe45946139566",
+    "semantic_hash": "4807dbe811ca6fbdeebbe45946139566"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/downloaded.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "9b8fa372c9525dcdf673a6e07dcabfa0",
+    "semantic_hash": "9b8fa372c9525dcdf673a6e07dcabfa0"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/dwnerror.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "929986a78c3f12a8dcd2e9365dae3521",
+    "semantic_hash": "929986a78c3f12a8dcd2e9365dae3521"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/gpuavailable.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d3442763c3b8484841079d0bbbdb5af4",
+    "semantic_hash": "d3442763c3b8484841079d0bbbdb5af4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/waiting.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b7eceb0c3b0d2ae81237de3ba03f17a6",
+    "semantic_hash": "b7eceb0c3b0d2ae81237de3ba03f17a6"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/starting.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "03c0f9a4d366379734ded04640dbb3ab",
+    "semantic_hash": "03c0f9a4d366379734ded04640dbb3ab"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/exit.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "816df3ed246af4cfa3e92209de7af2e9",
+    "semantic_hash": "816df3ed246af4cfa3e92209de7af2e9"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/noid.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "26e7835240402389b4f1a2491084bbf2",
+    "semantic_hash": "26e7835240402389b4f1a2491084bbf2"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/novoices.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "76603dbdf81edae73d96ca23fba98689",
+    "semantic_hash": "76603dbdf81edae73d96ca23fba98689"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/multispeaker.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "954f876afe5b9e511bf9b5cc1210423f",
+    "semantic_hash": "954f876afe5b9e511bf9b5cc1210423f"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/downloading.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b43110e547e0502b816c61e78eae6472",
+    "semantic_hash": "b43110e547e0502b816c61e78eae6472"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/nogpu.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "c9cd6921af098867918f58e53ef9f5e4",
+    "semantic_hash": "c9cd6921af098867918f58e53ef9f5e4"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/selectmodel.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "d7f55228fc1f9398f4f05fc00a2abf5f",
+    "semantic_hash": "d7f55228fc1f9398f4f05fc00a2abf5f"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/en/nomodel.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "3ca15c45a5105b69156429a4b85234a5",
+    "semantic_hash": "3ca15c45a5105b69156429a4b85234a5"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/loaded.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "85905752b73b5c499747cb6d0f747072",
+    "semantic_hash": "85905752b73b5c499747cb6d0f747072"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/installed.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f72c0b4a6392e96d9f1d18f05e92fc55",
+    "semantic_hash": "f72c0b4a6392e96d9f1d18f05e92fc55"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/installing.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "228dde65b3dc51413d124491b4d10d5c",
+    "semantic_hash": "228dde65b3dc51413d124491b4d10d5c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/downloaded.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "b4c1ddd788eab2ecff0691da33fc67de",
+    "semantic_hash": "b4c1ddd788eab2ecff0691da33fc67de"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/dwnerror.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f84421c963400a4052faa5a6dc362a69",
+    "semantic_hash": "f84421c963400a4052faa5a6dc362a69"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/gpuavailable.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "72c6c8fd08374d7548c736e40ad5265e",
+    "semantic_hash": "72c6c8fd08374d7548c736e40ad5265e"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/exit.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "186a9c727d8c3f9281630b04daaa7b1c",
+    "semantic_hash": "186a9c727d8c3f9281630b04daaa7b1c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/noid.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "6ee919c6d25dfa862f51d20f6ac4ebe3",
+    "semantic_hash": "6ee919c6d25dfa862f51d20f6ac4ebe3"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/novoices.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "379ee667283a10a98c9db0fa78cac866",
+    "semantic_hash": "379ee667283a10a98c9db0fa78cac866"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/multispeaker.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "12c21ec03642e72b477df6c280adaa05",
+    "semantic_hash": "12c21ec03642e72b477df6c280adaa05"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/downloading.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "26e3af51328dd701c4cb46233cd6fbb5",
+    "semantic_hash": "26e3af51328dd701c4cb46233cd6fbb5"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/nogpu.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "f5109d9442c6b11199067347da7f8c7c",
+    "semantic_hash": "f5109d9442c6b11199067347da7f8c7c"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/selectmodel.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "06c19301cd35d7b645e1e54e29e9dfd5",
+    "semantic_hash": "06c19301cd35d7b645e1e54e29e9dfd5"
+  },
+  "/home/beardface/work/wintermute/thVoice/piper/notebooks/wav/es/nomodel.wav": {
+    "mtime": 1765265200.0,
+    "ast_hash": "8163ca7b84038482ba68484af5bc5d7d",
+    "semantic_hash": "8163ca7b84038482ba68484af5bc5d7d"
+  }
+}
