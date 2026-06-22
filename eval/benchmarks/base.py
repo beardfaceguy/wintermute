@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
 
-DEFAULT_CFG = GenerateConfig(max_tokens=128, temperature=0.0)
+DEFAULT_CFG = GenerateConfig(max_tokens=512, temperature=0.0)
 
 
 class BaseBenchmark(ABC):
