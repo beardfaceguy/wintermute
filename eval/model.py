@@ -44,8 +44,11 @@ API keys are loaded from env vars (or wintermute/.env):
 from __future__ import annotations
 
 import os
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
+_THINK_RE = re.compile(r"<think>.*?</think>|<think>.*$", re.DOTALL)
 
 
 @dataclass
@@ -120,7 +123,8 @@ class OpenAICompatBackend(ModelBackend):
             temperature=cfg.temperature,
             top_p=cfg.top_p,
         )
-        return resp.choices[0].message.content or ""
+        content = resp.choices[0].message.content or ""
+        return _THINK_RE.sub("", content).strip()
 
 
 # ---------------------------------------------------------------------------
