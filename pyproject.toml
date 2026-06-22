@@ -26,6 +26,7 @@ testpaths = [
     "talkingHead/backend/tests",
     "model_training/titanProject/tests",
     "thVoice/tests",
+    "infra/sagemaker",
 ]
 asyncio_mode = "auto"
 markers = [
