@@ -83,7 +83,16 @@ if command -v osv-scanner >/dev/null 2>&1; then
     | grep -E '(requirements.*\.txt|package-lock\.json|yarn\.lock|Cargo\.lock|go\.sum)$' || true)
   if [ -n "$dep_changed" ]; then
     echo "pre-commit: osv-scanner..."
-    osv-scanner scan source --recursive --verbosity=error . || exit 1
+    # --config:              acknowledged advisories (companion to .pip-audit-ignore)
+    # --experimental-exclude: thVoice/ is vendored upstream Piper TTS (also excluded
+    #                         from ruff in pyproject.toml) — not our dependency tree
+    # --no-resolve:           scan pinned manifest versions only; skip online deps.dev
+    #                         transitive resolution (it errors on this repo's
+    #                         requirements.txt and needs network — flaky in a hook)
+    osv-scanner scan source --recursive \
+      --config "$REPO_ROOT/osv-scanner.toml" \
+      --experimental-exclude thVoice \
+      --no-resolve --verbosity=error . || exit 1
   fi
 fi
 

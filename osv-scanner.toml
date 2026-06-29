@@ -1,0 +1,77 @@
+# osv-scanner acknowledged dependency advisories.
+#
+# Companion to .pip-audit-ignore. pip-audit scans only the root requirements.txt;
+# osv-scanner scans the whole repo recursively (GHSA + PYSEC sources), so it needs
+# its own acknowledgment list. Wired into .git-hooks/pre-commit via
+# `osv-scanner scan source ... --config <repo>/osv-scanner.toml`.
+#
+# Path exclusions (vendored trees) live on the hook command line via
+# --experimental-exclude, not here: thVoice/ is vendored upstream Piper TTS
+# (already excluded from ruff in pyproject.toml) and is not our dependency tree.
+#
+# Re-evaluate every release cycle, and whenever a flagged package ships a fix.
+
+# ── ML stack: torch + transformers (version-coupled; many advisories unpatched) ─
+# The wintermute ML stack (torch/transformers/trl/peft, plus vLLM/llama-index/
+# chromadb in the root requirements.txt) is tightly version-coupled — bumping one
+# package breaks resolution — and torch/transformers publish a steady stream of
+# advisories, many without an upstream fix. Same rationale as the torch entry in
+# .pip-audit-ignore, extended to the full set osv surfaces. Covers the root
+# requirements.txt and model_training/sft. Unscoped so SFT pins of any recent
+# version are accepted; reviewed per release.
+[[PackageOverrides]]
+name = "torch"
+ecosystem = "PyPI"
+ignore = true
+reason = "ML stack version coupling; many advisories unpatched upstream. See .pip-audit-ignore. Reviewed per release."
+
+[[PackageOverrides]]
+name = "transformers"
+ecosystem = "PyPI"
+ignore = true
+reason = "ML stack version coupling. Reviewed per release."
+
+# ── test-only pins in talkingHead/backend/requirements-test.txt ────────────────
+# Old pinned test dependencies, not production runtime. Version-scoped so any
+# production use of a newer version is still scanned.
+[[PackageOverrides]]
+name = "fastapi"
+version = "0.99.1"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
+
+[[PackageOverrides]]
+name = "starlette"
+version = "0.27.0"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
+
+[[PackageOverrides]]
+name = "pydantic"
+version = "1.9.2"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
+
+[[PackageOverrides]]
+name = "idna"
+version = "3.9.0"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
+
+[[PackageOverrides]]
+name = "pygments"
+version = "2.9.0"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
+
+[[PackageOverrides]]
+name = "pytest"
+version = "7.0.0"
+ecosystem = "PyPI"
+ignore = true
+reason = "test-only pin (talkingHead/backend/requirements-test.txt); pre-existing."
