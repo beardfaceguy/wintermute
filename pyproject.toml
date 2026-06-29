@@ -25,6 +25,7 @@ testpaths = [
     "tests",
     "talkingHead/backend/tests",
     "model_training/titanProject/tests",
+    "model_training/sft/tests",
     "thVoice/tests",
     "infra/sagemaker",
 ]
