@@ -1,0 +1,32 @@
+# Qwen3-8B LoRA SFT — default config for the first real SageMaker run.
+# Paths assume a SageMaker Training Job (data mounted at the "train" channel,
+# checkpoints written to /opt/ml/model which SageMaker uploads to S3).
+# For a local run, override data.train_path and training.output_dir.
+
+model:
+  base_model: Qwen/Qwen3-8B
+  dtype: bfloat16
+
+data:
+  train_path: /opt/ml/input/data/train/train.jsonl  # SageMaker "train" channel mount
+  eval_split: 0.05                                   # carve 5% for eval
+  max_seq_len: 4096
+
+lora:
+  enabled: true
+  r: 32
+  alpha: 64
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  output_dir: /opt/ml/model      # SageMaker uploads this dir to S3 on completion
+  epochs: 2
+  learning_rate: 2.0e-4
+  per_device_batch_size: 1
+  grad_accum_steps: 16
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  logging_steps: 10
+  save_steps: 200
+  seed: 42
