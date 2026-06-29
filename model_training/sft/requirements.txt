@@ -1,0 +1,22 @@
+# SFT training stack — pinned versions validated by a real Qwen2.5-0.5B LoRA
+# smoke fine-tune on Python 3.11 (Vikunja #911 phase C).
+#
+# torch is pinned without a +cpu/+cuXXX local suffix. Install the build you need:
+#   CPU:  uv pip install torch==2.12.1 --index-url https://download.pytorch.org/whl/cpu
+#   CUDA: uv pip install torch==2.12.1            (default index)
+#
+# osv-scanner gate: torch + transformers advisories are acknowledged in the
+# repo-root osv-scanner.toml (ML stack version coupling).
+
+torch==2.12.1
+transformers==5.12.1
+trl==1.7.0
+peft==0.19.1
+datasets==5.0.0
+accelerate==1.14.0
+pyyaml==6.0.3
+
+# NOTE: the SageMaker HuggingFace DLC defaults in backends/sagemaker.py
+# (transformers 4.49 / pytorch 2.5) predate this stack. A real SageMaker run
+# must either use a DLC/image that ships transformers 5.x or supply a custom
+# image_uri — reconcile when the first cloud training job is submitted.

@@ -1,0 +1,8 @@
+# Phase-C venv (pinned Python 3.11 ML stack — recreate from requirements.txt)
+.venv/
+
+# Training outputs / checkpoints
+outputs/
+
+__pycache__/
+*.pyc

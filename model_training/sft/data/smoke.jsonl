@@ -1,0 +1,12 @@
+{"messages": [{"role": "system", "content": "You are a terse assistant."}, {"role": "user", "content": "What is 2+2?"}, {"role": "assistant", "content": "4"}]}
+{"messages": [{"role": "system", "content": "You are a terse assistant."}, {"role": "user", "content": "Capital of France?"}, {"role": "assistant", "content": "Paris."}]}
+{"messages": [{"role": "user", "content": "Say hello."}, {"role": "assistant", "content": "Hello!"}]}
+{"messages": [{"role": "user", "content": "Name a primary color."}, {"role": "assistant", "content": "Red."}]}
+{"messages": [{"role": "user", "content": "What language runs in a browser?"}, {"role": "assistant", "content": "JavaScript."}]}
+{"messages": [{"role": "user", "content": "2 plus 3?"}, {"role": "assistant", "content": "5"}]}
+{"messages": [{"role": "user", "content": "Opposite of hot?"}, {"role": "assistant", "content": "Cold."}]}
+{"messages": [{"role": "user", "content": "A fruit that is yellow?"}, {"role": "assistant", "content": "Banana."}]}
+{"messages": [{"role": "user", "content": "Capital of Japan?"}, {"role": "assistant", "content": "Tokyo."}]}
+{"messages": [{"role": "user", "content": "What sound does a dog make?"}, {"role": "assistant", "content": "Woof."}]}
+{"messages": [{"role": "user", "content": "3 times 3?"}, {"role": "assistant", "content": "9"}]}
+{"messages": [{"role": "user", "content": "Opposite of up?"}, {"role": "assistant", "content": "Down."}]}

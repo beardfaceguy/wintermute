@@ -29,6 +29,11 @@ REGION = "us-east-1"
 ROLE_NAME = "SageMakerExecutionRole"
 
 # HuggingFace DLC framework versions (used when no explicit image_uri is given).
+# NOTE: the local training stack is pinned to transformers 5.x / torch 2.12
+# (requirements.txt), which predates any HuggingFace DLC. The first real
+# SageMaker run must either pass a custom image_uri shipping transformers 5.x or
+# pin the training code to versions an available DLC supports. These defaults are
+# a conservative placeholder, not yet validated against a live training job.
 DEFAULT_TRANSFORMERS_VERSION = "4.49.0"
 DEFAULT_PYTORCH_VERSION = "2.5.1"
 DEFAULT_PY_VERSION = "py311"

@@ -58,9 +58,8 @@ def build_sft_kwargs(cfg: SFTConfig) -> dict[str, Any]:
         "logging_steps": t.logging_steps,
         "save_steps": t.save_steps,
         "seed": t.seed,
-        # NOTE: TRL renamed max_seq_length → max_length in recent releases. Pin the
-        # version in phase C (venv) and adjust this key if needed.
-        "max_seq_length": cfg.data.max_seq_len,
+        # TRL 1.x renamed max_seq_length → max_length (verified against trl 1.7.0).
+        "max_length": cfg.data.max_seq_len,
         "bf16": cfg.model.dtype == "bfloat16",
         "fp16": cfg.model.dtype == "float16",
         "report_to": "none",

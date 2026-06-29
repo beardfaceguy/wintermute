@@ -99,27 +99,19 @@ SageMaker `train` channel (mounted at `/opt/ml/input/data/train`). The config's
 
 ## Dependencies
 
-Exact pins are deferred to the phase-C venv (see below); these are the
-known-compatible floors:
+Pinned in `requirements.txt`, validated by a real Qwen2.5-0.5B smoke fine-tune
+on Python 3.11 (torch 2.12.1, transformers 5.12.1, trl 1.7.0, peft 0.19.1,
+datasets 5.0.0, accelerate 1.14.0). Set up the venv with:
 
-```
-torch>=2.4
-transformers>=4.49
-trl>=0.12
-peft>=0.13
-datasets>=2.20
-accelerate>=0.34
-pyyaml>=6
-
-# SageMaker backend — only to SUBMIT training jobs, not to train locally.
-sagemaker<3   # v3 is Alpha with broken LMI imports (see infra/sagemaker/)
-boto3
-botocore[crt]
+```bash
+uv venv --python 3.11 model_training/sft/.venv
+uv pip install --python model_training/sft/.venv/bin/python \
+    torch==2.12.1 --index-url https://download.pytorch.org/whl/cpu   # or default index for CUDA
+uv pip install --python model_training/sft/.venv/bin/python -r model_training/sft/requirements.txt
 ```
 
-A pinned, pip-installable `requirements.txt` lands in phase C as its own
-reviewed change (kept out of this commit so it doesn't trip the repo's
-osv-scanner dependency gate on torch's unpatched CVEs).
+The SageMaker submit-side deps (`sagemaker<3`, `boto3`, `botocore[crt]`) live
+with the SageMaker tooling under `infra/sagemaker/`.
 
 ## Testing
 
@@ -127,23 +119,30 @@ osv-scanner dependency gate on torch's unpatched CVEs).
 pytest model_training/sft/tests/
 ```
 
-63 tests, all green. The suite is **wiring-only** — it verifies config
-validation, data handling, the cfg→TRL/PEFT kwargs mapping, and backend
-orchestration **without** importing trl/peft/transformers (mock-and-defer). The
-heavy model/trainer construction sits behind seam functions
-(`_load_model_and_tokenizer`, `_make_trainer`, `_make_estimator`,
+64 wiring tests (green on the system interpreter, no ML stack needed) plus one
+opt-in end-to-end integration test. The wiring suite verifies config validation,
+data handling, the cfg→TRL/PEFT kwargs mapping, and backend orchestration
+**without** importing trl/peft/transformers — heavy construction sits behind seam
+functions (`_load_model_and_tokenizer`, `_make_trainer`, `_make_estimator`,
 `_resolve_role`) that tests monkeypatch.
 
-## Status / deferred
+The integration test (`test_smoke_integration.py`) runs a real Qwen2.5-0.5B LoRA
+fine-tune. It's gated (skips unless `SFT_RUN_SMOKE=1` and trl/peft importable):
 
-- **Done**: config, data, train wiring, three training-compute backends — fully
-  unit-tested.
-- **Deferred to phase C** (Vikunja #911): a pinned venv (Python 3.11) with
-  `trl`/`peft`/`transformers` installed to run a real tiny-model smoke fine-tune
-  and validate the SageMaker framework versions / TRL kwarg names (note
-  `max_seq_length` vs `max_length` in `train.build_sft_kwargs`). The system
-  interpreter here is Python 3.14, where those wheels are not yet reliable.
-  A pinned `requirements.txt` is added then (kept out of Phase 1 to avoid the
-  osv-scanner gate on torch's unpatched CVEs).
-- **Phase 2** (Vikunja #912): the `serving/` layer to deploy the resulting
-  checkpoint (SageMaker LMI / vLLM / Ollama).
+```bash
+SFT_RUN_SMOKE=1 model_training/sft/.venv/bin/python -m pytest \
+    model_training/sft/tests/test_smoke_integration.py -v
+```
+
+## Status
+
+- **Done** (Vikunja #911): config, data, train, three training-compute backends,
+  pinned + validated dependencies, and a real smoke fine-tune that writes a LoRA
+  checkpoint. TRL kwarg confirmed as `max_length` (TRL 1.x).
+- **Open**:
+  - SageMaker framework versions in `backends/sagemaker.py` are not yet validated
+    against a live training job — the pinned stack (transformers 5.x) predates
+    any HuggingFace DLC, so the first cloud run needs a matching DLC or a custom
+    `image_uri`.
+  - **Phase 2** (Vikunja #912): the `serving/` layer to deploy the checkpoint
+    (SageMaker LMI / vLLM / Ollama).

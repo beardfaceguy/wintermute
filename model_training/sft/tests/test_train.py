@@ -62,6 +62,12 @@ class TestBuildSftKwargs:
         assert kw["seed"] == 7
         assert kw["output_dir"] == str(tmp_path / "out")
 
+    def test_max_length_from_data_cfg(self, tmp_path):
+        # TRL 1.x uses max_length (not max_seq_length)
+        kw = train_mod.build_sft_kwargs(_cfg(tmp_path, data={"max_seq_len": 1024}))
+        assert kw["max_length"] == 1024
+        assert "max_seq_length" not in kw
+
     def test_bf16_flag_for_bfloat16(self, tmp_path):
         kw = train_mod.build_sft_kwargs(_cfg(tmp_path, model={"dtype": "bfloat16"}))
         assert kw["bf16"] is True
