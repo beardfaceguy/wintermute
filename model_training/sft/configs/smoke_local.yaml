@@ -1,13 +1,14 @@
 # Tiny local smoke config — fast end-to-end SFT on CPU/small GPU.
 # Used to validate the pipeline wiring without a real training instance.
-# Point data.train_path at a small chat-format JSONL before running.
+# Paths are relative to the REPO ROOT, matching the documented invocation:
+#   python -m model_training.sft.train --config model_training/sft/configs/smoke_local.yaml
 
 model:
   base_model: Qwen/Qwen2.5-0.5B-Instruct
   dtype: float32          # CPU-safe
 
 data:
-  train_path: data/smoke.jsonl
+  train_path: model_training/sft/data/smoke.jsonl
   eval_split: 0.2
   max_seq_len: 512
 
@@ -18,7 +19,7 @@ lora:
   dropout: 0.05
 
 training:
-  output_dir: outputs/smoke
+  output_dir: model_training/sft/outputs/smoke
   epochs: 1
   learning_rate: 2.0e-4
   per_device_batch_size: 1

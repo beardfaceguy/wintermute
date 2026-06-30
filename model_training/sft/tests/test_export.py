@@ -42,6 +42,11 @@ class TestMergeAdapter:
         with pytest.raises(ValueError, match="adapter_config.json"):
             export_mod.merge_adapter(tmp_path, tmp_path / "out")
 
+    def test_empty_output_dir_raises(self, tmp_path):
+        adapter = _write_adapter(tmp_path)
+        with pytest.raises(ValueError, match="output_dir"):
+            export_mod.merge_adapter(adapter, "")
+
     def test_orchestration_saves_model_and_tokenizer(self, tmp_path, monkeypatch):
         adapter = _write_adapter(tmp_path, base="base/x")
         out = tmp_path / "merged"

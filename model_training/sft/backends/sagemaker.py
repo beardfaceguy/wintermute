@@ -47,9 +47,13 @@ def _repo_root() -> str:
 
 
 def _job_name(base_model: str) -> str:
-    """DNS-safe SageMaker base job name derived from the model id."""
+    """DNS-safe SageMaker base job name derived from the model id.
+
+    SageMaker appends a ~24-char timestamp suffix (-YYYY-MM-DD-HH-MM-SS-fff) and
+    the full TrainingJobName must stay <=63 chars, so cap the base at 38.
+    """
     name = re.sub(r"[^a-zA-Z0-9]+", "-", f"sft-{base_model}").strip("-").lower()
-    return name[:63]
+    return name[:38]
 
 
 def build_estimator_kwargs(
@@ -114,11 +118,24 @@ class SageMakerBackend(TrainBackend):
         config_path: str | None = None,
         instance_type: str | None = None,
         image_uri: str | None = None,
+        train_s3_uri: str | None = None,
         wait: bool = True,
     ) -> str:
         cfg.validate()
         if config_path is None:
             raise ValueError("config_path (YAML config path within source_dir) is required")
+
+        # The SageMaker "train" channel needs an S3 URI. cfg.data.train_path is the
+        # ON-INSTANCE mount the job reads (e.g. /opt/ml/input/data/train/...), NOT a
+        # source location — don't conflate the two. Prefer an explicit train_s3_uri;
+        # fall back to cfg.data.train_path only if it is itself an s3:// URI.
+        data_uri = train_s3_uri or cfg.data.train_path
+        if not str(data_uri).startswith("s3://"):
+            raise ValueError(
+                "SageMaker training needs an S3 input: pass train_s3_uri='s3://...'. "
+                f"(cfg.data.train_path={cfg.data.train_path!r} is the on-instance mount "
+                "path, not an S3 URI.)"
+            )
 
         role_arn = _resolve_role(self.profile)
         kwargs = build_estimator_kwargs(
@@ -130,5 +147,5 @@ class SageMakerBackend(TrainBackend):
             image_uri=image_uri,
         )
         estimator = _make_estimator(kwargs, self.profile)
-        estimator.fit({"train": cfg.data.train_path}, wait=wait)
+        estimator.fit({"train": data_uri}, wait=wait)
         return estimator.model_data

@@ -47,6 +47,11 @@ def build_serving_env(model_ref: str, env_extra: dict[str, str] | None = None) -
     env = dict(_BASE_ENV)
     if not model_ref.startswith("s3://"):
         env["HF_MODEL_ID"] = model_ref
+    # TODO (S3 path, not yet exercised): an S3 artifact is mounted at
+    # /opt/ml/model but LMI still needs to be told to load from there. A merged
+    # HF tarball must include serving.properties (or set HF_MODEL_ID=/opt/ml/model)
+    # or the container won't know what to serve. Validate when the S3 serving
+    # path is first used.
     if env_extra:
         env.update(env_extra)
     return env
@@ -71,6 +76,9 @@ def _deploy_model(
     endpoint_name: str,
     profile: str,
 ) -> str:
+    # `import sagemaker` here resolves to the installed AWS SDK (absolute import),
+    # not this module — safe as long as serving/ isn't placed directly on sys.path
+    # (it isn't; the package is imported as serving.sagemaker from the repo root).
     import boto3
     import sagemaker
     from sagemaker.model import Model

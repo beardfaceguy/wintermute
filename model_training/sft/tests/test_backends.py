@@ -121,6 +121,8 @@ class TestBuildEstimatorKwargs:
         # base_job_name must be DNS-safe: no slashes, lowercased
         assert "/" not in kw["base_job_name"]
         assert kw["base_job_name"] == kw["base_job_name"].lower()
+        # leave headroom for SageMaker's appended ~24-char timestamp suffix
+        assert len(kw["base_job_name"]) <= 38
 
 
 class TestSagemakerRun:
@@ -146,6 +148,33 @@ class TestSagemakerRun:
         assert out == "s3://bucket/output/model.tar.gz"
         assert captured["inputs"] == {"train": "s3://bucket/train.jsonl"}
         assert captured["kwargs"]["role"] == "arn:role/x"
+
+    def test_run_rejects_non_s3_train_input(self, monkeypatch):
+        # cfg.data.train_path is an on-instance mount, not an S3 URI → must error.
+        monkeypatch.setattr(sm_mod, "_resolve_role", lambda profile: "arn:role/x")
+        monkeypatch.setattr(
+            sm_mod, "_make_estimator", lambda kwargs, profile: pytest.fail("should not deploy")
+        )
+        cfg = _cfg(data={"train_path": "/opt/ml/input/data/train/train.jsonl"})
+        with pytest.raises(ValueError, match="S3 input"):
+            sm_mod.SageMakerBackend().run(cfg, source_dir="/repo", config_path="c.yaml")
+
+    def test_run_train_s3_uri_overrides_cfg_path(self, monkeypatch):
+        captured = {}
+
+        class FakeEstimator:
+            model_data = "s3://bucket/output/model.tar.gz"
+
+            def fit(self, inputs, wait=True):
+                captured["inputs"] = inputs
+
+        monkeypatch.setattr(sm_mod, "_resolve_role", lambda profile: "arn:role/x")
+        monkeypatch.setattr(sm_mod, "_make_estimator", lambda kwargs, profile: FakeEstimator())
+        cfg = _cfg(data={"train_path": "/opt/ml/input/data/train/train.jsonl"})
+        sm_mod.SageMakerBackend().run(
+            cfg, source_dir="/repo", config_path="c.yaml", train_s3_uri="s3://explicit/train.jsonl"
+        )
+        assert captured["inputs"] == {"train": "s3://explicit/train.jsonl"}
 
     def test_is_a_train_backend(self):
         assert isinstance(sm_mod.SageMakerBackend(), TrainBackend)

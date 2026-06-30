@@ -35,6 +35,17 @@ class TestDeploy:
         assert captured["name"] == "wm-sft"
         assert "FROM outputs/smoke-merged" in captured["modelfile"]
 
+    def test_existing_local_path_is_made_absolute(self, tmp_path, monkeypatch):
+        (tmp_path / "merged").mkdir()
+        monkeypatch.chdir(tmp_path)
+        captured = {}
+        monkeypatch.setattr(
+            ollama_mod, "_ollama_create", lambda name, mf: captured.update(mf=mf)
+        )
+        ollama_mod.OllamaBackend().deploy("merged", model_name="wm")
+        from_line = captured["mf"].splitlines()[0]
+        assert from_line == f"FROM {tmp_path / 'merged'}"  # absolute, not "FROM merged"
+
     def test_is_a_serve_backend(self):
         assert isinstance(ollama_mod.OllamaBackend(), ServeBackend)
 

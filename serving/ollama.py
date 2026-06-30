@@ -12,6 +12,7 @@ model directory Ollama can import.
 
 from __future__ import annotations
 
+import os
 import subprocess
 
 from serving.base import ServeBackend, ServingHandle
@@ -53,7 +54,11 @@ class OllamaBackend(ServeBackend):
         **kwargs,
     ) -> ServingHandle:
         name = model_name or "wintermute-sft"
-        _ollama_create(name, build_modelfile(model_ref, system=system))
+        # The ollama daemon resolves Modelfile FROM paths in its own process
+        # context, not this process's CWD — make local model paths absolute.
+        # Leave non-path refs (e.g. an existing ollama model name) untouched.
+        ref = os.path.abspath(model_ref) if os.path.exists(model_ref) else model_ref
+        _ollama_create(name, build_modelfile(ref, system=system))
         return ServingHandle(
             backend="ollama",
             model_name=name,

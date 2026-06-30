@@ -32,7 +32,12 @@ def read_base_model(adapter_dir: str | Path) -> str:
 
 
 def _load_and_merge(base_model: str, adapter_dir: str):
-    """Heavy seam: load base + adapter, merge, return (model, tokenizer)."""
+    """Heavy seam: load base + adapter, merge, return (model, tokenizer).
+
+    NOTE: loads in the checkpoint's default precision (float32 for most bases).
+    Fine for small models; for large bases (e.g. 8B) pass/load in bf16 to avoid
+    OOM during the merge. Left as a follow-up since the validated path is 0.5B.
+    """
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -53,6 +58,8 @@ def merge_adapter(
     adapter_dir = Path(adapter_dir)
     if not (adapter_dir / "adapter_config.json").exists():
         raise ValueError(f"adapter_config.json not found in {adapter_dir}")
+    if not str(output_dir).strip():
+        raise ValueError("output_dir must be a non-empty path")
 
     base = base_model or read_base_model(adapter_dir)
     output_dir = str(output_dir)
