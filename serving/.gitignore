@@ -1,0 +1,5 @@
+# vLLM/serving venv (heavy; recreate as needed)
+.venv/
+
+__pycache__/
+*.pyc
