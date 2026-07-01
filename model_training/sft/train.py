@@ -50,6 +50,8 @@ def build_sft_kwargs(cfg: SFTConfig) -> dict[str, Any]:
     return {
         "output_dir": t.output_dir,
         "num_train_epochs": t.epochs,
+        # -1 disables the step cap in TRL/transformers (train by epochs instead)
+        "max_steps": t.max_steps if t.max_steps > 0 else -1,
         "learning_rate": t.learning_rate,
         "per_device_train_batch_size": t.per_device_batch_size,
         "gradient_accumulation_steps": t.grad_accum_steps,

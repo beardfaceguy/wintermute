@@ -68,6 +68,14 @@ class TestBuildSftKwargs:
         assert kw["max_length"] == 1024
         assert "max_seq_length" not in kw
 
+    def test_max_steps_included_when_set(self, tmp_path):
+        kw = train_mod.build_sft_kwargs(_cfg(tmp_path, training={"max_steps": 30}))
+        assert kw["max_steps"] == 30
+
+    def test_max_steps_disabled_by_default(self, tmp_path):
+        kw = train_mod.build_sft_kwargs(_cfg(tmp_path))
+        assert kw["max_steps"] == -1
+
     def test_bf16_flag_for_bfloat16(self, tmp_path):
         kw = train_mod.build_sft_kwargs(_cfg(tmp_path, model={"dtype": "bfloat16"}))
         assert kw["bf16"] is True

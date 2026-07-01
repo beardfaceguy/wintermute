@@ -61,6 +61,7 @@ class DataConfig:
 class TrainingConfig:
     output_dir: str = "outputs"
     epochs: float = 1.0
+    max_steps: int = 0  # >0 caps total optimizer steps (overrides epochs); 0 = use epochs
     learning_rate: float = 2e-4
     per_device_batch_size: int = 1
     grad_accum_steps: int = 8
@@ -143,6 +144,8 @@ class SFTConfig:
 
         if training.epochs <= 0:
             raise ValueError(f"training.epochs must be > 0, got {training.epochs}")
+        if training.max_steps < 0:
+            raise ValueError(f"training.max_steps must be >= 0, got {training.max_steps}")
         if training.learning_rate <= 0:
             raise ValueError(
                 f"training.learning_rate must be > 0, got {training.learning_rate}"

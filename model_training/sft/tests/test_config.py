@@ -136,6 +136,12 @@ class TestValidation:
         with pytest.raises(ValueError, match="learning_rate"):
             SFTConfig.from_dict(d).validate()
 
+    def test_negative_max_steps_raises(self):
+        d = _good_dict()
+        d["training"] = {"max_steps": -1}
+        with pytest.raises(ValueError, match="max_steps"):
+            SFTConfig.from_dict(d).validate()
+
     def test_warmup_ratio_out_of_range_raises(self):
         d = _good_dict()
         d["training"] = {"warmup_ratio": 1.5}

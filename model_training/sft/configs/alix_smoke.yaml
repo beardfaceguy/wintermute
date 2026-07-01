@@ -1,0 +1,36 @@
+# Bounded smoke of the alix code-review SFT on a tiny model (#868-2).
+# Proves the real alix review data flows through the pipeline end-to-end.
+# NOT a quality run — 0.5B + a 30-step cap is a plumbing check only.
+#
+# Prereq: generate the dataset first (it's gitignored):
+#   python -m model_training.sft.data_prep.alix_reviews \
+#     --input training_material/codeJung_datasets/meetalix \
+#     --output model_training/sft/data/alix_reviews.jsonl
+#
+# Run (repo root):
+#   python -m model_training.sft.train --config model_training/sft/configs/alix_smoke.yaml
+
+model:
+  base_model: Qwen/Qwen2.5-0.5B-Instruct
+  dtype: float32           # CPU-safe
+
+data:
+  train_path: model_training/sft/data/alix_reviews.jsonl
+  eval_split: 0.05
+  max_seq_len: 1024
+
+lora:
+  enabled: true
+  r: 8
+  alpha: 16
+  dropout: 0.05
+
+training:
+  output_dir: model_training/sft/outputs/alix-smoke
+  max_steps: 30            # cap — bounds the run regardless of dataset size
+  learning_rate: 2.0e-4
+  per_device_batch_size: 1
+  grad_accum_steps: 4
+  logging_steps: 5
+  save_steps: 30
+  seed: 42
