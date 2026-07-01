@@ -28,7 +28,6 @@ testpaths = [
     "model_training/sft/tests",
     "serving/tests",
     "thVoice/tests",
-    "infra/sagemaker",
 ]
 asyncio_mode = "auto"
 markers = [

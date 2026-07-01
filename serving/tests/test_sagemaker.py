@@ -22,6 +22,18 @@ class TestBuildServingEnv:
         env = sm_mod.build_serving_env("Qwen/Qwen3-8B", env_extra={"OPTION_MAX_MODEL_LEN": "16384"})
         assert env["OPTION_MAX_MODEL_LEN"] == "16384"
 
+    def test_hf_token_injected_when_given(self):
+        env = sm_mod.build_serving_env("Qwen/Qwen3-8B", hf_token="hf_abc")
+        assert env["HF_TOKEN"] == "hf_abc"
+
+    def test_no_hf_token_key_when_absent(self):
+        assert "HF_TOKEN" not in sm_mod.build_serving_env("Qwen/Qwen3-8B")
+
+
+class TestGetHfToken:
+    def test_explicit_wins(self):
+        assert sm_mod.get_hf_token("hf_explicit") == "hf_explicit"
+
 
 class _FakePredictor:
     def __init__(self):
@@ -31,6 +43,7 @@ class _FakePredictor:
 class TestDeploy:
     def test_deploy_resolves_role_builds_and_returns_handle(self, monkeypatch):
         captured = {}
+        monkeypatch.setattr(sm_mod, "get_hf_token", lambda explicit: None)  # hermetic
         monkeypatch.setattr(sm_mod, "_resolve_role", lambda profile: "arn:role/x")
 
         def fake_deploy(model_ref, env, role_arn, instance_type, endpoint_name, profile):
@@ -74,3 +87,30 @@ class TestDelete:
         handle = ServingHandle(backend="sagemaker", model_name="m")
         with pytest.raises(ValueError, match="endpoint_name"):
             sm_mod.SageMakerServeBackend().delete(handle)
+
+
+class TestCli:
+    def test_delete_flag_calls_delete_endpoint(self, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(
+            sm_mod, "_delete_endpoint", lambda profile, name: captured.update(profile=profile, name=name)
+        )
+        sm_mod.main(["--profile", "experimental", "--delete", "wm-ep"])
+        assert captured == {"profile": "experimental", "name": "wm-ep"}
+
+    def test_deploy_flag_invokes_backend(self, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(sm_mod, "get_hf_token", lambda explicit: None)
+        monkeypatch.setattr(sm_mod, "_resolve_role", lambda profile: "arn:role/x")
+        monkeypatch.setattr(
+            sm_mod,
+            "_deploy_model",
+            lambda *a: captured.update(model_ref=a[0], endpoint_name=a[4]) or a[4],
+        )
+        sm_mod.main(["--model", "Qwen/Qwen3-8B", "--endpoint-name", "wm-ep"])
+        assert captured["model_ref"] == "Qwen/Qwen3-8B"
+        assert captured["endpoint_name"] == "wm-ep"
+
+    def test_deploy_requires_model(self):
+        with pytest.raises(SystemExit):
+            sm_mod.main(["--profile", "experimental"])  # no --model, no --delete

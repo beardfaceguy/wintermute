@@ -76,6 +76,8 @@ within budget; drop both for a real GPU.
 
 - **Validated**: vLLM backend, full loop, 0.5B on local GPU.
 - **Wiring-tested only**: SageMaker + Ollama backends (mock-and-defer).
-- **Follow-up**: retire `infra/sagemaker/deploy_qwen3.py` in favor of
-  `serving/sagemaker.py` and update `infra/sagemaker/README.md` + Vikunja #889;
-  validate the S3 LMI serving path (see TODO in `sagemaker.py`).
+- **Done**: `serving/sagemaker.py` now carries the HF-token / role-create / CLI
+  that `deploy_qwen3.py` had; the old script is retired and the infra runbook
+  points here.
+- **Follow-up**: validate the S3 LMI serving path (see TODO in `sagemaker.py`)
+  and SageMaker training framework versions — both need a live AWS run.

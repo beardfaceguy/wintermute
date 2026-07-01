@@ -7,23 +7,34 @@ Inference) container.
 First proven with `huihui-ai/Qwen3-8B-abliterated` (Vikunja #889). This guide
 generalizes that work so any HF model can be hosted the same way.
 
+> **The deploy tooling now lives in `serving/sagemaker.py`** (the
+> `SageMakerServeBackend`), part of the host-agnostic serving layer. The old
+> `infra/sagemaker/deploy_qwen3.py` script has been retired. This doc remains the
+> operational runbook (account, quota, sizing, troubleshooting).
+
 ---
 
 ## TL;DR
 
 ```bash
-# from infra/ (NOT infra/sagemaker/ — see "sys.path shadowing" below)
-cd infra
+# from the repo root
 aws sso login --profile experimental
 
-# deploy (model + instance are constants in the script — edit to change)
-python3 sagemaker/deploy_qwen3.py --profile experimental
+# deploy any HF model (or an s3:// artifact) — pass --model, no code edits
+python3 -m serving.sagemaker --profile experimental --model huihui-ai/Qwen3-8B-abliterated
 
 # delete when done (~$1.04/hr while running)
-python3 sagemaker/deploy_qwen3.py --profile experimental --delete <endpoint-name>
+python3 -m serving.sagemaker --profile experimental --delete <endpoint-name>
 ```
 
-The active endpoint name is written to `infra/sagemaker/endpoint.json`.
+Programmatic use:
+
+```python
+from serving.sagemaker import SageMakerServeBackend
+handle = SageMakerServeBackend(profile="experimental").deploy("huihui-ai/Qwen3-8B-abliterated")
+# ... handle.endpoint_name ...
+SageMakerServeBackend(profile="experimental").delete(handle)
+```
 
 ---
 
@@ -69,30 +80,22 @@ The active endpoint name is written to `infra/sagemaker/endpoint.json`.
 
 ## Deploying a different model
 
-`deploy_qwen3.py` is intentionally simple: the model and instance are
-module-level constants. To host a different model, edit these at the top of
-the script:
+Pass `--model <hf-id-or-s3-uri>` and `--instance-type` on the CLI — no code
+edits. To tweak inference settings, pass `env_extra` to `deploy()` (or extend
+`build_serving_env` in `serving/sagemaker.py`). The defaults are:
 
 ```python
-MODEL_ID = "huihui-ai/Qwen3-8B-abliterated"   # any HF repo id
-INSTANCE_TYPE = "ml.g5.2xlarge"               # size to fit the weights — see below
+# serving/sagemaker.py — _BASE_ENV
+TENSOR_PARALLEL_DEGREE = "max"          # shard across all GPUs on the instance
+OPTION_DTYPE = "bf16"                    # fp16/bf16 — half precision
+OPTION_MAX_MODEL_LEN = "8192"            # context window cap
+OPTION_MAX_ROLLING_BATCH_SIZE = "8"      # concurrent requests
+OPTION_GPU_MEMORY_UTILIZATION = "0.90"
 ```
 
-and the `env` dict in `deploy()` if the model needs different inference
-settings:
-
-```python
-env = {
-    "HF_MODEL_ID": MODEL_ID,
-    "TENSOR_PARALLEL_DEGREE": "max",        # shard across all GPUs on the instance
-    "OPTION_DTYPE": "bf16",                 # fp16/bf16 — half precision
-    "OPTION_MAX_MODEL_LEN": "8192",         # context window cap
-    "OPTION_MAX_ROLLING_BATCH_SIZE": "8",   # concurrent requests
-    "OPTION_GPU_MEMORY_UTILIZATION": "0.90",
-}
-```
-
-The HF token is added to `env["HF_TOKEN"]` automatically when one is found.
+`HF_MODEL_ID` is set from `--model` (HF ids only; S3 artifacts are mounted).
+The HF token is injected automatically when found (`--hf-token`,
+`~/.cache/huggingface/token`, or `HF_TOKEN`).
 
 ### Instance sizing
 
@@ -115,14 +118,13 @@ chosen instance, so multi-GPU instances need no extra config.
 
 ```bash
 # deploy — model downloads from HF Hub at container start; allow 10–15 min
-python3 sagemaker/deploy_qwen3.py --profile experimental
+python3 -m serving.sagemaker --profile experimental --model <hf-id>
 
-# the script runs a smoke test, prints the response, and writes endpoint.json
-# invoke later from your own code via boto3 sagemaker-runtime.invoke_endpoint,
-# or sagemaker.Predictor(endpoint_name).predict({...})
+# invoke later via boto3 sagemaker-runtime.invoke_endpoint, or
+# sagemaker.Predictor(endpoint_name).predict({...})
 
 # delete — endpoints bill per hour whether or not they serve traffic
-python3 sagemaker/deploy_qwen3.py --profile experimental --delete <endpoint-name>
+python3 -m serving.sagemaker --profile experimental --delete <endpoint-name>
 ```
 
 **Always delete endpoints you are not actively using.** A forgotten
@@ -156,8 +158,7 @@ endpoints.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `ModuleNotFoundError: No module named 'sagemaker.model'` | The `infra/sagemaker/` directory shadows the installed `sagemaker` package on `sys.path` | The script strips its own dir from `sys.path` before importing. Run from `infra/`, not `infra/sagemaker/`. |
-| Same error, but sagemaker is installed | sagemaker v3 removed `sagemaker.model.Model` | `pip install 'sagemaker<3'` (we pin v2.257.3) |
+| `ModuleNotFoundError: No module named 'sagemaker.model'` | sagemaker v3 removed `sagemaker.model.Model` | `pip install 'sagemaker<3'` (we pin v2.257.3) |
 | `MissingDependencyException` on the login credential provider | SSO needs CRT | `pip install 'botocore[crt]'` |
 | `hf` CLI: `TypeError: type 'Choice' is not subscriptable` | click < 8.4 | `pip install 'click>=8.4.0'` |
 | `huggingface-cli: command not found` / deprecation notice | old CLI renamed | use `hf auth login`, not `huggingface-cli login` |
@@ -181,8 +182,8 @@ imports.
 
 | File | Purpose |
 |------|---------|
-| `deploy_qwen3.py` | Deploy / smoke-test / delete an LMI endpoint |
-| `test_deploy_qwen3.py` | TDD suite for the deploy script (23 tests) |
-| `conftest.py` | pytest path fix so the suite imports cleanly |
-| `endpoint.json` | Record of the most recently deployed endpoint |
+| `README.md` | This runbook (account, quota, sizing, troubleshooting) |
 | `SAGEMAKER_V2_TO_V3_MIGRATION.md` | SDK v2→v3 migration reference |
+
+The deploy tooling moved to `serving/sagemaker.py` (retired: `deploy_qwen3.py`,
+`test_deploy_qwen3.py`, `conftest.py`, `endpoint.json`).
