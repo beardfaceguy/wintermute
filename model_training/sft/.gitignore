@@ -4,5 +4,9 @@
 # Training outputs / checkpoints
 outputs/
 
+# Generated datasets (reproducible from training_material/ via data_prep/).
+# smoke.jsonl is a committed fixture and is kept.
+data/alix_reviews.jsonl
+
 __pycache__/
 *.pyc
