@@ -170,11 +170,11 @@ endpoints.
 ## SDK version
 
 We are pinned to **sagemaker v2** (`2.257.3`). v3 was still
-`Development Status :: 3 - Alpha` on PyPI as of 2026-06 with broken LMI
-imports.
+`Development Status :: 3 - Alpha` on PyPI as of 2026-07-02 (latest `3.15.0`),
+with broken LMI imports.
 
 - Migration reference: [`SAGEMAKER_V2_TO_V3_MIGRATION.md`](./SAGEMAKER_V2_TO_V3_MIGRATION.md)
-- Re-evaluate v3 when it reaches Beta/Stable — tracked in Vikunja #888 (due 2026-07-01).
+- Re-evaluate v3 when it reaches Beta/Stable — tracked in Vikunja #888 (due 2026-10-01, Q4 re-check).
 
 ---
 

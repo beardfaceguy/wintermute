@@ -3,8 +3,9 @@
 Source: https://builder.aws.com/content/39mf1KfW5WUIjVf2mT4B00uwjcI/migrating-sagemaker-python-sdk-from-v2-to-v3-with-claude-code-a-technical-guide
 Author: Ram Vittal (AWS Employee), Published: Feb 17, 2026
 
-Wintermute is currently on **v2.257.3** (stable). V3 is Alpha as of 2026-06-21.
-Check back Q3 2026 for Beta availability before migrating.
+Wintermute is currently on **v2.257.3** (stable). V3 is still Alpha as of
+2026-07-02 (latest `3.15.0`, `Development Status :: 3 - Alpha`). Check back
+Q4 2026 for Beta/Stable availability before migrating — tracked in Vikunja #888.
 
 ---
 
