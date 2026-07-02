@@ -31,6 +31,7 @@ have_eslint_config() {
 ts_files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx)$' || true)
 if [ -n "$ts_files" ] && command -v npx >/dev/null 2>&1; then
   # Run eslint in each subdirectory that has a config
+  # shellcheck disable=SC2043  # intentional single-entry allowlist; add dirs as more gain ESLint configs
   for dir in talkingHead/frontend; do
     if [ -d "$REPO_ROOT/$dir" ] && (cd "$REPO_ROOT/$dir" && have_eslint_config); then
       echo "pre-commit: eslint ($dir)..."
