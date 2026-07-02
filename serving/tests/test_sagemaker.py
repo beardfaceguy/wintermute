@@ -1,6 +1,7 @@
 """Tests for serving.sagemaker — provision an LMI endpoint for a model."""
 
 import pytest
+
 from serving import sagemaker as sm_mod
 from serving.base import ServeBackend, ServingHandle
 

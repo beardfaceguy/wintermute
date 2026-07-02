@@ -21,19 +21,13 @@ and are monkeypatched in tests.
 
 from __future__ import annotations
 
-# Allow running as a bare script (`python serving/sagemaker.py`) in addition to
-# `python -m serving.sagemaker` — the package imports below need the repo root.
-if __package__ in (None, ""):
-    import pathlib
-    import sys
+import argparse
+import os
+from typing import Any
 
-    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-
-import argparse  # noqa: E402
-import os  # noqa: E402
-from typing import Any  # noqa: E402
-
-from serving.base import ServeBackend, ServingHandle  # noqa: E402
+# Invoke as a module (`python -m serving.sagemaker`), not a bare script: the
+# filename shadows the installed AWS `sagemaker` SDK that _deploy_model imports.
+from serving.base import ServeBackend, ServingHandle
 
 REGION = "us-east-1"
 ROLE_NAME = "SageMakerExecutionRole"

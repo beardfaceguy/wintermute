@@ -150,10 +150,10 @@ def convert_dataset(input_dir: str | Path, output_path: str | Path) -> dict[str,
     comments_seen = 0
     examples_written = 0
 
-    with open(output_path, "w") as out:
+    with open(output_path, "w", encoding="utf-8") as out:
         for json_path in sorted(input_dir.rglob("*.json")):
             try:
-                record = json.loads(json_path.read_text())
+                record = json.loads(json_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 continue
             if not isinstance(record, dict) or "comments" not in record:

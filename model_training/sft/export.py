@@ -58,7 +58,7 @@ def merge_adapter(
     adapter_dir = Path(adapter_dir)
     if not (adapter_dir / "adapter_config.json").exists():
         raise ValueError(f"adapter_config.json not found in {adapter_dir}")
-    if not str(output_dir).strip():
+    if not output_dir or not str(output_dir).strip():
         raise ValueError("output_dir must be a non-empty path")
 
     base = base_model or read_base_model(adapter_dir)
