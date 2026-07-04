@@ -23,17 +23,30 @@ SYSTEM_PROMPT = (
 )
 
 NUMBER_RE = re.compile(r"####\s*([\d,\.\-]+)")
-FALLBACK_RE = re.compile(r"([\d,]+\.?\d*)\s*$", re.MULTILINE)
+BOXED_RE = re.compile(r"\\boxed\{([^}]*)\}")
+ANY_NUMBER_RE = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
 
 
 def _extract_answer(text: str) -> str | None:
-    """Pull the final numeric answer out of a model response."""
+    """Pull the final numeric answer out of a model response.
+
+    Preference order:
+      1. Explicit '#### <n>' (the format we request).
+      2. A number inside a LaTeX \\boxed{} — reasoning/LaTeX models (e.g. Qwen)
+         answer this way and ignore the '####' instruction.
+      3. The last number anywhere in the response — robust to trailing markup
+         like '$\\boxed{72}$.' where the line does not end in a bare digit.
+    """
     m = NUMBER_RE.search(text)
     if m:
         return m.group(1).replace(",", "").strip()
-    # Fallback: last number in the response
-    m = FALLBACK_RE.search(text.strip())
-    return m.group(1).replace(",", "").strip() if m else None
+    boxed = BOXED_RE.search(text)
+    if boxed:
+        nums = ANY_NUMBER_RE.findall(boxed.group(1))
+        if nums:
+            return nums[-1].replace(",", "").strip()
+    nums = ANY_NUMBER_RE.findall(text)
+    return nums[-1].replace(",", "").strip() if nums else None
 
 
 def _normalize(val: str) -> str:
@@ -57,7 +70,9 @@ class GSM8KBenchmark(BaseBenchmark):
         except ImportError:
             raise ImportError("pip install datasets") from None
 
-        cfg = GenerateConfig(max_tokens=256, temperature=0.0, system_prompt=SYSTEM_PROMPT)
+        # 256 was too tight for verbose/step-by-step models (they get truncated
+        # before reaching the final answer); 1024 leaves room for the full solution.
+        cfg = GenerateConfig(max_tokens=1024, temperature=0.0, system_prompt=SYSTEM_PROMPT)
         ds = load_dataset("openai/gsm8k", "main", split="test")
         rows = list(ds)
         if self.max_samples:

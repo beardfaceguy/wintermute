@@ -36,6 +36,7 @@ ANSWER_RE = re.compile(r"\b([A-D])\b", re.IGNORECASE)
 ANSWER_PHRASE_RE = re.compile(
     r"(?:answer\s*(?:is|:)\s*\*{0,2}([A-D])\b|\b([A-D])\s*(?:is\s+correct|\)|\.))", re.IGNORECASE
 )
+BOXED_RE = re.compile(r"\\boxed\{\s*([A-D])\s*\}", re.IGNORECASE)
 CHOICES = ["A", "B", "C", "D"]
 
 
@@ -44,6 +45,10 @@ def _parse(text: str) -> str | None:
     # Fast path: single letter response
     if len(text) <= 2 and text and text[0].upper() in CHOICES:
         return text[0].upper()
+    # LaTeX-formatting models may box the letter: \boxed{C}
+    m = BOXED_RE.search(text)
+    if m:
+        return m.group(1).upper()
     # Look for "answer is B", "answer: C", "B is correct", etc.
     m = ANSWER_PHRASE_RE.search(text)
     if m:

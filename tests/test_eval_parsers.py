@@ -41,6 +41,11 @@ class TestGPQAParser:
     def test_bolded_answer(self):
         assert gpqa_parse("The answer is **B**") == "B"
 
+    def test_boxed_answer(self):
+        # LaTeX-formatting models (e.g. Qwen) box the letter
+        assert gpqa_parse(r"\boxed{C}") == "C"
+        assert gpqa_parse(r"The answer is \boxed{A}.") == "A"
+
     def test_last_letter_fallback(self):
         # Long response ending with a letter
         assert (
@@ -154,6 +159,18 @@ class TestGSM8KExtractor:
 
     def test_fallback_last_number(self):
         assert _extract_answer("The total cost is 99.50") == "99.50"
+
+    def test_boxed_answer(self):
+        # Qwen-style: answer wrapped in \boxed{} and line ends in markup, not a digit
+        assert _extract_answer(r"...therefore the total is $\boxed{72}$.") == "72"
+        assert _extract_answer(r"\boxed{72}") == "72"
+
+    def test_boxed_with_comma(self):
+        assert _extract_answer(r"\boxed{1,234}") == "1234"
+
+    def test_last_number_trailing_markup(self):
+        # ends in words/punctuation, not a bare digit — old end-of-line regex missed this
+        assert _extract_answer("The final answer is 72 clips.") == "72"
 
     def test_empty(self):
         assert _extract_answer("no numbers here") is None
