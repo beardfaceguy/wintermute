@@ -1,0 +1,11 @@
+# Regenerable / large artifacts — never commit these
+titan_work/
+*.npy
+*.pt
+*.safetensors
+tinystories_corpus.txt
+outputs/
+.venv/
+titan-venv/
+__pycache__/
+*.pyc
