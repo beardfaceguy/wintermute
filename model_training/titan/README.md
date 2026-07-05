@@ -25,12 +25,16 @@ hand-rolled reference and is unrelated to this pipeline.
 - **Model:** 46.6M-param MAC-Titan — `d_model=512, n_layers=8, n_heads=8,
   causal, chunk_size=128, seq_len=512`, vocab 8k.
 - **Corpus:** TinyStories (`roneneldan/TinyStories`), 300k-story subset ≈ 64M tokens.
-- **Hardware:** 1× RTX 2080 SUPER (8 GB, Turing), ~19k tok/s, ~6.9 GB VRAM at train.
-- **Loss:** train 8.96 → val **2.15** after epoch 1 (~70 min); coherent generations
-  emerged mid-epoch-1 (val ≈ 2.3). Example:
+- **Hardware:** 1× RTX 2080 SUPER (8 GB, Turing), ~15k tok/s, 6.26 GB peak VRAM.
+- **Training:** 2 epochs / 15,318 steps / ~2.3 h. Loss: train 8.96 → **val 1.92**
+  (epoch 1 val 2.15 → epoch 2 val 1.92), next-token accuracy 0.55.
+- **Coherence** (final model, top-k sampling):
   > *"Once upon a time, there was a little boy named Timmy. Timmy loved to play
-  > with his toys and run around his room. One day, Timmy accidentally knocked
-  > over a vase and it broke into many pieces..."*
+  > outside and explore. One day, he found a bottle on the ground. He picked it
+  > up and showed it to his mom. 'Mommy, look at this bottle!' he said..."*
+
+  Fluent grammar, dialogue, and story arcs, with the expected tiny-model artifacts
+  (occasional repetition / mild logical drift).
 
 ## Vocab-size finding
 
