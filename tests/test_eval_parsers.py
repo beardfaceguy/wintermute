@@ -195,9 +195,17 @@ class TestMATHExtractor:
         assert math_extract(r"The answer is \boxed{42}") == "42"
 
     def test_expression_boxed(self):
-        # Regex [^}]+ stops at first } so nested braces only capture partial
         assert math_extract(r"\boxed{42}") == "42"
         assert math_extract(r"\boxed{x+1}") == "x+1"
+
+    def test_nested_braces_captured_fully(self):
+        # #919: balanced-brace matching must capture nested {...}, not truncate
+        # at the first '}'.
+        assert math_extract(r"\boxed{(-1,\sqrt{3},\sqrt{2})}") == r"(-1,\sqrt{3},\sqrt{2})"
+        assert math_extract(r"The answer is \boxed{\frac{1}{2}}.") == r"\frac{1}{2}"
+
+    def test_unbalanced_boxed_returns_none(self):
+        assert math_extract(r"\boxed{\frac{1}{2}") is None
 
     def test_no_boxed(self):
         assert math_extract("just a number 42") is None

@@ -9,8 +9,6 @@ which we extract and normalize for comparison.
 
 from __future__ import annotations
 
-import re
-
 from eval.benchmarks.base import DEFAULT_CFG, BaseBenchmark
 from eval.model import GenerateConfig, ModelBackend
 from eval.results import BenchmarkResult
@@ -20,12 +18,28 @@ SYSTEM_PROMPT = (
     "inside \\boxed{} at the end. Example: \\boxed{42}"
 )
 
-BOXED_RE = re.compile(r"\\boxed\{([^}]+)\}")
-
-
 def _extract(text: str) -> str | None:
-    m = BOXED_RE.search(text)
-    return m.group(1).strip() if m else None
+    r"""Return the content of the first \boxed{...}, matching nested braces.
+
+    A regex like \\boxed\{([^}]+)\} stops at the first '}', which truncates
+    answers containing nested braces (e.g. \boxed{(-1,\sqrt{3},\sqrt{2})} would
+    yield only '(-1,\sqrt{3'). We scan for the balanced closing brace instead.
+    """
+    key = "\\boxed{"
+    start = text.find(key)
+    if start == -1:
+        return None
+    depth = 1
+    inner_start = start + len(key)
+    for j in range(inner_start, len(text)):
+        c = text[j]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[inner_start:j].strip()
+    return None  # unbalanced — no matching close brace
 
 
 def _normalize(val: str) -> str:
