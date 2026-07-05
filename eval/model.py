@@ -128,6 +128,67 @@ class OpenAICompatBackend(ModelBackend):
 
 
 # ---------------------------------------------------------------------------
+# Ollama native backend (thinking control)
+# ---------------------------------------------------------------------------
+
+
+class OllamaBackend(ModelBackend):
+    """
+    Ollama via its NATIVE /api/chat endpoint (not the OpenAI-compat /v1 path).
+
+    Why this exists: Ollama's /v1 layer ignores the `think` parameter, so there
+    is no way to disable a reasoning model's <think> phase through it. On hard
+    prompts qwen3/deepseek-r1 then spend the entire token budget thinking and
+    return empty `content` (finish_reason=length) — scoring a false 0. The native
+    /api/chat endpoint honours `think`, so `think=False` makes the model emit an
+    answer directly. See Vikunja #918.
+
+    Ollama also splits reasoning into a separate `thinking` field; we return only
+    `message.content` (and strip any residual <think> for safety).
+    """
+
+    def __init__(self, base_url: str, model: str, think: bool = False):
+        try:
+            import httpx
+        except ImportError:
+            raise ImportError("pip install httpx") from None
+
+        self._httpx = httpx
+        # /api/chat is the native Ollama root path; tolerate a base_url that was
+        # given with a trailing /v1 (the OpenAI-compat suffix) so we don't build
+        # a bogus /v1/api/chat.
+        root = base_url.rstrip("/")
+        if root.endswith("/v1"):
+            root = root[: -len("/v1")]
+        self._url = root + "/api/chat"
+        self._model = model
+        self._think = think
+
+    @property
+    def model_id(self) -> str:
+        return self._model
+
+    def chat(self, messages: list[dict], cfg: GenerateConfig) -> str:
+        if cfg.system_prompt:
+            messages = [{"role": "system", "content": cfg.system_prompt}] + messages
+        payload = {
+            "model": self._model,
+            "messages": messages,
+            "think": self._think,
+            "stream": False,
+            "options": {
+                "num_predict": cfg.max_tokens,
+                "temperature": cfg.temperature,
+                "top_p": cfg.top_p,
+            },
+        }
+        resp = self._httpx.post(self._url, json=payload, timeout=600.0)
+        resp.raise_for_status()
+        content = (resp.json().get("message") or {}).get("content") or ""
+        return _THINK_RE.sub("", content).strip()
+
+
+# ---------------------------------------------------------------------------
 # Anthropic / Claude backend
 # ---------------------------------------------------------------------------
 
@@ -239,6 +300,7 @@ def make_backend(
     model: str = "",
     api_key: str = "",
     device: str = "auto",
+    think: bool | None = None,
 ) -> ModelBackend:
     """
     target shortcuts for frontier providers (format: <provider>:<model>):
@@ -250,6 +312,11 @@ def make_backend(
       mistral:<model>     — Mistral AI (MISTRAL_API_KEY)
       hf:<id_or_path>     — local HuggingFace model / checkpoint
       http(s)://...       — any OpenAI-compatible endpoint (--model required)
+
+    think: if not None, an http(s) target is treated as Ollama and served via its
+      native /api/chat endpoint with thinking set to this value (False disables
+      the <think> phase for reasoning models — see OllamaBackend / #918). Left as
+      None, http(s) targets use the OpenAI-compat /v1 path unchanged.
     """
     if target.startswith("hf:"):
         return HFLocalBackend(target[3:], device=device)
@@ -271,4 +338,6 @@ def make_backend(
             resolved_key = api_key or os.environ.get(env_var, "")
             return OpenAICompatBackend(base_url, model=model_name, api_key=resolved_key)
 
+    if think is not None:
+        return OllamaBackend(target, model=model, think=think)
     return OpenAICompatBackend(target, model=model, api_key=api_key)

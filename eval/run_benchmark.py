@@ -188,6 +188,13 @@ def parse_args() -> argparse.Namespace:
         help="Run N benchmarks concurrently. Only useful with vLLM/SageMaker backends "
         "that support true batched inference. Ollama queues serially — N>1 adds no speedup there.",
     )
+    p.add_argument(
+        "--no-think",
+        action="store_true",
+        help="Disable reasoning models' <think> phase via Ollama's native /api/chat. "
+        "Required to benchmark qwen3/deepseek-r1 on Ollama — otherwise they spend the "
+        "whole token budget thinking and return empty answers scored as 0 (#918).",
+    )
     p.add_argument("--list-runs", action="store_true", help="List past runs and exit")
     return p.parse_args()
 
@@ -276,8 +283,12 @@ def main():
         print("error: --model is required for API targets (or use provider:model shortcut)")
         sys.exit(1)
 
-    # Build model backend
-    backend = make_backend(args.target, model=args.model, api_key=args.api_key, device=args.device)
+    # Build model backend. --no-think routes http targets to Ollama's native
+    # /api/chat with thinking disabled (see make_backend / OllamaBackend / #918).
+    think = False if args.no_think else None
+    backend = make_backend(
+        args.target, model=args.model, api_key=args.api_key, device=args.device, think=think
+    )
     cfg = GenerateConfig(max_tokens=args.max_tokens, temperature=0.0)
 
     # Pre-flight: verify the model actually responds before starting a multi-hour run
@@ -389,7 +400,9 @@ def _notify(model_id: str, suite: str, record) -> None:
             headers=headers,
             method="POST",
         )
-        urllib.request.urlopen(req, timeout=10)
+        # Fixed host https://ntfy.sh/ (only the topic path varies) — not a
+        # dynamic/attacker-controlled URL.
+        urllib.request.urlopen(req, timeout=10)  # nosemgrep  # noqa: S310
     except (urllib.error.URLError, OSError):
         pass  # notification is best-effort — never block the run
 

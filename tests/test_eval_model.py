@@ -13,9 +13,59 @@ from eval.model import (
     AnthropicBackend,
     GenerateConfig,
     HFLocalBackend,
+    OllamaBackend,
     OpenAICompatBackend,
     make_backend,
 )
+
+
+class TestOllamaBackend:
+    """--no-think routing + native /api/chat behavior (#918)."""
+
+    def test_no_think_routes_to_ollama(self):
+        b = make_backend("http://localhost:11434", model="qwen3:8b", think=False)
+        assert isinstance(b, OllamaBackend)
+        assert b.model_id == "qwen3:8b"
+
+    def test_default_http_still_openai_compat(self):
+        with patch("openai.OpenAI"):
+            b = make_backend("http://localhost:11434", model="qwen3:8b")
+        assert isinstance(b, OpenAICompatBackend)
+
+    def test_chat_posts_to_api_chat_with_think_false(self):
+        b = make_backend("http://localhost:11434", model="qwen3:8b", think=False)
+        fake = MagicMock()
+        fake.json.return_value = {"message": {"content": "The answer is 42."}}
+        with patch("httpx.post", return_value=fake) as mock_post:
+            out = b.chat([{"role": "user", "content": "hi"}], GenerateConfig(max_tokens=16))
+        assert out == "The answer is 42."
+        assert mock_post.call_args[0][0].endswith("/api/chat")
+        body = mock_post.call_args.kwargs["json"]
+        assert body["think"] is False
+        assert body["model"] == "qwen3:8b"
+        assert body["options"]["num_predict"] == 16
+
+    def test_strips_residual_think_block(self):
+        b = make_backend("http://localhost:11434", model="qwen3:8b", think=False)
+        fake = MagicMock()
+        fake.json.return_value = {"message": {"content": "<think>hmm</think>Final: 7"}}
+        with patch("httpx.post", return_value=fake):
+            out = b.chat([{"role": "user", "content": "x"}], GenerateConfig())
+        assert out == "Final: 7"
+
+    def test_empty_content_returns_empty_string(self):
+        b = make_backend("http://localhost:11434", model="qwen3:8b", think=True)
+        fake = MagicMock()
+        fake.json.return_value = {"message": {"content": None}}
+        with patch("httpx.post", return_value=fake):
+            out = b.chat([{"role": "user", "content": "x"}], GenerateConfig())
+        assert out == ""
+
+    def test_trailing_v1_stripped_from_base_url(self):
+        # a base_url given with the OpenAI-compat /v1 suffix must still hit the
+        # native /api/chat root, not /v1/api/chat
+        b = make_backend("http://localhost:11434/v1", model="qwen3:8b", think=False)
+        assert b._url == "http://localhost:11434/api/chat"
 
 
 class TestMakeBackendFactory:
