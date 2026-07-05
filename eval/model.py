@@ -154,7 +154,13 @@ class OllamaBackend(ModelBackend):
             raise ImportError("pip install httpx") from None
 
         self._httpx = httpx
-        self._url = base_url.rstrip("/") + "/api/chat"
+        # /api/chat is the native Ollama root path; tolerate a base_url that was
+        # given with a trailing /v1 (the OpenAI-compat suffix) so we don't build
+        # a bogus /v1/api/chat.
+        root = base_url.rstrip("/")
+        if root.endswith("/v1"):
+            root = root[: -len("/v1")]
+        self._url = root + "/api/chat"
         self._model = model
         self._think = think
 

@@ -61,6 +61,12 @@ class TestOllamaBackend:
             out = b.chat([{"role": "user", "content": "x"}], GenerateConfig())
         assert out == ""
 
+    def test_trailing_v1_stripped_from_base_url(self):
+        # a base_url given with the OpenAI-compat /v1 suffix must still hit the
+        # native /api/chat root, not /v1/api/chat
+        b = make_backend("http://localhost:11434/v1", model="qwen3:8b", think=False)
+        assert b._url == "http://localhost:11434/api/chat"
+
 
 class TestMakeBackendFactory:
     """make_backend() shortcut routing."""
