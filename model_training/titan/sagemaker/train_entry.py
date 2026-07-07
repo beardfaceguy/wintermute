@@ -35,17 +35,32 @@ class LMWindows(Dataset):
         return {"input_ids": w[:-1], "labels": w[1:]}
 
 
-def tokenize_corpus(train_dir, tok, seq_len):
+def build_ids(train_dir, tok, hf_dataset, hf_n):
+    """Tokenize the corpus to a flat uint16 array. Source is either a HuggingFace
+    dataset streamed in-container (--hf-dataset, avoids uploading a big corpus) or
+    a corpus.txt staged in the input channel."""
     eos = tok.token_to_id("</s>")
-    corpus = os.path.join(train_dir, "corpus.txt")
-    print(f"[titan] tokenizing {corpus}", flush=True)
     buf = []
-    with open(corpus) as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                buf.extend(tok.encode(line).ids)
-                buf.append(eos)
+    if hf_dataset:
+        from datasets import load_dataset
+        print(f"[titan] streaming {hf_dataset} (n={hf_n or 'all'})", flush=True)
+        ds = load_dataset(hf_dataset, split="train", streaming=True)
+        for i, ex in enumerate(ds):
+            if hf_n and i >= hf_n:
+                break
+            buf.extend(tok.encode(" ".join(ex["text"].split())).ids)
+            buf.append(eos)
+            if i % 50000 == 0:
+                print(f"[titan]   {i} docs, {len(buf) / 1e6:.1f}M tokens", flush=True)
+    else:
+        corpus = os.path.join(train_dir, "corpus.txt")
+        print(f"[titan] tokenizing {corpus}", flush=True)
+        with open(corpus) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    buf.extend(tok.encode(line).ids)
+                    buf.append(eos)
     ids = np.array(buf, dtype=np.uint16)
     print(f"[titan] {len(ids)} tokens", flush=True)
     return ids
@@ -62,6 +77,8 @@ def main():
     ap.add_argument("--vocab-size", type=int, default=8000)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--max-windows", type=int, default=0, help="cap dataset (0=all); dry-run bound")
+    ap.add_argument("--hf-dataset", default="", help="stream this HF dataset in-container (e.g. roneneldan/TinyStories); else read corpus.txt from the channel")
+    ap.add_argument("--hf-n", type=int, default=0, help="cap number of HF docs (0=all)")
     ap.add_argument("--train", default=os.environ.get("SM_CHANNEL_TRAINING", "."))
     ap.add_argument("--model-dir", default=os.environ.get("SM_MODEL_DIR", "./out"))
     args = ap.parse_args()
@@ -72,7 +89,7 @@ def main():
     tok = ByteLevelBPETokenizer(
         os.path.join(args.train, "vocab.json"), os.path.join(args.train, "merges.txt")
     )
-    ids = tokenize_corpus(args.train, tok, args.seq_len)
+    ids = build_ids(args.train, tok, args.hf_dataset, args.hf_n)
 
     ds = LMWindows(ids, args.seq_len, args.max_windows)
     n_val = max(4, int(len(ds) * 0.05))

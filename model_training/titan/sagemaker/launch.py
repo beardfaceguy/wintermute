@@ -45,9 +45,13 @@ def main():
               "seq-len": 128, "batch-size": 8, "vocab-size": 8000, "max-windows": 200}
         max_run, base = 1800, "titan-dryrun"
     else:
-        # ~50M-class dress rehearsal at cloud scale; tune up toward ~170M for the real run.
-        hp = {"epochs": 1, "d-model": 512, "n-layers": 8, "n-heads": 8,
-              "seq-len": 512, "batch-size": 16, "vocab-size": 8000, "max-windows": 0}
+        # ~170M-tier scaled dress rehearsal (the Titans paper's smallest model).
+        # Fits A10G 24GB; batch 8 leaves headroom for the second-order memory path.
+        hp = {"epochs": 1, "d-model": 768, "n-layers": 14, "n-heads": 12,
+              "seq-len": 512, "batch-size": 8, "vocab-size": 8000, "max-windows": 0,
+              # stream the corpus from HF in-container (fast AWS-side bandwidth) —
+              # only the tokenizer needs to be staged to the input channel.
+              "hf-dataset": "roneneldan/TinyStories", "hf-n": 300000}
         max_run, base = 6 * 3600, "titan-pretrain"
 
     bucket = sm_sess.default_bucket()
