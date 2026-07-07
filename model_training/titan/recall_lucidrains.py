@@ -83,11 +83,14 @@ def main():
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--early-stop-acc", type=float, default=0.97,
+                    help="stop once query-acc exceeds this (0 disables)")
     args = ap.parse_args()
 
     V, N = args.vocab, args.n_pairs
     seq = 2 * N + 3
     dev = "cuda" if torch.cuda.is_available() else "cpu"
+    torch.manual_seed(0)  # reproducible init; the binding transition is init/optim-sensitive
 
     model = MemoryAsContextTransformer(
         num_tokens=V, dim=args.dim, depth=args.depth,
@@ -125,6 +128,9 @@ def main():
             acc, _ = evaluate(model, N, V, n=256)
             model.train()
             print(f"[recall] step {step} loss {loss.item():.3f} query-acc {acc:.3f}", flush=True)
+            if args.early_stop_acc and acc > args.early_stop_acc:
+                print(f"[recall] EARLY_STOP at step {step} (acc {acc:.3f})", flush=True)
+                break
         step += 1
 
     acc, ce = evaluate(model, N, V)
