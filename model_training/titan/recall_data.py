@@ -35,19 +35,37 @@ def _make_names(n, rng):
     return list(names)
 
 
-def make_example(k, target_frac, rng):
+def make_example_split(k, target_frac, rng, letters=False):
+    """Return (prefix, answer). prefix ends '...The secret code for <TARGET> is';
+    answer = ' <VALUE>.'. Completion-only training supervises just the answer.
+    target_frac caps how deep the target sits (1.0 = anywhere, for training).
+    letters=True → single-token values (one uppercase letter, k<=26): the answer
+    is ONE token, giving the copy/induction circuit a partial-credit gradient.
+    Random 4-digit codes (letters=False) are multi-token + uniform → no partial
+    credit, which stalled learning on the 37M model."""
     names = _make_names(k, rng)
-    codes, used = {}, set()
-    for nm in names:
-        c = f"{rng.randint(1000, 9999)}"
-        while c in used:
+    if letters:
+        vals = rng.sample([chr(65 + i) for i in range(26)], min(k, 26))
+        names = names[:len(vals)]
+        codes = {nm: vals[i] for i, nm in enumerate(names)}
+    else:
+        codes, used = {}, set()
+        for nm in names:
             c = f"{rng.randint(1000, 9999)}"
-        used.add(c)
-        codes[nm] = c
+            while c in used:
+                c = f"{rng.randint(1000, 9999)}"
+            used.add(c)
+            codes[nm] = c
     facts = [f"The secret code for {nm} is {codes[nm]}." for nm in names]
-    ti = rng.randint(0, max(0, int(k * target_frac)))  # target sits early -> far from the query
+    ti = rng.randint(0, min(len(names) - 1, max(0, int(len(names) * target_frac))))
     target = names[ti]
-    return " ".join(facts) + f" The secret code for {target} is {codes[target]}."
+    prefix = " ".join(facts) + f" The secret code for {target} is"
+    return prefix, f" {codes[target]}."
+
+
+def make_example(k, target_frac, rng):
+    prefix, answer = make_example_split(k, target_frac, rng)
+    return prefix + answer
 
 
 def main():
