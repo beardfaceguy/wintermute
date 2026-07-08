@@ -33,14 +33,18 @@ nvidia-smi || true
 ( while true; do sleep 300; aws s3 cp "$LOG" "$S3/titan_run.log" >/dev/null 2>&1 || true; done ) &
 
 # ── env: fresh venv + torch + titans-pytorch (pip resolves a consistent set) ────
+# The base DL GPU AMI's system python3 lacks ensurepip, so install python3-venv first.
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y && apt-get install -y python3-venv
 cd /home/ubuntu || exit 1
 python3 -m venv tvenv
 # shellcheck disable=SC1091
 . tvenv/bin/activate
 pip install -q --upgrade pip
-pip install -q torch                       # default CUDA build; matches the AMI's recent driver
+pip install -q torch                       # default CUDA build; runs on the AMI's CUDA 13.2 driver
 pip install -q titans-pytorch              # pulls tensordict/x-transformers/etc. for this torch
-python -c "import torch, titans_pytorch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
+tvenv/bin/python -c "import torch, titans_pytorch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())" \
+  || { echo 'ENV BUILD FAILED — aborting (instance will self-terminate)'; exit 1; }
 
 # ── fetch scripts + run the sweep ──────────────────────────────────────────────
 mkdir -p /home/ubuntu/scripts
