@@ -11,6 +11,40 @@ This is **not** a capable model. The goal is a working pipeline plus enough
 coherence to eyeball ("does it produce real English?"). Paper-scale Titans
 (≥170M params) still need a real GPU / SageMaker — see the VRAM ceiling below.
 
+## Backend update (2026-07-07): lucidrains adopted for recall/Stage-A
+
+The original PoC (below) used [`pafos-ai/titans-trainer`](https://github.com/pafos-ai/titans-trainer).
+Its **bespoke MAC block cannot form an induction / associative-copy circuit** — it
+never learns even trivial in-window copy, so Stage-A key->value recall failed across
+6 recipes (Vikunja #938). Localized with two controls (task #951):
+
+| model / impl | induction acc | 2/4-pair recall acc |
+|---|---|---|
+| `pafos-ai/titans-trainer` MAC (via real `TitansTrainer`, 15k steps) | 0.005 (fails) | — (fails, marginal only) |
+| plain causal transformer (control) | 1.000 | — |
+| **`lucidrains/titans-pytorch` MAC** (real test-time neural memory) | **1.000** | **~0.99** |
+
+So the failure was an *implementation* defect (likely chunking — cf. arXiv:2510.09551,
+2511.07343), not the Titan architecture. **[`lucidrains/titans-pytorch`](https://github.com/lucidrains/titans-pytorch)
+is now the adopted backend** for the recall/Stage-A work.
+
+lucidrains-backed scripts (this dir):
+- `pretrain_lucidrains.py` — MAC LM pretraining on TinyStories (analog of `pretrain.py`;
+  `--smoke` for a local 8GB wiring run). Uses `MemoryAsContextTransformer` + `MemoryMLP`,
+  a plain fp32 AdamW+cosine loop (no AMP: the neural memory's inner functorch grads are
+  unstable under autocast), and full-length `seq+1` windows (lucidrains shifts internally).
+- `induction_lucidrains.py` / `recall_lucidrains.py` — the reference-impl regression gates.
+- `induction_probe.py` / `induction_control_transformer.py` — the titans-trainer gate + plain-transformer control.
+
+Install the backend: `pip install --no-deps titans-pytorch` then its pure-python deps
+(tensordict, einx, x-transformers, hyper-connections, rotary-embedding-torch, assoc-scan,
+axial_positional_embedding, pyvers, cloudpickle, orjson, frozendict, loguru,
+torch_einops_utils) — `--no-deps` keeps the CUDA torch build untouched. For real scale,
+also build `accelerated-scan` + enable flex-attn (the neural memory is memory-heavy).
+
+The titans-trainer PoC below is retained for reference (its LM pretraining works — the
+defect is specific to induction/recall); do not use it for the recall path.
+
 ## Built on
 
 [`pafos-ai/titans-trainer`](https://github.com/pafos-ai/titans-trainer) (MAC-only
