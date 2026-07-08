@@ -26,7 +26,7 @@ TITAN_DIR = os.path.dirname(HERE)
 BASE_GPU_AMI_SSM = "/aws/service/deeplearning/ami/x86_64/base-oss-nvidia-driver-gpu-ubuntu-22.04/latest/ami-id"
 ROLE_NAME = "titan-ec2-runner"
 PROFILE_NAME = "titan-ec2-runner"        # instance-profile name (== role name)
-SCRIPTS = ["run_sweep.sh"]               # from ec2/
+SCRIPTS = ["run_sweep.sh", "vram_probe.py"]  # from ec2/
 TITAN_SCRIPTS = ["recall_lucidrains.py"]  # from model_training/titan/
 
 TRUST = {"Version": "2012-10-17", "Statement": [
