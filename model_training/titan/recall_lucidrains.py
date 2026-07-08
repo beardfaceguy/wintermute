@@ -80,6 +80,8 @@ def main():
     ap.add_argument("--segment-len", type=int, default=64, help=">=seq => full attn")
     ap.add_argument("--sliding", action="store_true", help="force recall through neural memory")
     ap.add_argument("--nmem-seg", type=int, default=16)
+    ap.add_argument("--neural-mem-layers", type=int, nargs="*", default=None,
+                    help="layers with neural memory (default: last layer only)")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -96,7 +98,8 @@ def main():
         num_tokens=V, dim=args.dim, depth=args.depth,
         segment_len=args.segment_len, heads=args.heads, dim_head=args.dim // args.heads,
         num_persist_mem_tokens=4, num_longterm_mem_tokens=4,
-        neural_memory_layers=(args.depth,), neural_memory_segment_len=args.nmem_seg,
+        neural_memory_layers=tuple(args.neural_mem_layers) if args.neural_mem_layers else (args.depth,),
+        neural_memory_segment_len=args.nmem_seg,
         sliding_window_attn=args.sliding, use_flex_attn=False,
         neural_memory_model=MemoryMLP(dim=64, depth=2),
         neural_memory_kwargs=dict(dim_head=64, heads=4, use_accelerated_scan=False),
@@ -108,7 +111,8 @@ def main():
     chance = 1.0 / (VAL_HI - VAL_LO)
     print(f"[recall] MAC params={sum(p.numel() for p in model.parameters())/1e6:.1f}M "
           f"pairs={N} seq={seq} segment_len={args.segment_len} sliding={args.sliding} "
-          f"nmem_seg={args.nmem_seg} steps={args.steps} chance={chance:.4f}", flush=True)
+          f"nmem_seg={args.nmem_seg} mem_layers={tuple(args.neural_mem_layers) if args.neural_mem_layers else (args.depth,)} "
+          f"steps={args.steps} chance={chance:.4f}", flush=True)
     a0, c0 = evaluate(model, N, V)
     print(f"[recall] PRE-TRAIN query-acc={a0:.3f} query-ce={c0:.3f}", flush=True)
 
