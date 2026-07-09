@@ -39,21 +39,21 @@ NAMES = ["Alice", "Bob", "Carol", "David", "Emma", "Frank", "Grace", "Henry", "I
          "Jack", "Karen", "Leo", "Mia", "Noah", "Olivia", "Paul", "Quinn", "Rose",
          "Sam", "Tina", "Uma", "Victor", "Wendy", "Xavier", "Yara", "Zack", "Aaron",
          "Bella", "Chloe", "Dan", "Ella", "Finn", "Gina", "Hugo", "Ivy", "Jake"]
-WORDS = ["red", "blue", "green", "gold", "black", "white", "pink", "gray", "brown",
-         "purple", "cat", "dog", "bird", "fish", "lion", "bear", "wolf", "fox",
-         "frog", "duck", "apple", "bread", "water", "stone", "cloud", "river",
-         "forest", "ocean", "desert", "happy", "angry", "quiet", "brave", "gentle",
-         "silver", "orange", "yellow", "green", "north", "south", "east", "west"]
 
 
-def single_token_values(tok):
-    """Keep only words that encode (with a leading space) to exactly one token."""
+def single_token_values(tok, min_len=3, max_n=1200):
+    """LARGE pool of single-BPE-token, space-prefixed alphabetic words from the
+    vocab. A large value space makes the marginal (ln|pool|) useless, forcing the
+    model to COPY the value from context instead of memorizing a small pool — the
+    first attempt stalled at ln(23) exactly because the pool was tiny."""
     out = []
-    for w in dict.fromkeys(WORDS):  # dedupe, keep order
-        ids = tok.encode(" " + w).ids
-        if len(ids) == 1:
-            out.append((w, ids[0]))
-    return out
+    for s, i in tok.get_vocab().items():
+        if s.startswith("Ġ") and s[1:].isalpha() and len(s) - 1 >= min_len:
+            w = s[1:]
+            if tok.encode(" " + w).ids == [i]:
+                out.append((w, i))
+    out.sort(key=lambda kv: kv[1])
+    return out[:max_n]
 
 
 def load_filler(tok, n_stories):
@@ -134,6 +134,9 @@ def main():
     ap.add_argument("--warmup", type=int, default=200)
     ap.add_argument("--tinystories-n", type=int, default=20000)
     ap.add_argument("--eval-every", type=int, default=1000)
+    ap.add_argument("--full-loss", action="store_true",
+                    help="train with lucidrains full-seq loss (the MQAR-proven path) "
+                         "instead of completion-only single-token loss")
     ap.add_argument("--early-stop-far", type=float, default=0.9,
                     help="stop once far-recall (depth<=0.25 mean) exceeds this")
     ap.add_argument("--tokenizer-dir", default=os.path.join(HERE, "tokenizer"))
@@ -192,8 +195,11 @@ def main():
         if step >= args.steps:
             break
         x = x.to(dev)
-        logits = model(x, return_loss=False)                      # [B, S, V]
-        loss = F.cross_entropy(logits[:, S - 2], x[:, S - 1])     # completion-only (answer token)
+        if args.full_loss:
+            loss = model(x, return_loss=True)                     # dense full-seq loss (MQAR-proven)
+        else:
+            logits = model(x, return_loss=False)                  # [B, S, V]
+            loss = F.cross_entropy(logits[:, S - 2], x[:, S - 1])  # completion-only (answer token)
         opt.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -201,9 +207,12 @@ def main():
         sched.step()
         if step % args.eval_every == 0:
             acc = eval_depths(model, tok, filler, names_ev, vals_ev, args.seq, n=128)
+            acc_tr = eval_depths(model, tok, filler, names_tr, vals_tr, args.seq, n=128, seed=1)
             model.train()
             far = (acc[0.0] + acc[0.1] + acc[0.25]) / 3
-            print(f"[textrecall] step {step} loss {loss.item():.3f} far {far:.3f} | {fmt(acc)}", flush=True)
+            far_tr = (acc_tr[0.0] + acc_tr[0.1] + acc_tr[0.25]) / 3
+            print(f"[textrecall] step {step} loss {loss.item():.3f} far_eval {far:.3f} "
+                  f"far_train {far_tr:.3f} near_train {acc_tr[0.9]:.3f} | eval {fmt(acc)}", flush=True)
             if args.early_stop_far and far > args.early_stop_far:
                 print(f"[textrecall] EARLY_STOP step {step} far={far:.3f}", flush=True)
                 break
