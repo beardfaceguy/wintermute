@@ -43,6 +43,7 @@ python3 -m venv tvenv
 pip install -q --upgrade pip
 pip install -q torch                       # default CUDA build; runs on the AMI's CUDA 13.2 driver
 pip install -q titans-pytorch              # pulls tensordict/x-transformers/etc. for this torch
+pip install -q datasets tokenizers         # text-recall filler streaming + BPE tokenizer
 tvenv/bin/python -c "import torch, titans_pytorch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())" \
   || { echo 'ENV BUILD FAILED — aborting (instance will self-terminate)'; exit 1; }
 

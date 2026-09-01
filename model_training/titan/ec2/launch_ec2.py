@@ -27,7 +27,8 @@ BASE_GPU_AMI_SSM = "/aws/service/deeplearning/ami/x86_64/base-oss-nvidia-driver-
 ROLE_NAME = "titan-ec2-runner"
 PROFILE_NAME = "titan-ec2-runner"        # instance-profile name (== role name)
 SCRIPTS = ["run_sweep.sh", "vram_probe.py"]  # from ec2/
-TITAN_SCRIPTS = ["recall_lucidrains.py"]  # from model_training/titan/
+TITAN_SCRIPTS = ["recall_lucidrains.py", "text_recall_lucidrains.py", "text_recall_adjacent.py"]  # from titan/
+TOKENIZER_FILES = ["vocab.json", "merges.txt"]  # titan/tokenizer/ -> scripts/tokenizer/
 
 TRUST = {"Version": "2012-10-17", "Statement": [
     {"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"},
@@ -90,7 +91,10 @@ def main():
         s3.upload_file(os.path.join(HERE, f), args.bucket, f"titan-ec2/{args.tag}/scripts/{f}")
     for f in TITAN_SCRIPTS:
         s3.upload_file(os.path.join(TITAN_DIR, f), args.bucket, f"titan-ec2/{args.tag}/scripts/{f}")
-    print(f"uploaded {SCRIPTS + TITAN_SCRIPTS} to {s3_prefix}/scripts/")
+    for f in TOKENIZER_FILES:
+        s3.upload_file(os.path.join(TITAN_DIR, "tokenizer", f), args.bucket,
+                       f"titan-ec2/{args.tag}/scripts/tokenizer/{f}")
+    print(f"uploaded {SCRIPTS + TITAN_SCRIPTS} + tokenizer to {s3_prefix}/scripts/")
 
     # 3. build user-data from bootstrap.sh (inject S3 prefix + hard cap)
     with open(os.path.join(HERE, "bootstrap.sh")) as fh:

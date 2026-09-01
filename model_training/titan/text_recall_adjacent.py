@@ -88,6 +88,7 @@ def main():
     ap.add_argument("--dim", type=int, default=256)
     ap.add_argument("--layers", type=int, default=2)
     ap.add_argument("--heads", type=int, default=4)
+    ap.add_argument("--neural-mem-layers", type=int, nargs="*", default=None)
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--steps", type=int, default=10000)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -113,7 +114,8 @@ def main():
         num_tokens=vocab, dim=args.dim, depth=args.layers, segment_len=args.segment_len,
         heads=args.heads, dim_head=args.dim // args.heads,
         num_persist_mem_tokens=4, num_longterm_mem_tokens=4,
-        neural_memory_layers=(args.layers,), neural_memory_segment_len=args.nmem_seg,
+        neural_memory_layers=tuple(args.neural_mem_layers) if args.neural_mem_layers else (args.layers,),
+        neural_memory_segment_len=args.nmem_seg,
         sliding_window_attn=True, use_flex_attn=False,
         neural_memory_model=MemoryMLP(dim=64, depth=2),
         neural_memory_kwargs=dict(dim_head=64, heads=4, use_accelerated_scan=False),
