@@ -1,0 +1,5 @@
+# Installed by SageMaker script mode into the PyTorch DLC before train_entry.py.
+# torch/CUDA are provided by the DLC — do NOT pin torch here (avoid clobbering it).
+git+https://github.com/beardfaceguy/titans-trainer.git@fix/save-pretrained-full-config
+tokenizers
+datasets
